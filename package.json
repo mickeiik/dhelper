@@ -11,7 +11,8 @@
   },
   "main": "packages/entry-point.mjs",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "packages/@tools/*"
   ],
   "engines": {
     "node": ">=23.0.0"

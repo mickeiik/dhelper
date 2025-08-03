@@ -1,19 +1,21 @@
-import type {AppInitConfig} from './AppInitConfig.js';
-import {createModuleRunner} from './ModuleRunner.js';
-import {disallowMultipleAppInstance} from './modules/SingleInstanceApp.js';
-import {createWindowManagerModule} from './modules/WindowManager.js';
-import {terminateAppOnLastWindowClose} from './modules/ApplicationTerminatorOnLastWindowClose.js';
-import {hardwareAccelerationMode} from './modules/HardwareAccelerationModule.js';
+import type { AppInitConfig } from './AppInitConfig.js';
+import { createModuleRunner } from './ModuleRunner.js';
+import { disallowMultipleAppInstance } from './modules/electron/SingleInstanceApp.js';
+import { createWindowManagerModule } from './modules/electron/WindowManager.js';
+import { terminateAppOnLastWindowClose } from './modules/electron/ApplicationTerminatorOnLastWindowClose.js';
+import { hardwareAccelerationMode } from './modules/electron/HardwareAccelerationModule.js';
 //import {autoUpdater} from './modules/AutoUpdater.js';
-import {allowInternalOrigins} from './modules/BlockNotAllowdOrigins.js';
-import {allowExternalUrls} from './modules/ExternalUrls.js';
+import { allowInternalOrigins } from './modules/electron/BlockNotAllowdOrigins.js';
+import { allowExternalUrls } from './modules/electron/ExternalUrls.js';
+import { initializeToolModule } from './modules/ToolModule.js';
+import { initializeWorkflowModule } from './modules/WorkflowModule.js';
 
 export async function initApp(initConfig: AppInitConfig) {
   const moduleRunner = createModuleRunner()
-    .init(createWindowManagerModule({initConfig, openDevTools: import.meta.env.DEV}))
+    .init(createWindowManagerModule({ initConfig, openDevTools: import.meta.env.DEV }))
     .init(disallowMultipleAppInstance())
     .init(terminateAppOnLastWindowClose())
-    .init(hardwareAccelerationMode({enable: false}))
+    .init(hardwareAccelerationMode({ enable: false }))
     // .init(autoUpdater()) //Disable for now as there issue with the CI now being able to query for new releases of a privat github repo
 
     // Install DevTools extension if needed
@@ -27,19 +29,14 @@ export async function initApp(initConfig: AppInitConfig) {
       new Set(
         initConfig.renderer instanceof URL
           ? [
-            'https://vite.dev',
-            'https://developer.mozilla.org',
-            'https://solidjs.com',
-            'https://qwik.dev',
-            'https://lit.dev',
-            'https://react.dev',
-            'https://preactjs.com',
-            'https://www.typescriptlang.org',
-            'https://vuejs.org',
+
           ]
           : [],
       )),
-    );
+    )
+
+    .init(initializeToolModule())
+    .init(initializeWorkflowModule());
 
   await moduleRunner;
 }

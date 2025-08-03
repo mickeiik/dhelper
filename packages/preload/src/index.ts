@@ -1,9 +1,15 @@
-import {sha256sum} from './nodeCrypto.js';
-import {versions} from './versions.js';
-import {ipcRenderer} from 'electron';
+import { sha256sum } from './nodeCrypto.js';
+import { versions } from './versions.js';
+import { ipcRenderer } from 'electron';
 
 function send(channel: string, message: string) {
   return ipcRenderer.invoke(channel, message);
 }
 
-export {sha256sum, versions, send};
+export { sha256sum, versions, send };
+
+import { getTools } from './tools.js';
+export { getTools };
+
+import { runWorkflow, onWorkflowProgress } from './workflow.js';
+export { runWorkflow, onWorkflowProgress };

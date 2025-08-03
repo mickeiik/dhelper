@@ -1,0 +1,19 @@
+{
+  "name": "@app/storage",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "devDependencies": {
+    "@app/electron-versions": "*",
+    "typescript": "5.8.3",
+    "vite": "7.0.6"
+  }
+}

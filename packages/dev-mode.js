@@ -52,8 +52,11 @@ const rendererWatchServerProvider = {
 
 /** @type {string[]} */
 const packagesToStart = [
-  'packages/preload',
+  'packages/@tools/hello-world',
   'packages/tools',
+  'packages/workflows',
+  'packages/storage',
+  'packages/preload',
   'packages/main',
 ];
 
