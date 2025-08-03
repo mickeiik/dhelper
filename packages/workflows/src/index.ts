@@ -14,13 +14,21 @@ export class WorkflowRunner {
 
     async run(workflow: Workflow) {
         let results: Record<string, any> = {}
+        let lastToolId;
+        let result;
 
         for (const step of workflow.steps) {
-            const result = await this.toolManager.runTool(step.toolId, step.inputs)
+            if (step.inputs === 'last' && lastToolId) {
+                result = await this.toolManager.runTool(step.toolId, results[lastToolId])
+            } else {
+                result = await this.toolManager.runTool(step.toolId, step.inputs)
+            }
             results[step.toolId] = result
 
             // Emit progress event
             this.emit('step-done', { stepId: step.toolId, result })
+
+            lastToolId = step.toolId
         }
 
         return results

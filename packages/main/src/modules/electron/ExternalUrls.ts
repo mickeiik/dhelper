@@ -1,5 +1,5 @@
-import {AppModule} from '../AppModule.js';
-import {ModuleContext} from '../ModuleContext.js';
+import {AppModule} from '../../AppModule.js';
+import {ModuleContext} from '../../ModuleContext.js';
 import {shell} from 'electron';
 import {URL} from 'node:url';
 

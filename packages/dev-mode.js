@@ -52,6 +52,8 @@ const rendererWatchServerProvider = {
 
 /** @type {string[]} */
 const packagesToStart = [
+  'packages/@tools/ocr',
+  'packages/@tools/screenshot',
   'packages/@tools/hello-world',
   'packages/tools',
   'packages/workflows',

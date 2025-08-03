@@ -22,12 +22,17 @@ export class WorkflowModule implements AppModule {
                 name: 'Test Workflow',
                 steps: [
                     {
-                        toolId: 'hello-world',
-                        inputs: 'any'
+                        toolId: 'screenshot',
+                        inputs: {
+                            top: 0,
+                            left: 0,
+                            width: 500,
+                            height: 200,
+                        }
                     },
                     {
-                        toolId: 'hello-world',
-                        inputs: 'Mickael'
+                        toolId: 'tesseract-ocr',
+                        inputs: 'last'
                     }
                 ]
             }

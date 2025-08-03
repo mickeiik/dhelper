@@ -35,7 +35,7 @@ function handleHotReload() {
   let rendererWatchServer = null;
 
   return {
-    name: '@tools/hello-world-tool-process-hot-reload',
+    name: '@tools/screenshot-tool-process-hot-reload',
 
     config(config, env) {
       if (env.mode !== 'development') {

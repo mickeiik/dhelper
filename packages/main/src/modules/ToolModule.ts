@@ -1,11 +1,11 @@
-import { WorkflowRunner } from '@app/workflows'
-import { WorkflowStorage } from '@app/storage'
-import { Tool, ToolManager } from '@app/tools'
 import { ipcMain } from 'electron'
 import { AppModule } from '../AppModule.js';
 import { ModuleContext } from '../ModuleContext.js';
 
+import { ToolManager } from '@app/tools'
 import { HelloWorldTool } from '@tools/hello-world';
+import { TesseractOcrTool } from '@tools/ocr';
+import { ScreenshotTool } from '@tools/screenshot';
 
 const toolManager = new ToolManager()
 
@@ -15,6 +15,8 @@ export class ToolModule implements AppModule {
 
         // Register some built-in tools
         toolManager.registerTool(new HelloWorldTool())
+        toolManager.registerTool(new TesseractOcrTool())
+        toolManager.registerTool(new ScreenshotTool())
         // toolManager.registerTool(new OCRTool())
 
         // IPC handlers
@@ -25,7 +27,7 @@ export class ToolModule implements AppModule {
 }
 
 export function getToolManager() {
-        return toolManager;
+    return toolManager;
 }
 
 export function initializeToolModule() {
