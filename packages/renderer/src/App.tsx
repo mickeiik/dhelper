@@ -1,11 +1,12 @@
 import './App.css'
 import WorkflowPage from './Workflow.page'
+import { ErrorBoundary } from './components/ErrorBoundary'
 
 function App() {
   return (
-    <>
-      <WorkflowPage></WorkflowPage>
-    </>
+    <ErrorBoundary>
+      <WorkflowPage />
+    </ErrorBoundary>
   )
 }
 
