@@ -124,21 +124,21 @@ export class ToolManager {
             throw new Error(`Tool with id "${id}" not found`);
         }
 
-        // Initialize tool if needed
-        if (!registration.initialized) {
-            await this.initializeTool(id);
-        }
-
-        const tool = registration.tool;
-        console.log(`Running tool: "${tool.id}"`);
-
         try {
+            // Initialize tool if needed
+            if (!registration.initialized) {
+                await this.initializeTool(id);
+            }
+
+            const tool = registration.tool;
+            console.log(`Running tool: "${tool.id}"`);
+
             const result = await tool.execute(inputs);
-            console.log(`Tool result: "${JSON.stringify(result).substring(0, 100)}..."`);
+            console.log(`Tool "${tool.id}" completed successfully`);
             return result;
         } catch (error) {
-            console.error(`Tool "${tool.id}" execution failed:`, error);
-            throw error;
+            console.error(`Tool "${id}" execution failed:`, error);
+            throw error; // Re-throw so caller can handle it
         }
     }
 

@@ -11,5 +11,5 @@ export { sha256sum, versions, send };
 import { getTools } from './tools.js';
 export { getTools };
 
-import { runWorkflow, onWorkflowProgress } from './workflow.js';
-export { runWorkflow, onWorkflowProgress };
+import { runWorkflow, runCustomWorkflow, onWorkflowProgress } from './workflow.js';
+export { runWorkflow, runCustomWorkflow, onWorkflowProgress };

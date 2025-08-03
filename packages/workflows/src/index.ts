@@ -81,16 +81,14 @@ export class WorkflowRunner {
 
         // Check if step failed and handle according to error strategy
         if (!stepResult.success) {
-          const errorStrategy = step.onError || 'stop'; // Default to 'stop'
+          const errorStrategy = step.onError || 'stop';
 
           if (errorStrategy === 'stop') {
             console.error(`🛑 Workflow stopped due to failed step: ${step.id}`);
             throw new Error(`Step ${step.id} failed: ${stepResult.error}`);
           } else if (errorStrategy === 'continue') {
             console.warn(`⚠️ Step ${step.id} failed but continuing: ${stepResult.error}`);
-            // Continue to next step
           }
-          // 'retry' is handled in executeStep
         }
       }
 
@@ -111,7 +109,7 @@ export class WorkflowRunner {
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`❌ Workflow "${workflow.id}" failed: ${errorMessage}`);
+      console.error(`❌ Workflow "${workflow.id}" failed:`, errorMessage);
 
       const result: WorkflowResult = {
         workflowId: workflow.id,
@@ -129,7 +127,7 @@ export class WorkflowRunner {
         message: result.error
       });
 
-      return result;
+      return result; // Return failed result instead of throwing
     }
   }
 

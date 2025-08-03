@@ -34,7 +34,7 @@ export class WorkflowModule implements AppModule {
         ipcMain.handle('run-workflow', async (_, workflowId) => {
             // Example workflow: Screenshot + OCR
             const exampleWorkflow = workflow('auto-example', 'Auto-Discovery Example')
-                .step('fkdjsg', 'screenshot', {
+                .step('capture', 'screenshot', {
                     top: 0,
                     left: 0,
                     width: 100,
@@ -49,6 +49,31 @@ export class WorkflowModule implements AppModule {
                 .build();
 
             return await workflowRunner.run(exampleWorkflow);
+        });
+
+        ipcMain.handle('run-custom-workflow', async (_, customWorkflow) => {
+            try {
+                console.log('Running custom workflow:', customWorkflow);
+
+                // Convert the custom workflow format to our internal format
+                const workflow = {
+                    id: customWorkflow.id,
+                    name: customWorkflow.name,
+                    description: 'Custom workflow built in UI',
+                    steps: customWorkflow.steps.map((step: any) => ({
+                        id: step.id,
+                        toolId: step.toolId,
+                        inputs: step.inputs,
+                        onError: 'stop' as const, // Default error handling
+                        retryCount: 0 // No retries by default
+                    }))
+                };
+
+                return await workflowRunner.run(workflow);
+            } catch (error) {
+                console.error('Custom workflow execution failed:', error);
+                throw error;
+            }
         });
     }
 }

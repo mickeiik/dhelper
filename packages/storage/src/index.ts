@@ -1,17 +1,21 @@
 import { Workflow } from '@app/workflows';
 
 export class WorkflowStorage {
-    async saveWorkflow(workflow: Workflow) {
-        // Save to file or database
+    async saveWorkflow(workflow: Workflow): Promise<void> {
+        // TODO: Implement actual file/database storage
+        console.log('Saving workflow:', workflow.id);
+        // For now, just log it
     }
 
-    //@ts-expect-error A function whose declared type is neither 'undefined', 'void', nor 'any' must return a value.ts(2355)
-    async loadWorkflow(id: string): Promise<Workflow> {
-        // Load from storage
+    async loadWorkflow(id: string): Promise<Workflow | null> {
+        // TODO: Implement actual loading
+        console.log('Loading workflow:', id);
+        return null; // Return null when not found
     }
 
-    //@ts-expect-error A function whose declared type is neither 'undefined', 'void', nor 'any' must return a value.ts(2355)
     async listWorkflows(): Promise<Workflow[]> {
-        // Return all workflows
+        // TODO: Implement actual listing
+        console.log('Listing workflows');
+        return []; // Return empty array for now
     }
 }
