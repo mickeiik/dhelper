@@ -4,6 +4,9 @@ import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
 
+// Import auto-generated tool imports for TypeScript autocomplete
+import './auto-imports.js';
+
 export interface ToolMetadata {
     id: string
     name: string
@@ -31,7 +34,7 @@ export class ToolManager {
         try {
             const toolsPath = this.resolveToolsDirectory();
             console.log(`ToolManager: Looking for tools in: ${toolsPath}`);
-            
+
             if (!existsSync(toolsPath)) {
                 console.log(`ToolManager: Tools directory does not exist: ${toolsPath}`);
                 this.autoDiscovered = true;
@@ -57,10 +60,10 @@ export class ToolManager {
         // Get the current file path and navigate to project root
         const currentFilePath = fileURLToPath(import.meta.url);
         const currentDir = dirname(currentFilePath);
-        
+
         // Navigate up to find the project root (contains packages directory)
         let projectRoot = currentDir;
-        
+
         // Keep going up until we find a directory that contains 'packages'
         while (projectRoot !== dirname(projectRoot)) { // Stop at filesystem root
             const packagesDir = join(projectRoot, 'packages');
@@ -69,7 +72,7 @@ export class ToolManager {
             }
             projectRoot = dirname(projectRoot);
         }
-        
+
         const toolsPath = join(projectRoot, 'packages', '@tools');
         return toolsPath;
     }
@@ -175,3 +178,6 @@ export class ToolManager {
         await Promise.all(initPromises);
     }
 }
+
+// Export registry types
+export type { ToolRegistry, ToolId, ToolInput, ToolOutput } from './registry.js';

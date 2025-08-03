@@ -1,37 +1,37 @@
+// packages/tools/vite.config.js
 import { getChromeMajorVersion } from '@app/electron-versions';
 
 export default /**
  * @type {import('vite').UserConfig}
  * @see https://vitejs.dev/config/
  */
-  ({
-    build: {
-      ssr: true,
-      sourcemap: 'inline',
-      outDir: 'dist',
-      target: `chrome${getChromeMajorVersion()}`,
-      assetsDir: '.',
-      lib: {
-        entry: 'src/index.ts',
-        formats: ['es'],
-      },
-      rollupOptions: {
-        output: {
-          entryFileNames: '[name].js',
-        },
-      },
-      emptyOutDir: true,
-      reportCompressedSize: false,
+({
+  build: {
+    ssr: true,
+    sourcemap: 'inline',
+    outDir: 'dist',
+    target: `chrome${getChromeMajorVersion()}`,
+    assetsDir: '.',
+    lib: {
+      entry: 'src/index.ts',
+      formats: ['es'],
     },
-    plugins: [handleHotReload()],
-  });
+    rollupOptions: {
+      output: {
+        entryFileNames: '[name].js',
+      },
+    },
+    emptyOutDir: true,
+    reportCompressedSize: false,
+  },
+  plugins: [handleHotReload()],
+});
 
 /**
- * Implement Electron webview reload when some file was changed
+ * Standard hot reload handler
  * @return {import('vite').Plugin}
  */
 function handleHotReload() {
-  /** @type {import('vite').ViteDevServer|null} */
   let rendererWatchServer = null;
 
   return {

@@ -1,3 +1,4 @@
+// packages/@tools/screenshot/src/index.ts
 import { Tool } from '@app/tools';
 import { nativeImage } from 'electron';
 import * as fs from 'fs';
@@ -15,8 +16,8 @@ export type ScreenshotToolInput = {
 export type ScreenshotToolOutput = string;
 
 export class ScreenshotTool implements Tool {
-  id = 'screenshot'
-  name = 'Screenshot Tool'
+  id = 'screenshot' as const;
+  name = 'Screenshot Tool';
 
   async initialize(inputs: any) { }
 
@@ -48,5 +49,15 @@ export class ScreenshotTool implements Tool {
     } catch (error) {
       throw new Error(`Failed to capture screenshot: ${error}`);
     }
+  }
+}
+
+// Self-register types for autocomplete
+declare module '@app/tools' {
+  interface ToolRegistry {
+    'screenshot': {
+      input: ScreenshotToolInput;
+      output: ScreenshotToolOutput;
+    };
   }
 }

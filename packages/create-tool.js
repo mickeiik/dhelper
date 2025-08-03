@@ -1,6 +1,6 @@
-// scripts/create-tool.js
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
+import { generateToolImports } from './tools/scripts/generate-tool-imports.js';
 
 const toolName = process.argv[2];
 if (!toolName) {
@@ -35,40 +35,50 @@ const packageJson = {
     }
 };
 
-// TypeScript source template
+// TypeScript source template with auto-registration
 const indexTs = `import { Tool } from '@app/tools';
 
 export interface ${pascalCase(toolName)}Input {
   // Define your input interface here
+  message?: string;
 }
 
 export interface ${pascalCase(toolName)}Output {
   // Define your output interface here
+  success: boolean;
+  result: any;
 }
 
 export class ${pascalCase(toolName)}Tool implements Tool {
-  id = '${toolName}';
+  id = '${toolName}' as const;
   name = '${toolName.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} Tool';
 
   async initialize(inputs: any) {
-    // Initialize your tool here
     console.log(\`\${this.name} initialized\`);
   }
 
   async execute(input: ${pascalCase(toolName)}Input): Promise<${pascalCase(toolName)}Output> {
-    // Implement your tool logic here
     console.log(\`\${this.name} executing with input:\`, input);
     
-    // TODO: Replace with actual implementation
     return {
       success: true,
-      message: \`\${this.name} executed successfully\`
-    } as ${pascalCase(toolName)}Output;
+      result: \`\${this.name} executed successfully with: \${input.message || 'no message'}\`
+    };
+  }
+}
+
+// Auto-register this tool's types for autocomplete
+declare module '@app/tools' {
+  interface ToolRegistry {
+    '${toolName}': {
+      input: ${pascalCase(toolName)}Input;
+      output: ${pascalCase(toolName)}Output;
+    };
   }
 }
 `;
 
-// Vite config template (copied from existing tools)
+// Vite config template
 const viteConfig = `import { getChromeMajorVersion } from '@app/electron-versions';
 
 export default /**
@@ -168,8 +178,13 @@ await writeFile(join(toolDir, 'src', 'index.ts'), indexTs);
 await writeFile(join(toolDir, 'vite.config.js'), viteConfig);
 await writeFile(join(toolDir, 'tsconfig.json'), tsConfig);
 
+// Regenerate tool imports after creating new tool
 console.log(`✅ Created tool package: @tools/${toolName}`);
+console.log(`📝 Regenerating tool imports...`);
+await generateToolImports();
+
 console.log(`📁 Location: ${toolDir}`);
+console.log(`🎯 Auto-registered for TypeScript autocomplete`);
 console.log(`🔧 To use: npm run start (auto-discovery will pick it up)`);
 
 function pascalCase(str) {

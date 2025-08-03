@@ -1,3 +1,4 @@
+// packages/@tools/ocr/src/index.ts
 import { Tool } from '@app/tools';
 import Tesseract from 'tesseract.js';
 
@@ -5,9 +6,8 @@ export type TesseractOcrToolInput = Tesseract.ImageLike;
 
 export type TesseractOcrToolOutput = string;
 
-
 export class TesseractOcrTool implements Tool {
-  id = 'tesseract-ocr';
+  id = 'tesseract-ocr' as const;
   name = 'Tesseract Ocr Tool';
   worker: Tesseract.Worker | null = null;
 
@@ -36,5 +36,15 @@ export class TesseractOcrTool implements Tool {
       throw new Error(`TesseractOcrTool failed: ${error.message}`);
     }
     return ''
+  }
+}
+
+// Self-register types for autocomplete
+declare module '@app/tools' {
+  interface ToolRegistry {
+    'tesseract-ocr': {
+      input: TesseractOcrToolInput;
+      output: TesseractOcrToolOutput;
+    };
   }
 }
