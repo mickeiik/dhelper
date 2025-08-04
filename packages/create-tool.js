@@ -4,8 +4,8 @@ import { generateToolImports } from './tools/scripts/generate-tool-imports.js';
 
 const toolName = process.argv[2];
 if (!toolName) {
-    console.error('Usage: npm run create-tool <tool-name>');
-    process.exit(1);
+  console.error('Usage: npm run create-tool <tool-name>');
+  process.exit(1);
 }
 
 const toolDir = join('packages', '@tools', toolName);
@@ -16,23 +16,23 @@ await mkdir(join(toolDir, 'src'), { recursive: true });
 
 // Package.json template
 const packageJson = {
-    "name": `@tools/${toolName}`,
-    "type": "module",
-    "scripts": {
-        "build": "vite build",
-        "typecheck": "tsc --noEmit"
-    },
-    "exports": {
-        ".": {
-            "types": "./src/index.ts",
-            "default": "./dist/index.js"
-        }
-    },
-    "devDependencies": {
-        "@app/electron-versions": "*",
-        "typescript": "5.8.3",
-        "vite": "7.0.6"
+  "name": `@tools/${toolName}`,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
     }
+  },
+  "devDependencies": {
+    "@app/electron-versions": "*",
+    "typescript": "5.8.3",
+    "vite": "7.0.6"
+  }
 };
 
 // TypeScript source template with auto-registration
@@ -160,7 +160,7 @@ const tsConfig = `{
     "types": ["node"],
     "baseUrl": ".",
     "paths": {
-      "@app/*": ["../*"]
+      "@app/*": ["../../*"],
     }
   },
   "include": ["src/**/*.ts", "../../types/**/*.d.ts"],
@@ -184,7 +184,7 @@ console.log(`🎯 Auto-registered for TypeScript autocomplete`);
 console.log(`🔧 To use: npm run start (auto-discovery will pick it up)`);
 
 function pascalCase(str) {
-    return str.split('-').map(word =>
-        word.charAt(0).toUpperCase() + word.slice(1)
-    ).join('');
+  return str.split('-').map(word =>
+    word.charAt(0).toUpperCase() + word.slice(1)
+  ).join('');
 }
