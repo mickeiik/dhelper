@@ -34,11 +34,11 @@ export class WorkflowModule implements AppModule {
         ipcMain.handle('run-workflow', async (_, workflowId) => {
             // Example workflow: Screenshot + OCR
             const exampleWorkflow = workflow('auto-example', 'Auto-Discovery Example')
+                .step('region', 'screen-region-selector', {
+                    mode: 'rectangle'
+                })
                 .step('capture', 'screenshot', {
-                    top: 0,
-                    left: 0,
-                    width: 100,
-                    height: 100
+                    $ref: 'region'
                 })
                 .step('extract', 'tesseract-ocr', ref('capture'))
                 .step('log', 'hello-world', {
