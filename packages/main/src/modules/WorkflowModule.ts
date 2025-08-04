@@ -6,40 +6,21 @@ import { AppModule } from '../AppModule.js';
 import { ModuleContext } from '../ModuleContext.js';
 import { getToolManager } from './ToolModule.js';
 
-const workflowRunner = new WorkflowRunner(getToolManager())
 const storage = new WorkflowStorage()
+const workflowRunner = new WorkflowRunner(getToolManager(), storage)
 
 export class WorkflowModule implements AppModule {
-    enable({ app }: ModuleContext): Promise<void> | void {
+    enable({ app }: ModuleContext): void {
         app.whenReady();
 
-        // Set up event listeners for progress tracking
-        workflowRunner.on('workflow-started', (progress) => {
-            console.log(`Workflow ${progress.workflowId} started`);
-        });
-
-        workflowRunner.on('step-completed', (progress) => {
-            console.log(`Step ${progress.stepId} completed (${progress.progress}%) ${progress.fromCache ? '[CACHED]' : ''}`);
-        });
-
-        workflowRunner.on('workflow-completed', (progress) => {
-            console.log(`Workflow ${progress.workflowId} completed successfully`);
-        });
-
-        workflowRunner.on('workflow-failed', (progress) => {
-            console.error(`Workflow ${progress.workflowId} failed: ${progress.message}`);
-        });
-
-        // Existing IPC handlers
+        // Workflow execution handlers
         ipcMain.handle('run-workflow', async (_, workflowId) => {
-            // Try to load from storage first
             const storedWorkflow = await storage.loadWorkflow(workflowId);
             if (storedWorkflow) {
-                console.log(`Running stored workflow: ${workflowId}`);
-                return await workflowRunner.run(storedWorkflow);
+                return workflowRunner.run(storedWorkflow);
             }
 
-            // Fallback to example workflow
+            // Fallback to example workflow for demo purposes
             const exampleWorkflow = workflow('auto-example', 'Auto-Discovery Example')
                 .cachedStep('region', 'screen-region-selector', {
                     mode: 'rectangle'
@@ -55,100 +36,73 @@ export class WorkflowModule implements AppModule {
                 })
                 .build();
 
-            return await workflowRunner.run(exampleWorkflow);
+            return workflowRunner.run(exampleWorkflow);
         });
 
         ipcMain.handle('run-custom-workflow', async (_, customWorkflow) => {
-            try {
-                console.log('Running custom workflow:', customWorkflow);
-
-                const workflow = {
-                    id: customWorkflow.id,
-                    name: customWorkflow.name,
-                    description: 'Custom workflow built in UI',
-                    steps: customWorkflow.steps.map((step: any) => ({
-                        id: step.id,
-                        toolId: step.toolId,
-                        inputs: step.inputs,
-                        onError: 'stop' as const,
-                        retryCount: 0,
-                        cache: step.cache
-                    })),
-                    clearCache: customWorkflow.clearCache
-                };
-
-                return await workflowRunner.run(workflow);
-            } catch (error) {
-                console.error('Custom workflow execution failed:', error);
-                throw error;
-            }
+            const workflow = {
+                id: customWorkflow.id,
+                name: customWorkflow.name,
+                description: 'Custom workflow built in UI',
+                steps: customWorkflow.steps.map((step: any) => ({
+                    id: step.id,
+                    toolId: step.toolId,
+                    inputs: step.inputs,
+                    onError: 'stop' as const,
+                    retryCount: 0,
+                    cache: step.cache
+                })),
+                clearCache: customWorkflow.clearCache
+            };
+            return workflowRunner.run(workflow);
         });
 
-        // Storage IPC handlers
-        ipcMain.handle('save-workflow', async (_, workflow, options) => {
-            await storage.saveWorkflow(workflow, options);
-            return { success: true };
-        });
+        // Storage handlers
+        ipcMain.handle('save-workflow', (_, workflow, options) => 
+            storage.saveWorkflow(workflow, options)
+        );
+        ipcMain.handle('load-workflow', (_, workflowId) => 
+            storage.loadWorkflow(workflowId)
+        );
+        ipcMain.handle('delete-workflow', (_, workflowId) => 
+            storage.deleteWorkflow(workflowId)
+        );
+        ipcMain.handle('list-workflows', () => 
+            storage.listWorkflows()
+        );
+        ipcMain.handle('workflow-exists', (_, workflowId) => 
+            storage.workflowExists(workflowId)
+        );
+        ipcMain.handle('get-storage-stats', () => 
+            storage.getStorageStats()
+        );
+        ipcMain.handle('clear-all-workflows', () => 
+            storage.clearAllWorkflows()
+        );
+        ipcMain.handle('export-workflow', (_, workflowId) => 
+            storage.exportWorkflow(workflowId)
+        );
+        ipcMain.handle('import-workflow', (_, data) => 
+            storage.importWorkflow(data)
+        );
+        ipcMain.handle('duplicate-workflow', (_, sourceId, newId, newName) => 
+            storage.duplicateWorkflow(sourceId, newId, newName)
+        );
+        ipcMain.handle('search-workflows', (_, query) => 
+            storage.searchWorkflows(query)
+        );
 
-        ipcMain.handle('load-workflow', async (_, workflowId) => {
-            return await storage.loadWorkflow(workflowId);
-        });
-
-        ipcMain.handle('delete-workflow', async (_, workflowId) => {
-            return await storage.deleteWorkflow(workflowId);
-        });
-
-        ipcMain.handle('list-workflows', async () => {
-            return await storage.listWorkflows();
-        });
-
-        ipcMain.handle('workflow-exists', async (_, workflowId) => {
-            return await storage.workflowExists(workflowId);
-        });
-
-        ipcMain.handle('get-storage-stats', async () => {
-            return await storage.getStorageStats();
-        });
-
-        ipcMain.handle('clear-all-workflows', async () => {
-            await storage.clearAllWorkflows();
-            return { success: true };
-        });
-
-        ipcMain.handle('export-workflow', async (_, workflowId) => {
-            return await storage.exportWorkflow(workflowId);
-        });
-
-        ipcMain.handle('import-workflow', async (_, data) => {
-            return await storage.importWorkflow(data);
-        });
-
-        ipcMain.handle('duplicate-workflow', async (_, sourceId, newId, newName) => {
-            await storage.duplicateWorkflow(sourceId, newId, newName);
-            return { success: true };
-        });
-
-        ipcMain.handle('search-workflows', async (_, query) => {
-            return await storage.searchWorkflows(query);
-        });
-
-        // Cache management handlers (unchanged)
-        ipcMain.handle('clear-workflow-cache', async (_, workflowId) => {
-            await workflowRunner.clearWorkflowCache(workflowId);
-            return { success: true };
-        });
-
-        ipcMain.handle('clear-all-caches', async () => {
-            await workflowRunner.clearAllCaches();
-            return { success: true };
-        });
-
-        ipcMain.handle('get-cache-stats', async (_, workflowId) => {
-            return workflowRunner.getCacheStats(workflowId);
-        });
+        // Cache handlers
+        ipcMain.handle('clear-workflow-cache', (_, workflowId) => 
+            workflowRunner.clearWorkflowCache(workflowId)
+        );
+        ipcMain.handle('clear-all-caches', () => 
+            workflowRunner.clearAllCaches()
+        );
+        ipcMain.handle('get-cache-stats', (_, workflowId) => 
+            workflowRunner.getCacheStats(workflowId)
+        );
     }
 }
 
-export function initializeWorkflowModule() {
-    return new WorkflowModule()
-}
+export const initializeWorkflowModule = () => new WorkflowModule()

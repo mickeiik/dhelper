@@ -1,198 +1,112 @@
-// packages/workflows/src/cache.ts
-import { createHash } from 'node:crypto';
-import { writeFile, readFile, mkdir, rm } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
-import { app } from 'electron';
+import type { WorkflowStorage } from '@app/storage';
 
 interface CacheEntry {
     value: any;
     timestamp: number;
     ttl?: number;
-    key: string;
 }
 
-interface WorkflowCache {
-    workflowId: string;
-    entries: Map<string, CacheEntry>;
-    lastAccessed: number;
+interface WorkflowCacheStats {
+    entries: number;
+    memoryEntries: number;
+    lastAccessed?: number;
 }
 
 export class WorkflowCacheManager {
-    private caches = new Map<string, WorkflowCache>();
-    private cacheDir: string;
-    private initialized = false;
+    private memoryCache = new Map<string, Map<string, CacheEntry>>();
 
-    constructor() {
-        this.cacheDir = join(app.getPath('userData'), 'workflow-cache');
-    }
-
-    async initialize(): Promise<void> {
-        if (this.initialized) return;
-
-        try {
-            await mkdir(this.cacheDir, { recursive: true });
-            this.initialized = true;
-            console.log('🗄️ Cache manager initialized');
-        } catch (error) {
-            console.error('Failed to initialize cache manager:', error);
-        }
-    }
-
-    generateCacheKey(stepId: string, toolId: string, inputs: any, customKey?: string): string {
-        if (customKey) {
-            return `${stepId}_${customKey}`;
-        }
-
-        // Create deterministic hash of inputs
-        const inputHash = this.hashObject(inputs);
-        return `${stepId}_${toolId}_${inputHash}`;
-    }
-
-    private hashObject(obj: any): string {
-        const str = JSON.stringify(obj, Object.keys(obj).sort());
-        return createHash('sha256').update(str).digest('hex').substring(0, 16);
-    }
+    constructor(private storage: WorkflowStorage) {}
 
     async get(workflowId: string, cacheKey: string): Promise<any | null> {
-        await this.initialize();
-
         // Try memory first
-        const workflowCache = this.caches.get(workflowId);
-        if (workflowCache) {
-            const entry = workflowCache.entries.get(cacheKey);
-            if (entry && this.isValidEntry(entry)) {
-                console.log(`📦 Cache hit (memory): ${cacheKey}`);
+        const workflowCache = this.memoryCache.get(workflowId);
+        if (workflowCache?.has(cacheKey)) {
+            const entry = workflowCache.get(cacheKey)!;
+            if (this.isValidEntry(entry)) {
                 return entry.value;
+            } else {
+                // Remove expired entry
+                workflowCache.delete(cacheKey);
             }
         }
 
-        // Try disk cache
-        const diskEntry = await this.loadFromDisk(workflowId, cacheKey);
-        if (diskEntry && this.isValidEntry(diskEntry)) {
+        // Try storage
+        const stored = await this.storage.loadStoredWorkflow(workflowId);
+        const cacheEntry = stored?.cache?.[cacheKey];
+
+        if (cacheEntry && this.isValidEntry(cacheEntry)) {
             // Load back into memory
-            this.setInMemory(workflowId, cacheKey, diskEntry);
-            console.log(`📦 Cache hit (disk): ${cacheKey}`);
-            return diskEntry.value;
+            this.setMemory(workflowId, cacheKey, cacheEntry);
+            return cacheEntry.value;
         }
 
-        console.log(`📦 Cache miss: ${cacheKey}`);
         return null;
     }
 
-    async set(workflowId: string, cacheKey: string, value: any, options?: { ttl?: number; persistent?: boolean }): Promise<void> {
-        await this.initialize();
-
+    async set(workflowId: string, cacheKey: string, value: any, options?: { ttl?: number }): Promise<void> {
         const entry: CacheEntry = {
             value,
             timestamp: Date.now(),
-            ttl: options?.ttl,
-            key: cacheKey
+            ttl: options?.ttl
         };
 
         // Store in memory
-        this.setInMemory(workflowId, cacheKey, entry);
+        this.setMemory(workflowId, cacheKey, entry);
 
-        // Store on disk if persistent
-        if (options?.persistent !== false) {
-            await this.saveToDisk(workflowId, cacheKey, entry);
+        // Store in persistent storage
+        const stored = await this.storage.loadStoredWorkflow(workflowId);
+        if (stored) {
+            if (!stored.cache) stored.cache = {};
+
+            stored.cache[cacheKey] = entry;
+
+            await this.storage.saveWorkflow(stored.workflow, { includeCache: true });
         }
-
-        console.log(`💾 Cached: ${cacheKey} (persistent: ${options?.persistent !== false})`);
     }
 
     async clearWorkflowCache(workflowId: string): Promise<void> {
-        await this.initialize();
-
-        // Clear memory
-        this.caches.delete(workflowId);
-
-        // Clear disk
-        try {
-            const workflowCacheDir = join(this.cacheDir, workflowId);
-            if (existsSync(workflowCacheDir)) {
-                await rm(workflowCacheDir, { recursive: true });
-            }
-            console.log(`🗑️ Cleared cache for workflow: ${workflowId}`);
-        } catch (error) {
-            console.warn(`Failed to clear disk cache for ${workflowId}:`, error);
-        }
+        this.memoryCache.delete(workflowId);
+        await this.storage.clearWorkflowCache(workflowId);
     }
 
     async clearAllCache(): Promise<void> {
-        await this.initialize();
-
-        // Clear memory
-        this.caches.clear();
-
-        // Clear disk
-        try {
-            if (existsSync(this.cacheDir)) {
-                await rm(this.cacheDir, { recursive: true });
-                await mkdir(this.cacheDir, { recursive: true });
-            }
-            console.log('🗑️ Cleared all workflow caches');
-        } catch (error) {
-            console.warn('Failed to clear all disk caches:', error);
+        this.memoryCache.clear();
+        
+        // Clear cache for all workflows
+        const workflows = await this.storage.listWorkflows();
+        for (const workflow of workflows) {
+            await this.storage.clearWorkflowCache(workflow.id);
         }
+        
+        // Cleared all workflow caches
     }
 
-    private setInMemory(workflowId: string, cacheKey: string, entry: CacheEntry): void {
-        if (!this.caches.has(workflowId)) {
-            this.caches.set(workflowId, {
-                workflowId,
-                entries: new Map(),
-                lastAccessed: Date.now()
-            });
+    private setMemory(workflowId: string, cacheKey: string, entry: CacheEntry): void {
+        if (!this.memoryCache.has(workflowId)) {
+            this.memoryCache.set(workflowId, new Map());
         }
-
-        const workflowCache = this.caches.get(workflowId)!;
-        workflowCache.entries.set(cacheKey, entry);
-        workflowCache.lastAccessed = Date.now();
-    }
-
-    private async loadFromDisk(workflowId: string, cacheKey: string): Promise<CacheEntry | null> {
-        try {
-            const filePath = join(this.cacheDir, workflowId, `${cacheKey}.json`);
-            if (!existsSync(filePath)) {
-                return null;
-            }
-
-            const data = await readFile(filePath, 'utf-8');
-            return JSON.parse(data);
-        } catch (error) {
-            console.warn(`Failed to load cache entry ${cacheKey}:`, error);
-            return null;
-        }
-    }
-
-    private async saveToDisk(workflowId: string, cacheKey: string, entry: CacheEntry): Promise<void> {
-        try {
-            const workflowCacheDir = join(this.cacheDir, workflowId);
-            await mkdir(workflowCacheDir, { recursive: true });
-
-            const filePath = join(workflowCacheDir, `${cacheKey}.json`);
-            await writeFile(filePath, JSON.stringify(entry, null, 2));
-        } catch (error) {
-            console.warn(`Failed to save cache entry ${cacheKey}:`, error);
-        }
+        this.memoryCache.get(workflowId)!.set(cacheKey, entry);
     }
 
     private isValidEntry(entry: CacheEntry): boolean {
         if (!entry.ttl) return true;
-
-        const now = Date.now();
-        const age = now - entry.timestamp;
-        return age < entry.ttl;
+        return (Date.now() - entry.timestamp) < entry.ttl;
     }
 
-    // Get cache statistics
-    getCacheStats(workflowId: string): { entries: number; memoryEntries: number; lastAccessed?: number } {
-        const workflowCache = this.caches.get(workflowId);
+    generateCacheKey(stepId: string, toolId: string, inputs: any, customKey?: string): string {
+        if (customKey) return `${stepId}_${customKey}`;
+
+        const inputHash = JSON.stringify(inputs, Object.keys(inputs).sort())
+            .split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0).toString(36);
+        return `${stepId}_${toolId}_${inputHash}`;
+    }
+
+    getCacheStats(workflowId: string): WorkflowCacheStats {
+        const workflowCache = this.memoryCache.get(workflowId);
         return {
-            entries: workflowCache?.entries.size || 0,
-            memoryEntries: workflowCache?.entries.size || 0,
-            lastAccessed: workflowCache?.lastAccessed
+            entries: workflowCache?.size || 0,
+            memoryEntries: workflowCache?.size || 0,
+            lastAccessed: Date.now() // Simplified - could track actual access times
         };
     }
 }

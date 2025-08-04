@@ -1,5 +1,5 @@
-import { WorkflowStorageInterface } from './storage-interface.js';
 import { FileWorkflowStorage } from './file-storage.js';
+import type { WorkflowStorageInterface } from './storage-interface.js';
 import type { Workflow } from '@app/types';
 import type { StoredWorkflow, WorkflowListItem, SaveWorkflowOptions, StorageStats } from './types.js';
 
@@ -7,7 +7,6 @@ export class WorkflowStorage {
     private storage: WorkflowStorageInterface;
 
     constructor(storage?: WorkflowStorageInterface) {
-        // Default to file storage, but allow injection of other storage types
         this.storage = storage || new FileWorkflowStorage();
     }
 
@@ -33,12 +32,8 @@ export class WorkflowStorage {
         };
 
         // Include cache data if requested
-        if (options.includeCache) {
-            storedWorkflow.cache = {
-                enabled: true,
-                data: existing?.cache?.data || {},
-                lastCacheUpdate: now
-            };
+        if (options.includeCache && existing?.cache) {
+            storedWorkflow.cache = existing.cache;
         }
 
         await this.storage.save(workflow.id, storedWorkflow);
@@ -50,27 +45,27 @@ export class WorkflowStorage {
     }
 
     async loadStoredWorkflow(id: string): Promise<StoredWorkflow | null> {
-        return await this.storage.load(id);
+        return this.storage.load(id);
     }
 
     async deleteWorkflow(id: string): Promise<boolean> {
-        return await this.storage.delete(id);
+        return this.storage.delete(id);
     }
 
     async listWorkflows(): Promise<WorkflowListItem[]> {
-        return await this.storage.list();
+        return this.storage.list();
     }
 
     async workflowExists(id: string): Promise<boolean> {
-        return await this.storage.exists(id);
+        return this.storage.exists(id);
     }
 
     async getStorageStats(): Promise<StorageStats> {
-        return await this.storage.getStats();
+        return this.storage.getStats();
     }
 
     async clearAllWorkflows(): Promise<void> {
-        await this.storage.clear();
+        return this.storage.clear();
     }
 
     // Cache-related methods
@@ -80,11 +75,7 @@ export class WorkflowStorage {
             throw new Error(`Workflow ${workflowId} not found`);
         }
 
-        stored.cache = {
-            enabled: true,
-            data: cacheData,
-            lastCacheUpdate: new Date()
-        };
+        stored.cache = cacheData;
 
         await this.storage.save(workflowId, stored);
     }
@@ -99,19 +90,18 @@ export class WorkflowStorage {
         if (!stored) return;
 
         if (stored.cache) {
-            stored.cache.data = {};
-            stored.cache.lastCacheUpdate = new Date();
+            stored.cache = {};
             await this.storage.save(workflowId, stored);
         }
     }
 
     // Import/Export functionality
     async exportWorkflow(workflowId: string): Promise<string | null> {
-        return await this.storage.export(workflowId);
+        return this.storage.export(workflowId);
     }
 
     async importWorkflow(data: string): Promise<string> {
-        return await this.storage.import(data);
+        return this.storage.import(data);
     }
 
     // Utility methods
@@ -137,7 +127,7 @@ export class WorkflowStorage {
 
         // Don't copy cache data for duplicated workflows
         if (duplicated.cache) {
-            duplicated.cache.data = {};
+            duplicated.cache = {};
         }
 
         await this.storage.save(newId, duplicated);
@@ -154,4 +144,5 @@ export class WorkflowStorage {
             workflow.tags?.some(tag => tag.toLowerCase().includes(lowerQuery))
         );
     }
+
 }

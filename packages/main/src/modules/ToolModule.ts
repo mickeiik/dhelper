@@ -9,32 +9,14 @@ const toolManager = new ToolManager()
 export class ToolModule implements AppModule {
     async enable({ app }: ModuleContext): Promise<void> {
         await app.whenReady();
-
-        // Auto-discover all tools
         await toolManager.autoDiscoverTools();
 
-        // IPC handlers
-        ipcMain.handle('get-tools', () => {
-            const tools = toolManager.getTools();
-            console.log('Returning tools to renderer:', tools.map(t => ({
-                id: t.id,
-                name: t.name,
-                hasInputFields: !!t.inputFields?.length,
-                inputFieldCount: t.inputFields?.length || 0
-            }))); // Debug log
-            return tools;
-        });
-
-        ipcMain.handle('run-tool', async (_, toolId: string, inputs: any) => {
-            return await toolManager.runTool(toolId, inputs);
-        });
+        ipcMain.handle('get-tools', () => toolManager.getToolsMetadata());
+        ipcMain.handle('run-tool', async (_, toolId: string, inputs: any) => 
+            toolManager.runTool(toolId, inputs)
+        );
     }
 }
 
-export function getToolManager() {
-    return toolManager;
-}
-
-export function initializeToolModule() {
-    return new ToolModule()
-}
+export const getToolManager = () => toolManager;
+export const initializeToolModule = () => new ToolModule()

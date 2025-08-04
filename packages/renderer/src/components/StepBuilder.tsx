@@ -1,11 +1,11 @@
 // packages/renderer/src/components/StepBuilder.tsx
 import { useState } from 'react';
-import type { Tool, ToolInputField, WorkflowInputs } from '@app/types';
+import type { ToolInputField, ToolMetadata, WorkflowInputs } from '@app/types';
 import type { StepBuilderData } from '../hooks/useWorkflowBuilder';
 import styles from './StepBuilder.module.css';
 
 interface StepBuilderProps {
-    tools: Tool[];
+    tools: ToolMetadata[];
     onAddStep: (stepData: StepBuilderData) => boolean;
 }
 
@@ -124,14 +124,6 @@ export function StepBuilder({ tools, onAddStep }: StepBuilderProps) {
         }
     };
 
-    console.log('StepBuilder received tools:', tools.map(t => ({
-        id: t.id,
-        name: t.name,
-        hasInputFields: !!t.inputFields,
-        inputFieldsLength: t.inputFields?.length,
-        description: t.description,
-        category: t.category
-    })));
 
     return (
         <div className={styles.stepBuilder}>
@@ -329,7 +321,7 @@ export function StepBuilder({ tools, onAddStep }: StepBuilderProps) {
 }
 
 interface FormInputsProps {
-    tool: Tool;
+    tool: ToolMetadata;
     inputs: Record<string, unknown>;
     onInputChange: (field: string, value: InputValue) => void;
 }
@@ -535,7 +527,7 @@ function FieldInput({ field, value, onChange }: FieldInputProps) {
 interface JsonInputsProps {
     value: string;
     onChange: (value: string) => void;
-    tool: Tool;
+    tool: ToolMetadata;
 }
 
 function JsonInputs({ value, onChange, tool }: JsonInputsProps) {

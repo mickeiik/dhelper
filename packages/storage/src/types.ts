@@ -9,11 +9,12 @@ export interface StoredWorkflow {
         description?: string;
         tags?: string[];
     };
-    cache?: {
-        enabled: boolean;
-        data?: Record<string, any>; // Cached step results
-        lastCacheUpdate?: Date;
-    };
+    // Cache structure for workflow step results
+    cache?: Record<string, {
+        value: any;
+        timestamp: number;
+        ttl?: number;
+    }>;
 }
 
 export interface WorkflowListItem {

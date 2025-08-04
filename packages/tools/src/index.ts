@@ -25,10 +25,8 @@ export class ToolManager {
 
         try {
             const toolsPath = this.resolveToolsDirectory();
-            console.log(`ToolManager: Looking for tools in: ${toolsPath}`);
 
             if (!existsSync(toolsPath)) {
-                console.log(`ToolManager: Tools directory does not exist: ${toolsPath}`);
                 this.autoDiscovered = true;
                 return;
             }
@@ -42,7 +40,6 @@ export class ToolManager {
             }
 
             this.autoDiscovered = true;
-            console.log(`ToolManager: Auto-discovered ${this.tools.size} tools`);
         } catch (error) {
             console.warn('ToolManager: Auto-discovery failed:', error);
         }
@@ -97,7 +94,7 @@ export class ToolManager {
             this.registerToolWithMetadata(tempTool, factory);
 
         } catch (error) {
-            console.warn(`ToolManager: Failed to load tool from ${toolName}:`, error);
+            console.warn(`Failed to load tool ${toolName}:`, error);
         }
     }
 
@@ -108,7 +105,7 @@ export class ToolManager {
             initialized: false, // Mark as not initialized for execution
             factory
         });
-        console.log(`ToolManager: "${tool.name}" tool registered with metadata`);
+        // Tool registered with metadata
     }
 
     registerTool(id: string, name: string, factory: () => Promise<Tool>) {
@@ -118,7 +115,7 @@ export class ToolManager {
             initialized: false,
             factory
         });
-        console.log(`ToolManager: "${name}" tool registered (lazy)`);
+        // Tool registered (lazy)
     }
 
     async runTool(id: string, inputs: any) {
@@ -133,11 +130,7 @@ export class ToolManager {
                 await this.initializeTool(id);
             }
 
-            const tool = registration.tool;
-            console.log(`Running tool: "${tool.id}"`);
-
-            const result = await tool.execute(inputs);
-            console.log(`Tool "${tool.id}" completed successfully`);
+            const result = await registration.tool.execute(inputs);
             return result;
         } catch (error) {
             console.error(`Tool "${id}" execution failed:`, error);
@@ -157,10 +150,9 @@ export class ToolManager {
                 registration.tool = newToolInstance;
                 await registration.tool.initialize({});
                 registration.initialized = true;
-                console.log(`ToolManager: "${registration.tool.name}" initialized for execution`);
             }
         } catch (error) {
-            console.error(`ToolManager: Failed to initialize tool "${id}":`, error);
+            console.error(`Failed to initialize tool "${id}":`, error);
             throw error;
         }
     }
@@ -168,6 +160,20 @@ export class ToolManager {
     getTools(): Tool[] {
         // Return full tool objects with all metadata
         return Array.from(this.tools.values()).map(({ tool }) => tool);
+    }
+
+    getToolsMetadata(): ToolMetadata[] {
+        return Array.from(this.tools.values()).map(({ tool }) => {
+            return {
+                id: tool.id,
+                name: tool.name,
+                description: tool.description,
+                category: tool.category,
+                inputFields: tool.inputFields,
+                examples: tool.examples
+            }
+
+        });
     }
 
     // Initialize all tools (useful for development/testing)

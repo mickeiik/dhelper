@@ -1,7 +1,9 @@
 // Export main classes
 export { WorkflowStorage } from './workflow-storage.js';
 export { FileWorkflowStorage } from './file-storage.js';
-export { WorkflowStorageInterface } from './storage-interface.js';
+
+// Export interfaces
+export type { WorkflowStorageInterface } from './storage-interface.js';
 
 // Export types
 export type {

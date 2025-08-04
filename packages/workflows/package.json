@@ -12,7 +12,8 @@
     }
   },
   "dependencies": {
-    "@app/types": "*"
+    "@app/types": "*",
+    "@app/storage": "*"
   },
   "devDependencies": {
     "@app/electron-versions": "*",

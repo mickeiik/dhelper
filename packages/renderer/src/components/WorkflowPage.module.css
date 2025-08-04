@@ -1,65 +1,408 @@
-/* Simple, consolidated styles - no over-engineering! */
+/* Modern, clean design - well organized! */
 
 .container {
-  padding: 20px;
-  max-width: 1000px;
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
   font-family: system-ui, -apple-system, sans-serif;
   color: #fff;
+  line-height: 1.6;
 }
 
-.container h1 {
-  color: #fff;
-  margin-bottom: 24px;
-}
-
-/* Sections */
-.section {
-  padding: 16px;
-  border: 1px solid #444;
-  border-radius: 8px;
-  background-color: #1a1a1a;
+/* Hero Section */
+.hero {
+  text-align: center;
+  padding: 32px 0 48px 0;
+  border-bottom: 1px solid #333;
   margin-bottom: 32px;
 }
 
-.section h2 {
-  color: #fff;
-  margin: 0 0 12px 0;
-}
-
-.section h3 {
-  color: #fff;
+.hero h1 {
+  font-size: 2.5rem;
   margin: 0 0 16px 0;
+  background: linear-gradient(135deg, #646cff, #4ade80);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.section h4 {
+.subtitle {
+  font-size: 1.2rem;
+  color: #ccc;
+  margin: 0;
+  font-weight: 300;
+}
+
+/* Quick Start Grid */
+.quickStart {
+  margin-bottom: 48px;
+}
+
+.quickStart h2 {
+  color: #fff;
+  margin: 0 0 24px 0;
+  font-size: 1.8rem;
+}
+
+.quickStartGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.featureCard {
+  padding: 24px;
+  background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+  border: 1px solid #444;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.featureCard:hover {
+  border-color: #646cff;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(100, 108, 255, 0.15);
+}
+
+.featureCard h3 {
   color: #fff;
   margin: 0 0 12px 0;
+  font-size: 1.3rem;
 }
 
-.section p {
+.featureCard p {
   color: #ccc;
+  margin: 8px 0;
+  font-size: 0.95rem;
+}
+
+.toolCategories {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.toolBadge {
+  background: #333;
+  color: #ccc;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  border: 1px solid #444;
+}
+
+/* Workflow Display */
+.workflowDisplay {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.sectionHeader h2 {
+  color: #fff;
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.progressBar {
+  background: #2a2a2a;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 20px;
+  border: 1px solid #444;
+}
+
+.progressText {
+  color: #4ade80;
+  font-weight: 500;
+}
+
+.stepsFlow {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.stepCard {
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.2s ease;
+}
+
+.stepCard:hover {
+  border-color: #646cff;
+}
+
+.stepHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.stepNumber {
+  background: #646cff;
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.stepHeader > div {
+  flex: 1;
+}
+
+.stepHeader strong {
+  color: #fff;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.toolName {
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.removeButton {
+  background: #dc3545;
+  border: none;
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.cacheInfo {
+  color: #4ade80;
+  font-size: 0.85rem;
   margin: 8px 0;
 }
 
-/* Banners */
+.stepInputs details {
+  margin-top: 8px;
+}
+
+.stepInputs summary {
+  color: #aaa;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.stepInputs pre {
+  background: #1a1a1a;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  margin: 8px 0 0 0;
+  overflow-x: auto;
+}
+
+.cacheControls {
+  text-align: center;
+  padding-top: 16px;
+  border-top: 1px solid #333;
+}
+
+/* Builder Section */
+.builderSection {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+
+.toggleButton {
+  background: #333;
+  color: #ccc;
+  border: 1px solid #555;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggleButton:hover {
+  background: #444;
+  border-color: #646cff;
+}
+
+.builderPrompt {
+  text-align: center;
+  padding: 32px;
+  color: #aaa;
+}
+
+.builderPrompt p {
+  margin: 0 0 20px 0;
+  font-size: 1.1rem;
+}
+
+.quickAddButtons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.quickAddButton {
+  background: #2a2a2a;
+  border: 1px solid #444;
+  color: #ccc;
+  padding: 12px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quickAddButton:hover {
+  border-color: #646cff;
+  background: #333;
+}
+
+.advancedBuilder {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #333;
+}
+
+/* Tools Overview */
+.toolsOverview {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+
+.toolCategory {
+  margin-bottom: 24px;
+}
+
+.toolCategory:last-child {
+  margin-bottom: 0;
+}
+
+.toolCategory h3 {
+  color: #fff;
+  margin: 0 0 16px 0;
+  font-size: 1.2rem;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #333;
+}
+
+.loading {
+  text-align: center;
+  color: #888;
+  padding: 32px;
+  font-style: italic;
+}
+
+/* Results Section */
+.resultsSection {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.resultsSection h2 {
+  color: #fff;
+  margin: 0 0 20px 0;
+  font-size: 1.5rem;
+}
+
+.progressDetail,
+.resultDetail {
+  margin-bottom: 20px;
+}
+
+.progressInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.cacheIndicator {
+  background: #4ade80;
+  color: #1a1a1a;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.resultHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.resultHeader h3 {
+  color: #fff;
+  margin: 0;
+}
+
+.cacheStats {
+  color: #4ade80;
+  font-size: 0.9rem;
+}
+
+/* Status Messages */
 .errorBanner,
 .successBanner {
-  padding: 12px;
-  border-radius: 6px;
+  padding: 12px 16px;
+  border-radius: 8px;
   margin-bottom: 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .errorBanner {
-  background-color: #4a1a1a;
+  background: linear-gradient(135deg, #4a1a1a, #3a1515);
   border: 1px solid #8b4a4a;
   color: #ff6b6b;
 }
 
 .successBanner {
-  background-color: #1a4a1a;
+  background: linear-gradient(135deg, #1a4a1a, #154a15);
   border: 1px solid #4a8b4a;
   color: #4ade80;
 }
@@ -70,164 +413,136 @@
   font-size: 18px;
   cursor: pointer;
   color: inherit;
-  padding: 0;
+  padding: 4px;
+  border-radius: 4px;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.closeButton:hover {
+  opacity: 1;
 }
 
 /* Buttons */
 .primaryButton {
   padding: 12px 24px;
-  background-color: #646cff;
+  background: linear-gradient(135deg, #646cff, #5a63e8);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(100, 108, 255, 0.3);
 }
 
 .primaryButton:hover:not(:disabled) {
-  background-color: #5a63e8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(100, 108, 255, 0.4);
 }
 
 .primaryButton:disabled {
-  background-color: #555;
+  background: #555;
   cursor: not-allowed;
-}
-
-.successButton {
-  padding: 8px 16px;
-  background-color: #28a745;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.successButton:hover {
-  background-color: #218838;
-}
-
-.dangerButton {
-  padding: 4px 8px;
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.dangerButton:hover {
-  background-color: #c82333;
+  transform: none;
+  box-shadow: none;
+  opacity: 0.6;
 }
 
 .secondaryButton {
   padding: 12px 24px;
-  background-color: #6c757d;
+  background: #2a2a2a;
+  color: #ccc;
+  border: 1px solid #555;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.secondaryButton:hover:not(:disabled) {
+  background: #333;
+  border-color: #777;
+  color: #fff;
+}
+
+.secondaryButton:disabled {
+  background: #1a1a1a;
+  border-color: #333;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.dangerButton {
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #dc3545, #c82333);
   color: white;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
-.secondaryButton:hover:not(:disabled) {
-  background-color: #5a6168;
+.dangerButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
 }
 
-.secondaryButton:disabled {
-  background-color: #555;
-  cursor: not-allowed;
-}
-
-/* Forms */
-.addStepForm {
-  padding: 16px;
-  background-color: #2a2a2a;
-  border-radius: 6px;
-  margin-bottom: 16px;
-}
-
-.formGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 2fr auto;
-  gap: 12px;
-  align-items: end;
-}
-
-.formGrid input,
-.formGrid select {
-  padding: 8px;
-  border: 1px solid #555;
-  border-radius: 4px;
-  background-color: #333;
-  color: #fff;
-  font-family: inherit;
-}
-
-.monoInput {
-  font-family: 'Fira Code', 'Monaco', 'Consolas', monospace !important;
-}
-
-/* Steps */
-.stepsContainer {
-  margin-bottom: 16px;
-}
-
-.stepsList {
-  border: 1px solid #444;
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.stepItem {
-  padding: 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #444;
-}
-
-.stepItem:nth-child(even) {
-  background-color: #2a2a2a;
-}
-
-.stepItem:nth-child(odd) {
-  background-color: #1f1f1f;
-}
-
-.stepItem:last-child {
-  border-bottom: none;
-}
-
-/* Controls */
 .controls {
   display: flex;
   gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
-/* Tools */
+/* Tools Grid */
 .toolsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
 }
 
 .toolCard {
-  padding: 12px;
+  padding: 16px;
+  background: #2a2a2a;
   border: 1px solid #444;
-  border-radius: 6px;
-  background-color: #2a2a2a;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.toolCard:hover {
+  border-color: #646cff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(100, 108, 255, 0.1);
 }
 
 .toolCard strong {
   color: #fff;
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  font-size: 1rem;
 }
 
 .toolCard small {
   color: #888;
-  font-size: 12px;
+  font-size: 0.8rem;
+  font-family: monospace;
+  background: #1a1a1a;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
+.toolCard p {
+  color: #ccc;
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
 }
 
 /* Utilities */
@@ -237,37 +552,291 @@
 }
 
 .small {
-  font-size: 12px;
+  font-size: 0.85rem;
   color: #888;
 }
 
 .codeBlock {
-  padding: 12px;
-  background-color: #2a2a2a;
-  border: 1px solid #444;
-  border-radius: 6px;
-  font-family: monospace;
-  font-size: 12px;
-  max-height: 300px;
+  padding: 16px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+  font-size: 0.85rem;
+  max-height: 400px;
   overflow: auto;
   color: #ccc;
+  line-height: 1.4;
 }
 
-.resultSummary {
-  cursor: pointer;
-  margin-bottom: 8px;
-  color: #ccc;
+.codeBlock::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-.toolCategory {
+.codeBlock::-webkit-scrollbar-track {
+  background: #2a2a2a;
+  border-radius: 3px;
+}
+
+.codeBlock::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 3px;
+}
+
+.codeBlock::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+  
+  .hero h1 {
+    font-size: 2rem;
+  }
+  
+  .subtitle {
+    font-size: 1rem;
+  }
+  
+  .quickStartGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .sectionHeader {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+  
+  .controls {
+    justify-content: center;
+  }
+  
+  .toolsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .quickAddButtons {
+    flex-direction: column;
+  }
+}
+
+/* Workflow Manager Styles */
+.workflowManager {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+
+.managerContent {
+  margin-top: 20px;
+}
+
+.saveSection {
+  padding: 20px;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.saveSection h3 {
+  color: #fff;
+  margin: 0 0 16px 0;
+  font-size: 1.2rem;
+}
+
+.saveForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.inputRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.textInput {
+  flex: 1;
+  padding: 12px;
+  background: #1a1a1a;
+  border: 1px solid #555;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+}
+
+.textInput:focus {
+  outline: none;
+  border-color: #646cff;
+}
+
+.textArea {
+  padding: 12px;
+  background: #1a1a1a;
+  border: 1px solid #555;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.textArea:focus {
+  outline: none;
+  border-color: #646cff;
+}
+
+.savedWorkflowsList {
+  padding: 20px;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 8px;
+}
+
+.savedWorkflowsList h3 {
+  color: #fff;
+  margin: 0 0 16px 0;
+  font-size: 1.2rem;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 32px;
   color: #888;
-  font-size: 11px;
-  margin-top: 4px;
 }
 
-.toolDescription {
-  color: #aaa;
-  font-size: 11px;
-  margin-top: 4px;
-  font-style: italic;
+.emptyState p {
+  margin: 8px 0;
+}
+
+.workflowsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.workflowItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 16px;
+  background: #1a1a1a;
+  border: 1px solid #444;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.workflowItem:hover {
+  border-color: #646cff;
+}
+
+.workflowInfo {
+  flex: 1;
+}
+
+.workflowInfo strong {
+  color: #fff;
+  display: block;
+  margin-bottom: 6px;
+  font-size: 1rem;
+}
+
+.workflowDescription {
+  color: #ccc;
+  margin: 6px 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.workflowMeta {
+  margin-top: 8px;
+}
+
+.workflowActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Loaded Workflow Viewer Styles */
+.loadedWorkflowViewer {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+
+.stepSelected {
+  border-color: #4ade80 !important;
+  background: #1a2e1a !important;
+}
+
+.stepUnselected {
+  opacity: 0.6;
+  border-color: #555 !important;
+}
+
+.stepRunning {
+  border-color: #646cff !important;
+  background: #1a1a2e !important;
+}
+
+.stepCheckbox {
+  margin-right: 12px;
+  transform: scale(1.2);
+  cursor: pointer;
+}
+
+.runningIndicator {
+  color: #646cff;
+  font-size: 1.2rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.saveWorkflowSection {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #333;
+}
+
+.saveWorkflowSection h3 {
+  color: #fff;
+  margin: 0 0 16px 0;
+  font-size: 1.2rem;
+}
+
+/* Responsive updates for new components */
+@media (max-width: 768px) {
+  .inputRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .workflowItem {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .workflowActions {
+    justify-content: center;
+  }
 }

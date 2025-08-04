@@ -1,16 +1,15 @@
-import { WorkflowStorageInterface } from './storage-interface.js';
 import type { StoredWorkflow, WorkflowListItem, StorageStats } from './types.js';
+import type { WorkflowStorageInterface } from './storage-interface.js';
 import { writeFile, readFile, mkdir, unlink, readdir, stat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { app } from 'electron';
 
-export class FileWorkflowStorage extends WorkflowStorageInterface {
+export class FileWorkflowStorage implements WorkflowStorageInterface {
     private storageDir: string;
     private initialized = false;
 
     constructor(customDir?: string) {
-        super();
         this.storageDir = customDir || join(app.getPath('userData'), 'workflows');
     }
 
@@ -20,7 +19,6 @@ export class FileWorkflowStorage extends WorkflowStorageInterface {
         try {
             await mkdir(this.storageDir, { recursive: true });
             this.initialized = true;
-            console.log('📁 File workflow storage initialized:', this.storageDir);
         } catch (error) {
             console.error('Failed to initialize file storage:', error);
             throw error;
@@ -38,7 +36,6 @@ export class FileWorkflowStorage extends WorkflowStorageInterface {
             const filePath = this.getFilePath(workflowId);
             const data = JSON.stringify(storedWorkflow, null, 2);
             await writeFile(filePath, data, 'utf-8');
-            console.log(`💾 Workflow saved: ${workflowId}`);
         } catch (error) {
             console.error(`Failed to save workflow ${workflowId}:`, error);
             throw error;
@@ -61,11 +58,7 @@ export class FileWorkflowStorage extends WorkflowStorageInterface {
             // Convert date strings back to Date objects
             stored.metadata.createdAt = new Date(stored.metadata.createdAt);
             stored.metadata.updatedAt = new Date(stored.metadata.updatedAt);
-            if (stored.cache?.lastCacheUpdate) {
-                stored.cache.lastCacheUpdate = new Date(stored.cache.lastCacheUpdate);
-            }
 
-            console.log(`📖 Workflow loaded: ${workflowId}`);
             return stored;
         } catch (error) {
             console.error(`Failed to load workflow ${workflowId}:`, error);
@@ -84,7 +77,6 @@ export class FileWorkflowStorage extends WorkflowStorageInterface {
             }
 
             await unlink(filePath);
-            console.log(`🗑️ Workflow deleted: ${workflowId}`);
             return true;
         } catch (error) {
             console.error(`Failed to delete workflow ${workflowId}:`, error);
@@ -118,7 +110,7 @@ export class FileWorkflowStorage extends WorkflowStorageInterface {
                             createdAt: stored.metadata.createdAt,
                             updatedAt: stored.metadata.updatedAt,
                             stepCount: stored.workflow.steps.length,
-                            hasCachedData: !!(stored.cache?.data && Object.keys(stored.cache.data).length > 0),
+                            hasCachedData: !!(stored.cache && Object.keys(stored.cache).length > 0),
                             tags: stored.metadata.tags
                         });
                     }
@@ -158,8 +150,8 @@ export class FileWorkflowStorage extends WorkflowStorageInterface {
 
                 // Estimate cache size
                 const stored = await this.load(workflow.id);
-                if (stored?.cache?.data) {
-                    cacheSize += JSON.stringify(stored.cache.data).length;
+                if (stored?.cache) {
+                    cacheSize += JSON.stringify(stored.cache).length;
                 }
             } catch (error) {
                 console.warn(`Failed to get stats for ${workflow.id}:`, error);
@@ -187,10 +179,22 @@ export class FileWorkflowStorage extends WorkflowStorageInterface {
                 await this.delete(workflow.id);
             }
 
-            console.log(`🗑️ Cleared all workflows (${workflows.length} deleted)`);
+            // Cleared all workflows
         } catch (error) {
             console.error('Failed to clear all workflows:', error);
             throw error;
         }
+    }
+
+    async export(workflowId: string): Promise<string | null> {
+        const stored = await this.load(workflowId);
+        return stored ? JSON.stringify(stored, null, 2) : null;
+    }
+
+    async import(data: string): Promise<string> {
+        const stored: StoredWorkflow = JSON.parse(data);
+        const workflowId = stored.workflow.id;
+        await this.save(workflowId, stored);
+        return workflowId;
     }
 }

@@ -10,13 +10,16 @@ import type {
 } from '@app/types';
 import { WorkflowEventEmitter } from './events.js';
 import { WorkflowCacheManager } from './cache.js';
+import { WorkflowStorage } from '@app/storage';
 
 export class WorkflowRunner extends WorkflowEventEmitter {
-  private cacheManager = new WorkflowCacheManager();
+  private cacheManager: WorkflowCacheManager;
 
-  constructor(private toolManager: ToolManager) {
+  constructor(private toolManager: ToolManager, private storage: WorkflowStorage) {
     super();
+    this.cacheManager = new WorkflowCacheManager(storage);
   }
+
 
   async run(workflow: Workflow): Promise<WorkflowResult> {
     const startTime = new Date();
@@ -30,7 +33,6 @@ export class WorkflowRunner extends WorkflowEventEmitter {
     // Clear cache if requested
     if (workflow.clearCache) {
       await this.cacheManager.clearWorkflowCache(workflow.id);
-      console.log(`🗑️ Cache cleared for workflow: ${workflow.id}`);
     }
 
     this.emit('workflow-started', {
@@ -62,10 +64,7 @@ export class WorkflowRunner extends WorkflowEventEmitter {
           const errorStrategy = step.onError || 'stop';
 
           if (errorStrategy === 'stop') {
-            console.error(`🛑 Workflow stopped due to failed step: ${step.id}`);
             throw new Error(`Step ${step.id} failed: ${stepResult.error}`);
-          } else if (errorStrategy === 'continue') {
-            console.warn(`⚠️ Step ${step.id} failed but continuing: ${stepResult.error}`);
           }
         }
       }
@@ -88,7 +87,6 @@ export class WorkflowRunner extends WorkflowEventEmitter {
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`❌ Workflow "${workflow.id}" failed:`, errorMessage);
 
       const result: WorkflowResult = {
         workflowId: workflow.id,
@@ -156,7 +154,6 @@ export class WorkflowRunner extends WorkflowEventEmitter {
           if (cachedResult !== null) {
             result = cachedResult;
             fromCache = true;
-            console.log(`📦 Using cached result for step: ${step.id}`);
 
             this.emit('step-completed', {
               workflowId,
@@ -178,8 +175,7 @@ export class WorkflowRunner extends WorkflowEventEmitter {
             const toolCacheConfig = tool?.cacheConfig;
 
             await this.cacheManager.set(workflowId, cacheKey, result, {
-              ttl: step.cache.ttl || toolCacheConfig?.ttl,
-              persistent: step.cache.persistent ?? toolCacheConfig?.persistent ?? true
+              ttl: step.cache.ttl || toolCacheConfig?.ttl
             });
           }
 
@@ -207,7 +203,6 @@ export class WorkflowRunner extends WorkflowEventEmitter {
         return stepResult;
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error(`❌ Step "${step.id}" failed: ${errorMessage}`);
 
         retryCount++;
 
