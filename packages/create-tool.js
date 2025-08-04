@@ -46,7 +46,7 @@ export interface ${pascalCase(toolName)}Input {
 export interface ${pascalCase(toolName)}Output {
   // Define your output interface here
   success: boolean;
-  result: any;
+  data: any;
 }
 
 export class ${pascalCase(toolName)}Tool implements Tool {
@@ -54,20 +54,16 @@ export class ${pascalCase(toolName)}Tool implements Tool {
   name = '${toolName.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} Tool';
 
   async initialize(inputs: any) {
-    console.log(\`\${this.name} initialized\`);
+    return;
   }
 
   async execute(input: ${pascalCase(toolName)}Input): Promise<${pascalCase(toolName)}Output> {
-    console.log(\`\${this.name} executing with input:\`, input);
-    
-    return {
-      success: true,
-      result: \`\${this.name} executed successfully with: \${input.message || 'no message'}\`
-    };
+    console.log('${pascalCase(toolName)}: ', input);
+    return { success: true, data: input };
   }
 }
 
-// Auto-register this tool's types for autocomplete
+// Self-register types for autocomplete
 declare module '@app/tools' {
   interface ToolRegistry {
     '${toolName}': {
@@ -116,7 +112,7 @@ function handleHotReload() {
   let rendererWatchServer = null;
 
   return {
-    name: '@tools/${toolName}-process-hot-reload',
+    name: '@tools/${toolName}-tool-process-hot-reload',
 
     config(config, env) {
       if (env.mode !== 'development') {
