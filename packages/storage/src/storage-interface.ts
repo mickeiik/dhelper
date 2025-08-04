@@ -1,4 +1,4 @@
-import type { StoredWorkflow, WorkflowListItem, SaveWorkflowOptions, StorageStats } from './types.js';
+import type { StoredWorkflow, WorkflowListItem, StorageStats } from './types.js';
 
 export abstract class WorkflowStorageInterface {
     abstract save(workflowId: string, storedWorkflow: StoredWorkflow): Promise<void>;
