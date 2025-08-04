@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Workflow, WorkflowStep } from '@app/types';
 
-interface NewStepForm {
+export interface NewStepForm {
   id: string;
   toolId: string;
   inputs: string;

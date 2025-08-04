@@ -1,21 +1,19 @@
-import { useState } from 'react';
 import { useTools } from '../hooks/useTools';
 import { useWorkflowExecution } from '../hooks/useWorkflowExecution';
-import { useWorkflowBuilder } from '../hooks/useWorkflowBuilder';
+import { useWorkflowBuilder, type NewStepForm } from '../hooks/useWorkflowBuilder';
 import { useWorkflowProgress } from '../hooks/useWorkflowProgress';
 import type { Tool, Workflow, WorkflowResult, WorkflowProgress } from '@app/types';
 import styles from './WorkflowPage.module.css';
 
 export function WorkflowPage() {
-  // Business logic hooks (the valuable part!)
   const { tools, isLoading: isLoadingTools, error: toolsError, reloadTools } = useTools();
-  const { 
-    isRunning, 
-    lastResult, 
-    error: executionError, 
-    executeExample, 
-    executeCustomWorkflow, 
-    clearError: clearExecutionError 
+  const {
+    isRunning,
+    lastResult,
+    error: executionError,
+    executeExample,
+    executeCustomWorkflow,
+    clearError: clearExecutionError
   } = useWorkflowExecution();
   const {
     workflow,
@@ -56,7 +54,7 @@ export function WorkflowPage() {
       )}
 
       {/* Example Workflow Section */}
-      <ExampleSection 
+      <ExampleSection
         onRun={executeExample}
         isRunning={isRunning}
         canRun={tools.length > 0 && !isLoadingTools}
@@ -97,7 +95,7 @@ function ExampleSection({ onRun, isRunning, canRun }: {
     <section className={styles.section}>
       <h2>🚀 Example Workflow</h2>
       <p>Run the pre-built example workflow (Screenshot → OCR → Hello World)</p>
-      <button 
+      <button
         onClick={onRun}
         disabled={isRunning || !canRun}
         className={styles.primaryButton}
@@ -108,22 +106,22 @@ function ExampleSection({ onRun, isRunning, canRun }: {
   );
 }
 
-function BuilderSection({ 
-  workflow, 
-  newStep, 
-  tools, 
-  isRunning, 
-  onUpdateStep, 
-  onAddStep, 
-  onRemoveStep, 
-  onClear, 
-  onRun 
+function BuilderSection({
+  workflow,
+  newStep,
+  tools,
+  isRunning,
+  onUpdateStep,
+  onAddStep,
+  onRemoveStep,
+  onClear,
+  onRun
 }: {
   workflow: Workflow;
-  newStep: any;
+  newStep: Partial<NewStepForm>;
   tools: Tool[];
   isRunning: boolean;
-  onUpdateStep: (updates: any) => void;
+  onUpdateStep: (updates: Partial<NewStepForm>) => void;
   onAddStep: () => void;
   onRemoveStep: (id: string) => void;
   onClear: () => void;
@@ -132,7 +130,7 @@ function BuilderSection({
   return (
     <section className={styles.section}>
       <h2>🔧 Build Custom Workflow</h2>
-      
+
       {/* Current Steps */}
       <div className={styles.stepsContainer}>
         <h3>Current Steps ({workflow.steps.length})</h3>
@@ -147,7 +145,7 @@ function BuilderSection({
                   <span className={styles.muted}>Tool: {step.toolId}</span><br />
                   <span className={styles.small}>Inputs: {JSON.stringify(step.inputs)}</span>
                 </div>
-                <button 
+                <button
                   onClick={() => onRemoveStep(step.id)}
                   className={styles.dangerButton}
                 >
@@ -212,12 +210,12 @@ function BuilderSection({
   );
 }
 
-function ResultsSection({ 
-  tools, 
-  isLoadingTools, 
-  onReloadTools, 
-  progress, 
-  result 
+function ResultsSection({
+  tools,
+  isLoadingTools,
+  onReloadTools,
+  progress,
+  result
 }: {
   tools: Tool[];
   isLoadingTools: boolean;
@@ -230,14 +228,14 @@ function ResultsSection({
       {/* Tools */}
       <section className={styles.section}>
         <h3>Available Tools ({tools.length})</h3>
-        <button 
-          onClick={onReloadTools} 
+        <button
+          onClick={onReloadTools}
           disabled={isLoadingTools}
           className={styles.secondaryButton}
         >
           {isLoadingTools ? '🔄 Loading...' : '🔄 Reload Tools'}
         </button>
-        
+
         {isLoadingTools ? (
           <p className={styles.muted}>Loading tools...</p>
         ) : (

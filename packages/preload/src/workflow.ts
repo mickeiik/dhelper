@@ -9,5 +9,5 @@ export async function runCustomWorkflow(workflow: any) {
 }
 
 export function onWorkflowProgress(callback: (progress: any) => void) {
-    ipcRenderer.on('workflow-progress', (event, progress) => callback(progress))
+    ipcRenderer.on('workflow-progress', (_event, progress) => callback(progress))
 }
