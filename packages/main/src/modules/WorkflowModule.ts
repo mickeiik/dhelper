@@ -30,15 +30,22 @@ export class WorkflowModule implements AppModule {
             console.error(`Workflow ${progress.workflowId} failed: ${progress.message}`);
         });
 
-        // IPC handlers
+        // Existing IPC handlers
         ipcMain.handle('run-workflow', async (_, workflowId) => {
-            // Example workflow with caching enabled for user interaction step
+            // Try to load from storage first
+            const storedWorkflow = await storage.loadWorkflow(workflowId);
+            if (storedWorkflow) {
+                console.log(`Running stored workflow: ${workflowId}`);
+                return await workflowRunner.run(storedWorkflow);
+            }
+
+            // Fallback to example workflow
             const exampleWorkflow = workflow('auto-example', 'Auto-Discovery Example')
                 .cachedStep('region', 'screen-region-selector', {
                     mode: 'rectangle'
                 }, {
-                    persistent: true, // Survives app restart
-                    ttl: 24 * 60 * 60 * 1000 // 24 hours
+                    persistent: true,
+                    ttl: 24 * 60 * 60 * 1000
                 })
                 .step('capture', 'screenshot', ref('region'))
                 .step('extract', 'tesseract-ocr', ref('capture'))
@@ -55,7 +62,6 @@ export class WorkflowModule implements AppModule {
             try {
                 console.log('Running custom workflow:', customWorkflow);
 
-                // Convert the custom workflow format to our internal format
                 const workflow = {
                     id: customWorkflow.id,
                     name: customWorkflow.name,
@@ -66,7 +72,7 @@ export class WorkflowModule implements AppModule {
                         inputs: step.inputs,
                         onError: 'stop' as const,
                         retryCount: 0,
-                        cache: step.cache // Pass through cache configuration
+                        cache: step.cache
                     })),
                     clearCache: customWorkflow.clearCache
                 };
@@ -78,7 +84,55 @@ export class WorkflowModule implements AppModule {
             }
         });
 
-        // Cache management handlers
+        // Storage IPC handlers
+        ipcMain.handle('save-workflow', async (_, workflow, options) => {
+            await storage.saveWorkflow(workflow, options);
+            return { success: true };
+        });
+
+        ipcMain.handle('load-workflow', async (_, workflowId) => {
+            return await storage.loadWorkflow(workflowId);
+        });
+
+        ipcMain.handle('delete-workflow', async (_, workflowId) => {
+            return await storage.deleteWorkflow(workflowId);
+        });
+
+        ipcMain.handle('list-workflows', async () => {
+            return await storage.listWorkflows();
+        });
+
+        ipcMain.handle('workflow-exists', async (_, workflowId) => {
+            return await storage.workflowExists(workflowId);
+        });
+
+        ipcMain.handle('get-storage-stats', async () => {
+            return await storage.getStorageStats();
+        });
+
+        ipcMain.handle('clear-all-workflows', async () => {
+            await storage.clearAllWorkflows();
+            return { success: true };
+        });
+
+        ipcMain.handle('export-workflow', async (_, workflowId) => {
+            return await storage.exportWorkflow(workflowId);
+        });
+
+        ipcMain.handle('import-workflow', async (_, data) => {
+            return await storage.importWorkflow(data);
+        });
+
+        ipcMain.handle('duplicate-workflow', async (_, sourceId, newId, newName) => {
+            await storage.duplicateWorkflow(sourceId, newId, newName);
+            return { success: true };
+        });
+
+        ipcMain.handle('search-workflows', async (_, query) => {
+            return await storage.searchWorkflows(query);
+        });
+
+        // Cache management handlers (unchanged)
         ipcMain.handle('clear-workflow-cache', async (_, workflowId) => {
             await workflowRunner.clearWorkflowCache(workflowId);
             return { success: true };

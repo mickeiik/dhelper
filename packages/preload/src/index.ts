@@ -12,5 +12,42 @@ export { sha256sum, versions, send };
 import { getTools } from './tools.js';
 export { getTools };
 
-import { runWorkflow, runCustomWorkflow, onWorkflowProgress, clearWorkflowCache, clearAllCaches, getCacheStats } from './workflow.js';
-export { runWorkflow, runCustomWorkflow, onWorkflowProgress, clearWorkflowCache, clearAllCaches, getCacheStats };
+import {
+  runWorkflow,
+  runCustomWorkflow,
+  onWorkflowProgress,
+  clearWorkflowCache,
+  clearAllCaches,
+  getCacheStats,
+  saveWorkflow,
+  loadWorkflow,
+  deleteWorkflow,
+  listWorkflows,
+  workflowExists,
+  getStorageStats,
+  clearAllWorkflows,
+  exportWorkflow,
+  importWorkflow,
+  duplicateWorkflow,
+  searchWorkflows
+} from './workflow.js';
+
+export {
+  runWorkflow,
+  runCustomWorkflow,
+  onWorkflowProgress,
+  clearWorkflowCache,
+  clearAllCaches,
+  getCacheStats,
+  saveWorkflow,
+  loadWorkflow,
+  deleteWorkflow,
+  listWorkflows,
+  workflowExists,
+  getStorageStats,
+  clearAllWorkflows,
+  exportWorkflow,
+  importWorkflow,
+  duplicateWorkflow,
+  searchWorkflows
+};
