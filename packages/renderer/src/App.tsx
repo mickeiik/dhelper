@@ -1,5 +1,5 @@
 import './App.css'
-import WorkflowPage from './Workflow.page'
+import { WorkflowPage } from './components/WorkflowPage'
 import { ErrorBoundary } from './components/ErrorBoundary'
 
 function App() {

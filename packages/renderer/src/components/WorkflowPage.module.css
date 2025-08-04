@@ -1,0 +1,258 @@
+/* Simple, consolidated styles - no over-engineering! */
+
+.container {
+  padding: 20px;
+  max-width: 1000px;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #fff;
+}
+
+.container h1 {
+  color: #fff;
+  margin-bottom: 24px;
+}
+
+/* Sections */
+.section {
+  padding: 16px;
+  border: 1px solid #444;
+  border-radius: 8px;
+  background-color: #1a1a1a;
+  margin-bottom: 32px;
+}
+
+.section h2 {
+  color: #fff;
+  margin: 0 0 12px 0;
+}
+
+.section h3 {
+  color: #fff;
+  margin: 0 0 16px 0;
+}
+
+.section h4 {
+  color: #fff;
+  margin: 0 0 12px 0;
+}
+
+.section p {
+  color: #ccc;
+  margin: 8px 0;
+}
+
+/* Banners */
+.errorBanner, .successBanner {
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.errorBanner {
+  background-color: #4a1a1a;
+  border: 1px solid #8b4a4a;
+  color: #ff6b6b;
+}
+
+.successBanner {
+  background-color: #1a4a1a;
+  border: 1px solid #4a8b4a;
+  color: #4ade80;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: inherit;
+  padding: 0;
+}
+
+/* Buttons */
+.primaryButton {
+  padding: 12px 24px;
+  background-color: #646cff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.primaryButton:hover:not(:disabled) {
+  background-color: #5a63e8;
+}
+
+.primaryButton:disabled {
+  background-color: #555;
+  cursor: not-allowed;
+}
+
+.successButton {
+  padding: 8px 16px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.successButton:hover {
+  background-color: #218838;
+}
+
+.dangerButton {
+  padding: 4px 8px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.dangerButton:hover {
+  background-color: #c82333;
+}
+
+.secondaryButton {
+  padding: 12px 24px;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.secondaryButton:hover:not(:disabled) {
+  background-color: #5a6168;
+}
+
+.secondaryButton:disabled {
+  background-color: #555;
+  cursor: not-allowed;
+}
+
+/* Forms */
+.addStepForm {
+  padding: 16px;
+  background-color: #2a2a2a;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 2fr auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.formGrid input, .formGrid select {
+  padding: 8px;
+  border: 1px solid #555;
+  border-radius: 4px;
+  background-color: #333;
+  color: #fff;
+  font-family: inherit;
+}
+
+.monoInput {
+  font-family: 'Fira Code', 'Monaco', 'Consolas', monospace !important;
+}
+
+/* Steps */
+.stepsContainer {
+  margin-bottom: 16px;
+}
+
+.stepsList {
+  border: 1px solid #444;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.stepItem {
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #444;
+}
+
+.stepItem:nth-child(even) {
+  background-color: #2a2a2a;
+}
+
+.stepItem:nth-child(odd) {
+  background-color: #1f1f1f;
+}
+
+.stepItem:last-child {
+  border-bottom: none;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: 12px;
+}
+
+/* Tools */
+.toolsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.toolCard {
+  padding: 12px;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background-color: #2a2a2a;
+}
+
+.toolCard strong {
+  color: #fff;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.toolCard small {
+  color: #888;
+  font-size: 12px;
+}
+
+/* Utilities */
+.muted {
+  color: #888;
+  font-style: italic;
+}
+
+.small {
+  font-size: 12px;
+  color: #888;
+}
+
+.codeBlock {
+  padding: 12px;
+  background-color: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 12px;
+  max-height: 300px;
+  overflow: auto;
+  color: #ccc;
+}
+
+.resultSummary {
+  cursor: pointer;
+  margin-bottom: 8px;
+  color: #ccc;
+}
