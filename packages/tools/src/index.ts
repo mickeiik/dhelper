@@ -7,15 +7,7 @@ import { existsSync } from 'node:fs';
 // Import auto-generated tool imports for TypeScript autocomplete
 import './auto-imports.js';
 
-export interface ToolMetadata {
-    id: string
-    name: string
-}
-
-export interface Tool extends ToolMetadata {
-    initialize(inputs: any): Promise<any>
-    execute(inputs: any): Promise<any>
-}
+import type { Tool, ToolMetadata } from '@app/types';
 
 interface ToolRegistration {
     tool: Tool;
@@ -181,3 +173,6 @@ export class ToolManager {
 
 // Export registry types
 export type { ToolRegistry, ToolId, ToolInput, ToolOutput } from './registry.js';
+
+// Re-export shared types for convenience
+export type { Tool, ToolMetadata } from '@app/types';

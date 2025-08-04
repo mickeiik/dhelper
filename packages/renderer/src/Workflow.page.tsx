@@ -1,38 +1,6 @@
 import { runWorkflow, runCustomWorkflow, getTools, onWorkflowProgress } from '@app/preload'
-import type { Tool } from '@app/tools'
+import type { Tool, Workflow, WorkflowResult, WorkflowStep } from '@app/types'
 import { useEffect, useState } from 'react'
-
-interface WorkflowStep {
-    id: string
-    toolId: string
-    inputs: Record<string, WorkflowResult>
-}
-
-interface CustomWorkflow {
-    id: string
-    name: string
-    steps: WorkflowStep[]
-}
-
-interface WorkflowResult {
-  workflowId: string;
-  success: boolean;
-  error?: string;
-  startTime: Date;
-  endTime?: Date;
-  stepResults: Record<string, StepResult>;
-}
-
-interface StepResult {
-  stepId: string;
-  toolId: string;
-  success: boolean;
-  result?: unknown;
-  error?: string;
-  startTime: Date;
-  endTime: Date;
-  retryCount: number;
-}
 
 function WorkflowPage() {
     const [tools, setTools] = useState<Tool[]>([])
@@ -43,7 +11,7 @@ function WorkflowPage() {
     const [lastResult, setLastResult] = useState<WorkflowResult | null>(null)
 
     // Workflow builder state
-    const [customWorkflow, setCustomWorkflow] = useState<CustomWorkflow>({
+    const [customWorkflow, setCustomWorkflow] = useState<Workflow>({
         id: 'custom-workflow',
         name: 'My Custom Workflow',
         steps: []

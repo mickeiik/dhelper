@@ -11,6 +11,9 @@
       "default": "./dist/index.js"
     }
   },
+  "dependencies": {
+    "@app/types": "*"
+  },
   "devDependencies": {
     "@app/electron-versions": "*",
     "typescript": "5.8.3",
