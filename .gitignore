@@ -13,3 +13,5 @@ package-lock.json
 .llm
 
 packages/template
+
+eng.traineddata
