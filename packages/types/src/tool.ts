@@ -1,3 +1,4 @@
+// packages/types/src/tool.ts
 export interface ToolMetadata {
   id: string;
   name: string;
@@ -6,6 +7,12 @@ export interface ToolMetadata {
 export interface Tool extends ToolMetadata {
   initialize(inputs: any): Promise<any>;
   execute(inputs: any): Promise<any>;
+  cacheConfig?: {
+    enabled: boolean;
+    ttl?: number; // Optional expiration in milliseconds
+    persistent?: boolean; // Survive app restart
+    keyGenerator?: (inputs: any) => string; // Custom cache key generation
+  };
 }
 
 export type ToolRegistry = Record<string, any>;

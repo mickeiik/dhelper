@@ -1,3 +1,4 @@
+// packages/types/src/workflow.ts
 import type { ToolId, ToolInput } from './tool.js';
 
 export interface WorkflowStep<T extends ToolId = ToolId> {
@@ -6,6 +7,12 @@ export interface WorkflowStep<T extends ToolId = ToolId> {
   inputs: WorkflowInputs<ToolInput<T>>;
   onError?: 'stop' | 'continue' | 'retry';
   retryCount?: number;
+  cache?: {
+    enabled: boolean;
+    key?: string; // Optional custom cache key
+    persistent?: boolean; // Survive app restart
+    ttl?: number; // Time to live in milliseconds
+  };
 }
 
 export interface Workflow {
@@ -13,6 +20,7 @@ export interface Workflow {
   name: string;
   description?: string;
   steps: WorkflowStep[];
+  clearCache?: boolean; // Flag to clear cache on next run
 }
 
 export type WorkflowInputs<T = any> =
@@ -32,6 +40,11 @@ export interface WorkflowResult {
   startTime: Date;
   endTime?: Date;
   stepResults: Record<string, StepResult>;
+  cacheStats?: {
+    cacheHits: number;
+    cacheMisses: number;
+    stepsCached: string[];
+  };
 }
 
 export interface StepResult {
@@ -43,6 +56,8 @@ export interface StepResult {
   startTime: Date;
   endTime: Date;
   retryCount: number;
+  fromCache?: boolean; // Indicates if result came from cache
+  cacheKey?: string; // The cache key used
 }
 
 export interface WorkflowProgress {
@@ -51,4 +66,5 @@ export interface WorkflowProgress {
   status: 'started' | 'completed' | 'failed' | 'retrying';
   progress?: number; // 0-100
   message?: string;
+  fromCache?: boolean; // Indicates if step used cache
 }

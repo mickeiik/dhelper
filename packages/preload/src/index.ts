@@ -1,3 +1,4 @@
+// packages/preload/src/index.ts
 import { sha256sum } from './nodeCrypto.js';
 import { versions } from './versions.js';
 import { ipcRenderer } from 'electron';
@@ -11,5 +12,5 @@ export { sha256sum, versions, send };
 import { getTools } from './tools.js';
 export { getTools };
 
-import { runWorkflow, runCustomWorkflow, onWorkflowProgress } from './workflow.js';
-export { runWorkflow, runCustomWorkflow, onWorkflowProgress };
+import { runWorkflow, runCustomWorkflow, onWorkflowProgress, clearWorkflowCache, clearAllCaches, getCacheStats } from './workflow.js';
+export { runWorkflow, runCustomWorkflow, onWorkflowProgress, clearWorkflowCache, clearAllCaches, getCacheStats };

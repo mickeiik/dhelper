@@ -1,15 +1,19 @@
+// packages/workflows/src/runner.ts
 import { ToolManager } from '@app/tools';
-import type { 
-  Workflow, 
-  WorkflowResult, 
-  WorkflowStep, 
-  StepResult, 
+import type {
+  Workflow,
+  WorkflowResult,
+  WorkflowStep,
+  StepResult,
   WorkflowInputs,
-  WorkflowProgress 
+  WorkflowProgress
 } from '@app/types';
 import { WorkflowEventEmitter } from './events.js';
+import { WorkflowCacheManager } from './cache.js';
 
 export class WorkflowRunner extends WorkflowEventEmitter {
+  private cacheManager = new WorkflowCacheManager();
+
   constructor(private toolManager: ToolManager) {
     super();
   }
@@ -17,6 +21,17 @@ export class WorkflowRunner extends WorkflowEventEmitter {
   async run(workflow: Workflow): Promise<WorkflowResult> {
     const startTime = new Date();
     const stepResults: Record<string, StepResult> = {};
+    const cacheStats = {
+      cacheHits: 0,
+      cacheMisses: 0,
+      stepsCached: [] as string[]
+    };
+
+    // Clear cache if requested
+    if (workflow.clearCache) {
+      await this.cacheManager.clearWorkflowCache(workflow.id);
+      console.log(`🗑️ Cache cleared for workflow: ${workflow.id}`);
+    }
 
     this.emit('workflow-started', {
       workflowId: workflow.id,
@@ -31,6 +46,16 @@ export class WorkflowRunner extends WorkflowEventEmitter {
 
         const stepResult = await this.executeStep(step, stepResults, workflow.id, stepProgress);
         stepResults[step.id] = stepResult;
+
+        // Update cache stats
+        if (stepResult.fromCache) {
+          cacheStats.cacheHits++;
+        } else {
+          cacheStats.cacheMisses++;
+          if (step.cache?.enabled) {
+            cacheStats.stepsCached.push(step.id);
+          }
+        }
 
         // Check if step failed and handle according to error strategy
         if (!stepResult.success) {
@@ -50,7 +75,8 @@ export class WorkflowRunner extends WorkflowEventEmitter {
         success: true,
         startTime,
         endTime: new Date(),
-        stepResults
+        stepResults,
+        cacheStats
       };
 
       this.emit('workflow-completed', {
@@ -70,7 +96,8 @@ export class WorkflowRunner extends WorkflowEventEmitter {
         error: errorMessage,
         startTime,
         endTime: new Date(),
-        stepResults
+        stepResults,
+        cacheStats
       };
 
       this.emit('workflow-failed', {
@@ -106,8 +133,64 @@ export class WorkflowRunner extends WorkflowEventEmitter {
         // Resolve inputs by replacing references with actual data
         const resolvedInputs = this.resolveInputs(step.inputs, previousResults);
 
-        // Execute the tool
-        const result = await this.toolManager.runTool(step.toolId, resolvedInputs);
+        // Check cache first if enabled
+        let result: any = null;
+        let fromCache = false;
+        let cacheKey: string | undefined;
+
+        if (step.cache?.enabled) {
+          // Get tool for cache configuration
+          const tool = await this.getToolInstance(step.toolId);
+          const toolCacheConfig = tool?.cacheConfig;
+
+          // Generate cache key
+          cacheKey = this.cacheManager.generateCacheKey(
+            step.id,
+            step.toolId,
+            resolvedInputs,
+            step.cache.key
+          );
+
+          // Try to get from cache
+          const cachedResult = await this.cacheManager.get(workflowId, cacheKey);
+          if (cachedResult !== null) {
+            result = cachedResult;
+            fromCache = true;
+            console.log(`📦 Using cached result for step: ${step.id}`);
+
+            this.emit('step-completed', {
+              workflowId,
+              stepId: step.id,
+              status: 'completed' as const,
+              progress,
+              fromCache: true
+            });
+          }
+        }
+
+        // Execute tool if not cached
+        if (!fromCache) {
+          result = await this.toolManager.runTool(step.toolId, resolvedInputs);
+
+          // Cache the result if caching is enabled
+          if (step.cache?.enabled && cacheKey) {
+            const tool = await this.getToolInstance(step.toolId);
+            const toolCacheConfig = tool?.cacheConfig;
+
+            await this.cacheManager.set(workflowId, cacheKey, result, {
+              ttl: step.cache.ttl || toolCacheConfig?.ttl,
+              persistent: step.cache.persistent ?? toolCacheConfig?.persistent ?? true
+            });
+          }
+
+          this.emit('step-completed', {
+            workflowId,
+            stepId: step.id,
+            status: 'completed' as const,
+            progress,
+            fromCache: false
+          });
+        }
 
         const stepResult: StepResult = {
           stepId: step.id,
@@ -116,15 +199,10 @@ export class WorkflowRunner extends WorkflowEventEmitter {
           result,
           startTime,
           endTime: new Date(),
-          retryCount
+          retryCount,
+          fromCache,
+          cacheKey
         };
-
-        this.emit('step-completed', {
-          workflowId,
-          stepId: step.id,
-          status: 'completed' as const,
-          progress
-        });
 
         return stepResult;
       } catch (error) {
@@ -167,6 +245,16 @@ export class WorkflowRunner extends WorkflowEventEmitter {
     }
 
     throw new Error('This should never be reached');
+  }
+
+  private async getToolInstance(toolId: string): Promise<any> {
+    // This is a bit of a hack - we need access to the actual tool instance
+    // In a real implementation, you might want to expose this through ToolManager
+    try {
+      return this.toolManager['tools']?.get(toolId)?.tool;
+    } catch {
+      return null;
+    }
   }
 
   private resolveInputs(inputs: WorkflowInputs<any>, previousResults: Record<string, StepResult>): any {
@@ -236,5 +324,20 @@ export class WorkflowRunner extends WorkflowEventEmitter {
     }
 
     return current;
+  }
+
+  // Public method to clear workflow cache
+  async clearWorkflowCache(workflowId: string): Promise<void> {
+    await this.cacheManager.clearWorkflowCache(workflowId);
+  }
+
+  // Public method to clear all caches
+  async clearAllCaches(): Promise<void> {
+    await this.cacheManager.clearAllCache();
+  }
+
+  // Get cache statistics
+  getCacheStats(workflowId: string) {
+    return this.cacheManager.getCacheStats(workflowId);
   }
 }

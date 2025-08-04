@@ -1,3 +1,4 @@
+// packages/@tools/screen-region-selector/src/index.ts
 import type { Tool } from '@app/types';
 import { BrowserWindow, screen, ipcMain } from 'electron';
 import { join } from 'path';
@@ -25,6 +26,13 @@ export type ScreenRegionSelectorOutput = PointSelection | RectangleSelection;
 export class ScreenRegionSelectorTool implements Tool {
   id = 'screen-region-selector' as const;
   name = 'Screen Region Selector';
+
+  // Configure caching for this tool
+  cacheConfig = {
+    enabled: true,
+    persistent: true, // Cache survives app restart
+    ttl: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
+  };
 
   private overlayWindow: BrowserWindow | null = null;
 

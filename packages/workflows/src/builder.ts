@@ -1,3 +1,4 @@
+// packages/workflows/src/builder.ts
 import type { ToolId, ToolInput, Workflow, WorkflowStep, WorkflowInputs } from '@app/types';
 
 export function createWorkflow(id: string, name: string, steps: WorkflowStep[], description?: string): Workflow {
@@ -11,6 +12,12 @@ export function createStep<T extends ToolId>(
   options?: {
     onError?: 'stop' | 'continue' | 'retry';
     retryCount?: number;
+    cache?: {
+      enabled: boolean;
+      key?: string;
+      persistent?: boolean;
+      ttl?: number;
+    };
   }
 ): WorkflowStep<T> {
   return {
@@ -34,10 +41,43 @@ export class WorkflowBuilder {
     id: string,
     toolId: T,
     inputs: WorkflowInputs<ToolInput<T>>,
-    options?: { onError?: 'stop' | 'continue' | 'retry'; retryCount?: number }
+    options?: {
+      onError?: 'stop' | 'continue' | 'retry';
+      retryCount?: number;
+      cache?: {
+        enabled: boolean;
+        key?: string;
+        persistent?: boolean;
+        ttl?: number;
+      };
+    }
   ): this {
     this.steps.push(createStep(id, toolId, inputs, options));
     return this;
+  }
+
+  // Convenience method for cacheable steps
+  cachedStep<T extends ToolId>(
+    id: string,
+    toolId: T,
+    inputs: WorkflowInputs<ToolInput<T>>,
+    cacheOptions?: {
+      key?: string;
+      persistent?: boolean;
+      ttl?: number;
+    },
+    stepOptions?: {
+      onError?: 'stop' | 'continue' | 'retry';
+      retryCount?: number;
+    }
+  ): this {
+    return this.step(id, toolId, inputs, {
+      ...stepOptions,
+      cache: {
+        enabled: true,
+        ...cacheOptions
+      }
+    });
   }
 
   build(): Workflow {

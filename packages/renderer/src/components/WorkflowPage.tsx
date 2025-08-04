@@ -1,9 +1,12 @@
+// packages/renderer/src/components/WorkflowPage.tsx
 import { useTools } from '../hooks/useTools';
 import { useWorkflowExecution } from '../hooks/useWorkflowExecution';
 import { useWorkflowBuilder, type NewStepForm } from '../hooks/useWorkflowBuilder';
 import { useWorkflowProgress } from '../hooks/useWorkflowProgress';
+import { clearWorkflowCache, clearAllCaches } from '@app/preload';
 import type { Tool, Workflow, WorkflowResult, WorkflowProgress } from '@app/types';
 import styles from './WorkflowPage.module.css';
+import { useState } from 'react';
 
 export function WorkflowPage() {
   const { tools, isLoading: isLoadingTools, error: toolsError, reloadTools } = useTools();
@@ -27,11 +30,39 @@ export function WorkflowPage() {
   } = useWorkflowBuilder();
   const { progress } = useWorkflowProgress();
 
+  const [cacheMessage, setCacheMessage] = useState<string | null>(null);
+
   // Simple error handling
   const currentError = executionError || builderError || toolsError;
   const handleClearError = () => {
     clearExecutionError();
     clearBuilderError();
+  };
+
+  const handleClearWorkflowCache = async () => {
+    try {
+      await clearWorkflowCache(workflow.id);
+      setCacheMessage(`✅ Cache cleared for workflow: ${workflow.id}`);
+      setTimeout(() => setCacheMessage(null), 3000);
+    } catch (error) {
+      setCacheMessage(`❌ Failed to clear cache: ${error}`);
+      setTimeout(() => setCacheMessage(null), 3000);
+    }
+  };
+
+  const handleClearAllCaches = async () => {
+    try {
+      await clearAllCaches();
+      setCacheMessage('✅ All caches cleared');
+      setTimeout(() => setCacheMessage(null), 3000);
+    } catch (error) {
+      setCacheMessage(`❌ Failed to clear all caches: ${error}`);
+      setTimeout(() => setCacheMessage(null), 3000);
+    }
+  };
+
+  const handleRunWithFreshCache = () => {
+    executeCustomWorkflow({ ...workflow, clearCache: true });
   };
 
   return (
@@ -50,6 +81,22 @@ export function WorkflowPage() {
       {lastResult?.success && (
         <div className={styles.successBanner}>
           ✅ Workflow completed successfully!
+          {lastResult.cacheStats && (
+            <div className={styles.small} style={{ marginTop: '8px' }}>
+              Cache: {lastResult.cacheStats.cacheHits} hits, {lastResult.cacheStats.cacheMisses} misses
+              {lastResult.cacheStats.stepsCached.length > 0 && (
+                <span> | Cached steps: {lastResult.cacheStats.stepsCached.join(', ')}</span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Cache Message */}
+      {cacheMessage && (
+        <div className={styles.successBanner}>
+          {cacheMessage}
+          <button onClick={() => setCacheMessage(null)} className={styles.closeButton}>×</button>
         </div>
       )}
 
@@ -71,6 +118,15 @@ export function WorkflowPage() {
         onRemoveStep={removeStep}
         onClear={clearWorkflow}
         onRun={() => executeCustomWorkflow(workflow)}
+        onRunFresh={handleRunWithFreshCache}
+        onClearCache={handleClearWorkflowCache}
+      />
+
+      {/* Cache Management */}
+      <CacheSection
+        onClearWorkflowCache={handleClearWorkflowCache}
+        onClearAllCaches={handleClearAllCaches}
+        workflowId={workflow.id}
       />
 
       {/* Tools & Results */}
@@ -95,6 +151,9 @@ function ExampleSection({ onRun, isRunning, canRun }: {
     <section className={styles.section}>
       <h2>🚀 Example Workflow</h2>
       <p>Run the pre-built example workflow (Screenshot → OCR → Hello World)</p>
+      <p className={styles.muted}>
+        💡 The screen selection step is cached - you'll only need to select the region once!
+      </p>
       <button
         onClick={onRun}
         disabled={isRunning || !canRun}
@@ -115,7 +174,9 @@ function BuilderSection({
   onAddStep,
   onRemoveStep,
   onClear,
-  onRun
+  onRun,
+  onRunFresh,
+  // onClearCache
 }: {
   workflow: Workflow;
   newStep: Partial<NewStepForm>;
@@ -126,6 +187,8 @@ function BuilderSection({
   onRemoveStep: (id: string) => void;
   onClear: () => void;
   onRun: () => void;
+  onRunFresh: () => void;
+  onClearCache: () => void;
 }) {
   return (
     <section className={styles.section}>
@@ -144,6 +207,12 @@ function BuilderSection({
                   <strong>{index + 1}. {step.id}</strong><br />
                   <span className={styles.muted}>Tool: {step.toolId}</span><br />
                   <span className={styles.small}>Inputs: {JSON.stringify(step.inputs)}</span>
+                  {step.cache?.enabled && (
+                    <div className={styles.small} style={{ color: '#4ade80' }}>
+                      📦 Cached (persistent: {step.cache.persistent ? 'yes' : 'no'}
+                      {step.cache.ttl && `, ttl: ${step.cache.ttl}ms`})
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={() => onRemoveStep(step.id)}
@@ -164,11 +233,11 @@ function BuilderSection({
           <input
             type="text"
             placeholder="Step ID"
-            value={newStep.id}
+            value={newStep.id || ''}
             onChange={(e) => onUpdateStep({ id: e.target.value })}
           />
           <select
-            value={newStep.toolId}
+            value={newStep.toolId || ''}
             onChange={(e) => onUpdateStep({ toolId: e.target.value })}
           >
             <option value="">Select tool...</option>
@@ -179,13 +248,52 @@ function BuilderSection({
           <input
             type="text"
             placeholder='{"key": "value"}'
-            value={newStep.inputs}
+            value={newStep.inputs || '{}'}
             onChange={(e) => onUpdateStep({ inputs: e.target.value })}
             className={styles.monoInput}
           />
           <button onClick={onAddStep} className={styles.successButton}>
             Add Step
           </button>
+        </div>
+
+        {/* Cache Configuration */}
+        <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#2a2a2a', borderRadius: '6px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <input
+              type="checkbox"
+              checked={newStep.cacheEnabled || false}
+              onChange={(e) => onUpdateStep({ cacheEnabled: e.target.checked })}
+            />
+            <span>Enable caching for this step</span>
+          </label>
+
+          {newStep.cacheEnabled && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginTop: '8px' }}>
+              <input
+                type="text"
+                placeholder="Custom cache key (optional)"
+                value={newStep.cacheKey || ''}
+                onChange={(e) => onUpdateStep({ cacheKey: e.target.value })}
+                style={{ padding: '6px', borderRadius: '4px', border: '1px solid #555', backgroundColor: '#333', color: '#fff' }}
+              />
+              <input
+                type="number"
+                placeholder="TTL (ms, optional)"
+                value={newStep.cacheTtl || ''}
+                onChange={(e) => onUpdateStep({ cacheTtl: e.target.value })}
+                style={{ padding: '6px', borderRadius: '4px', border: '1px solid #555', backgroundColor: '#333', color: '#fff' }}
+              />
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <input
+                  type="checkbox"
+                  checked={newStep.cachePersistent !== false}
+                  onChange={(e) => onUpdateStep({ cachePersistent: e.target.checked })}
+                />
+                <span style={{ fontSize: '12px' }}>Persistent</span>
+              </label>
+            </div>
+          )}
         </div>
       </div>
 
@@ -199,11 +307,51 @@ function BuilderSection({
           {isRunning ? '🔄 Running...' : '▶️ Run Custom Workflow'}
         </button>
         <button
+          onClick={onRunFresh}
+          disabled={isRunning || workflow.steps.length === 0}
+          className={styles.secondaryButton}
+        >
+          🔥 Run Fresh (Clear Cache)
+        </button>
+        <button
           onClick={onClear}
           disabled={workflow.steps.length === 0}
           className={styles.secondaryButton}
         >
           🗑️ Clear All Steps
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function CacheSection({
+  onClearWorkflowCache,
+  onClearAllCaches,
+  workflowId
+}: {
+  onClearWorkflowCache: () => void;
+  onClearAllCaches: () => void;
+  workflowId: string;
+}) {
+  return (
+    <section className={styles.section}>
+      <h3>🗄️ Cache Management</h3>
+      <p className={styles.muted}>
+        Cached steps (like screen selections) will reuse previous results until cleared.
+      </p>
+      <div className={styles.controls}>
+        <button
+          onClick={onClearWorkflowCache}
+          className={styles.secondaryButton}
+        >
+          🗑️ Clear Cache for "{workflowId}"
+        </button>
+        <button
+          onClick={onClearAllCaches}
+          className={styles.secondaryButton}
+        >
+          🗑️ Clear All Caches
         </button>
       </div>
     </section>
@@ -253,7 +401,7 @@ function ResultsSection({
       {/* Progress */}
       {progress && (
         <section className={styles.section}>
-          <h3>Progress</h3>
+          <h3>Progress {progress.fromCache && '📦'}</h3>
           <pre className={styles.codeBlock}>
             {JSON.stringify(progress, null, 2)}
           </pre>

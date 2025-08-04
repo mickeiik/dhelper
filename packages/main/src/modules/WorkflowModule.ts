@@ -19,7 +19,7 @@ export class WorkflowModule implements AppModule {
         });
 
         workflowRunner.on('step-completed', (progress) => {
-            console.log(`Step ${progress.stepId} completed (${progress.progress}%)`);
+            console.log(`Step ${progress.stepId} completed (${progress.progress}%) ${progress.fromCache ? '[CACHED]' : ''}`);
         });
 
         workflowRunner.on('workflow-completed', (progress) => {
@@ -32,17 +32,17 @@ export class WorkflowModule implements AppModule {
 
         // IPC handlers
         ipcMain.handle('run-workflow', async (_, workflowId) => {
-            // Example workflow: Screenshot + OCR
+            // Example workflow with caching enabled for user interaction step
             const exampleWorkflow = workflow('auto-example', 'Auto-Discovery Example')
-                .step('region', 'screen-region-selector', {
+                .cachedStep('region', 'screen-region-selector', {
                     mode: 'rectangle'
+                }, {
+                    persistent: true, // Survives app restart
+                    ttl: 24 * 60 * 60 * 1000 // 24 hours
                 })
-                .step('capture', 'screenshot', {
-                    $ref: 'region'
-                })
+                .step('capture', 'screenshot', ref('region'))
                 .step('extract', 'tesseract-ocr', ref('capture'))
                 .step('log', 'hello-world', {
-                    // TypeScript autocompletes: message, data (from hello-world tool)
                     message: 'OCR Result:',
                     data: ref('extract')
                 })
@@ -64,9 +64,11 @@ export class WorkflowModule implements AppModule {
                         id: step.id,
                         toolId: step.toolId,
                         inputs: step.inputs,
-                        onError: 'stop' as const, // Default error handling
-                        retryCount: 0 // No retries by default
-                    }))
+                        onError: 'stop' as const,
+                        retryCount: 0,
+                        cache: step.cache // Pass through cache configuration
+                    })),
+                    clearCache: customWorkflow.clearCache
                 };
 
                 return await workflowRunner.run(workflow);
@@ -74,6 +76,21 @@ export class WorkflowModule implements AppModule {
                 console.error('Custom workflow execution failed:', error);
                 throw error;
             }
+        });
+
+        // Cache management handlers
+        ipcMain.handle('clear-workflow-cache', async (_, workflowId) => {
+            await workflowRunner.clearWorkflowCache(workflowId);
+            return { success: true };
+        });
+
+        ipcMain.handle('clear-all-caches', async () => {
+            await workflowRunner.clearAllCaches();
+            return { success: true };
+        });
+
+        ipcMain.handle('get-cache-stats', async (_, workflowId) => {
+            return workflowRunner.getCacheStats(workflowId);
         });
     }
 }

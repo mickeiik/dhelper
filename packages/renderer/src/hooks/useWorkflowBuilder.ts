@@ -1,3 +1,4 @@
+// packages/renderer/src/hooks/useWorkflowBuilder.ts
 import { useState } from 'react';
 import type { Workflow, WorkflowStep } from '@app/types';
 
@@ -5,6 +6,10 @@ export interface NewStepForm {
   id: string;
   toolId: string;
   inputs: string;
+  cacheEnabled: boolean;
+  cacheKey: string;
+  cachePersistent: boolean;
+  cacheTtl: string;
 }
 
 export function useWorkflowBuilder() {
@@ -17,7 +22,11 @@ export function useWorkflowBuilder() {
   const [newStep, setNewStep] = useState<NewStepForm>({
     id: '',
     toolId: '',
-    inputs: '{}'
+    inputs: '{}',
+    cacheEnabled: false,
+    cacheKey: '',
+    cachePersistent: true,
+    cacheTtl: ''
   });
 
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +50,16 @@ export function useWorkflowBuilder() {
         inputs
       };
 
+      // Add cache configuration if enabled
+      if (newStep.cacheEnabled) {
+        step.cache = {
+          enabled: true,
+          key: newStep.cacheKey || undefined,
+          persistent: newStep.cachePersistent,
+          ttl: newStep.cacheTtl ? parseInt(newStep.cacheTtl) : undefined
+        };
+      }
+
       setWorkflow(prev => ({
         ...prev,
         steps: [...prev.steps, step]
@@ -49,9 +68,13 @@ export function useWorkflowBuilder() {
       setNewStep({
         id: '',
         toolId: '',
-        inputs: '{}'
+        inputs: '{}',
+        cacheEnabled: false,
+        cacheKey: '',
+        cachePersistent: true,
+        cacheTtl: ''
       });
-      
+
       setError(null);
       return true;
     } catch (err) {
