@@ -1,15 +1,17 @@
 // packages/renderer/src/hooks/useWorkflowBuilder.ts
 import { useState } from 'react';
-import type { Workflow, WorkflowStep } from '@app/types';
+import type { Workflow, WorkflowStep, WorkflowInputs } from '@app/types';
 
-export interface NewStepForm {
+export interface StepBuilderData {
   id: string;
   toolId: string;
-  inputs: string;
-  cacheEnabled: boolean;
-  cacheKey: string;
-  cachePersistent: boolean;
-  cacheTtl: string;
+  inputs: WorkflowInputs<unknown>;
+  cache?: {
+    enabled: boolean;
+    key?: string;
+    persistent?: boolean;
+    ttl?: number;
+  };
 }
 
 export function useWorkflowBuilder() {
@@ -19,96 +21,64 @@ export function useWorkflowBuilder() {
     steps: []
   });
 
-  const [newStep, setNewStep] = useState<NewStepForm>({
-    id: '',
-    toolId: '',
-    inputs: '{}',
-    cacheEnabled: false,
-    cacheKey: '',
-    cachePersistent: true,
-    cacheTtl: ''
-  });
-
   const [error, setError] = useState<string | null>(null);
 
-  const updateNewStep = (updates: Partial<NewStepForm>) => {
-    setNewStep(prev => ({ ...prev, ...updates }));
-  };
-
-  const addStep = () => {
-    if (!newStep.id || !newStep.toolId) {
+  const addStepFromBuilder = (stepData: StepBuilderData): boolean => {
+    if (!stepData.id || !stepData.toolId) {
       setError('Step ID and Tool are required');
       return false;
     }
 
-    try {
-      const inputs = JSON.parse(newStep.inputs);
-
-      const step: WorkflowStep = {
-        id: newStep.id,
-        toolId: newStep.toolId,
-        inputs
-      };
-
-      // Add cache configuration if enabled
-      if (newStep.cacheEnabled) {
-        step.cache = {
-          enabled: true,
-          key: newStep.cacheKey || undefined,
-          persistent: newStep.cachePersistent,
-          ttl: newStep.cacheTtl ? parseInt(newStep.cacheTtl) : undefined
-        };
-      }
-
-      setWorkflow(prev => ({
-        ...prev,
-        steps: [...prev.steps, step]
-      }));
-
-      setNewStep({
-        id: '',
-        toolId: '',
-        inputs: '{}',
-        cacheEnabled: false,
-        cacheKey: '',
-        cachePersistent: true,
-        cacheTtl: ''
-      });
-
-      setError(null);
-      return true;
-    } catch (err) {
-      setError(`Invalid JSON in inputs: ${err}`);
+    // Check for duplicate step IDs
+    if (workflow.steps.some(step => step.id === stepData.id)) {
+      setError(`Step ID "${stepData.id}" already exists`);
       return false;
     }
+
+    const step: WorkflowStep = {
+      id: stepData.id,
+      toolId: stepData.toolId,
+      inputs: stepData.inputs
+    };
+
+    // Add cache configuration if provided
+    if (stepData.cache) {
+      step.cache = stepData.cache;
+    }
+
+    setWorkflow(prev => ({
+      ...prev,
+      steps: [...prev.steps, step]
+    }));
+
+    setError(null);
+    return true;
   };
 
-  const removeStep = (stepId: string) => {
+  const removeStep = (stepId: string): void => {
     setWorkflow(prev => ({
       ...prev,
       steps: prev.steps.filter(step => step.id !== stepId)
     }));
   };
 
-  const clearWorkflow = () => {
+  const clearWorkflow = (): void => {
     setWorkflow(prev => ({
       ...prev,
       steps: []
     }));
   };
 
-  const updateWorkflowInfo = (updates: Partial<Pick<Workflow, 'name' | 'description'>>) => {
+  const updateWorkflowInfo = (updates: Partial<Pick<Workflow, 'name' | 'description'>>): void => {
     setWorkflow(prev => ({ ...prev, ...updates }));
   };
 
-  const clearError = () => setError(null);
+  const clearError = (): void => setError(null);
 
   return {
     workflow,
-    newStep,
     error,
-    updateNewStep,
-    addStep,
+    addStepFromBuilder,
     removeStep,
     clearWorkflow,
     updateWorkflowInfo,

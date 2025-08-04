@@ -1,10 +1,11 @@
 // packages/renderer/src/components/WorkflowPage.tsx
 import { useTools } from '../hooks/useTools';
 import { useWorkflowExecution } from '../hooks/useWorkflowExecution';
-import { useWorkflowBuilder, type NewStepForm } from '../hooks/useWorkflowBuilder';
+import { useWorkflowBuilder } from '../hooks/useWorkflowBuilder';
 import { useWorkflowProgress } from '../hooks/useWorkflowProgress';
 import { clearWorkflowCache, clearAllCaches } from '@app/preload';
-import type { Tool, Workflow, WorkflowResult, WorkflowProgress } from '@app/types';
+import { StepBuilder } from './StepBuilder';
+import type { Tool, WorkflowResult, WorkflowProgress } from '@app/types';
 import styles from './WorkflowPage.module.css';
 import { useState } from 'react';
 
@@ -20,10 +21,8 @@ export function WorkflowPage() {
   } = useWorkflowExecution();
   const {
     workflow,
-    newStep,
     error: builderError,
-    updateNewStep,
-    addStep,
+    addStepFromBuilder,
     removeStep,
     clearWorkflow,
     clearError: clearBuilderError
@@ -34,34 +33,34 @@ export function WorkflowPage() {
 
   // Simple error handling
   const currentError = executionError || builderError || toolsError;
-  const handleClearError = () => {
+  const handleClearError = (): void => {
     clearExecutionError();
     clearBuilderError();
   };
 
-  const handleClearWorkflowCache = async () => {
+  const handleClearWorkflowCache = async (): Promise<void> => {
     try {
       await clearWorkflowCache(workflow.id);
       setCacheMessage(`✅ Cache cleared for workflow: ${workflow.id}`);
       setTimeout(() => setCacheMessage(null), 3000);
     } catch (error) {
-      setCacheMessage(`❌ Failed to clear cache: ${error}`);
+      setCacheMessage(`❌ Failed to clear cache: ${error instanceof Error ? error.message : String(error)}`);
       setTimeout(() => setCacheMessage(null), 3000);
     }
   };
 
-  const handleClearAllCaches = async () => {
+  const handleClearAllCaches = async (): Promise<void> => {
     try {
       await clearAllCaches();
       setCacheMessage('✅ All caches cleared');
       setTimeout(() => setCacheMessage(null), 3000);
     } catch (error) {
-      setCacheMessage(`❌ Failed to clear all caches: ${error}`);
+      setCacheMessage(`❌ Failed to clear all caches: ${error instanceof Error ? error.message : String(error)}`);
       setTimeout(() => setCacheMessage(null), 3000);
     }
   };
 
-  const handleRunWithFreshCache = () => {
+  const handleRunWithFreshCache = (): void => {
     executeCustomWorkflow({ ...workflow, clearCache: true });
   };
 
@@ -108,19 +107,72 @@ export function WorkflowPage() {
       />
 
       {/* Custom Workflow Builder */}
-      <BuilderSection
-        workflow={workflow}
-        newStep={newStep}
-        tools={tools}
-        isRunning={isRunning}
-        onUpdateStep={updateNewStep}
-        onAddStep={addStep}
-        onRemoveStep={removeStep}
-        onClear={clearWorkflow}
-        onRun={() => executeCustomWorkflow(workflow)}
-        onRunFresh={handleRunWithFreshCache}
-        onClearCache={handleClearWorkflowCache}
-      />
+      <section className={styles.section}>
+        <h2>🔧 Build Custom Workflow</h2>
+
+        {/* Current Steps */}
+        <div className={styles.stepsContainer}>
+          <h3>Current Steps ({workflow.steps.length})</h3>
+          {workflow.steps.length === 0 ? (
+            <p className={styles.muted}>No steps added yet</p>
+          ) : (
+            <div className={styles.stepsList}>
+              {workflow.steps.map((step, index) => (
+                <div key={step.id} className={styles.stepItem}>
+                  <div>
+                    <strong>{index + 1}. {step.id}</strong><br />
+                    <span className={styles.muted}>Tool: {step.toolId}</span><br />
+                    <span className={styles.small}>Inputs: {JSON.stringify(step.inputs)}</span>
+                    {step.cache?.enabled && (
+                      <div className={styles.small} style={{ color: '#4ade80' }}>
+                        📦 Cached (persistent: {step.cache.persistent ? 'yes' : 'no'}
+                        {step.cache.ttl && `, ttl: ${step.cache.ttl}ms`})
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => removeStep(step.id)}
+                    className={styles.dangerButton}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Enhanced Step Builder */}
+        <StepBuilder
+          tools={tools}
+          onAddStep={addStepFromBuilder}
+        />
+
+        {/* Controls */}
+        <div className={styles.controls}>
+          <button
+            onClick={() => executeCustomWorkflow(workflow)}
+            disabled={isRunning || workflow.steps.length === 0}
+            className={styles.primaryButton}
+          >
+            {isRunning ? '🔄 Running...' : '▶️ Run Custom Workflow'}
+          </button>
+          <button
+            onClick={handleRunWithFreshCache}
+            disabled={isRunning || workflow.steps.length === 0}
+            className={styles.secondaryButton}
+          >
+            🔥 Run Fresh (Clear Cache)
+          </button>
+          <button
+            onClick={clearWorkflow}
+            disabled={workflow.steps.length === 0}
+            className={styles.secondaryButton}
+          >
+            🗑️ Clear All Steps
+          </button>
+        </div>
+      </section>
 
       {/* Cache Management */}
       <CacheSection
@@ -142,11 +194,13 @@ export function WorkflowPage() {
 }
 
 // Simple section components (not over-engineered!)
-function ExampleSection({ onRun, isRunning, canRun }: {
+interface ExampleSectionProps {
   onRun: () => void;
   isRunning: boolean;
   canRun: boolean;
-}) {
+}
+
+function ExampleSection({ onRun, isRunning, canRun }: ExampleSectionProps) {
   return (
     <section className={styles.section}>
       <h2>🚀 Example Workflow</h2>
@@ -165,175 +219,17 @@ function ExampleSection({ onRun, isRunning, canRun }: {
   );
 }
 
-function BuilderSection({
-  workflow,
-  newStep,
-  tools,
-  isRunning,
-  onUpdateStep,
-  onAddStep,
-  onRemoveStep,
-  onClear,
-  onRun,
-  onRunFresh,
-  // onClearCache
-}: {
-  workflow: Workflow;
-  newStep: Partial<NewStepForm>;
-  tools: Tool[];
-  isRunning: boolean;
-  onUpdateStep: (updates: Partial<NewStepForm>) => void;
-  onAddStep: () => void;
-  onRemoveStep: (id: string) => void;
-  onClear: () => void;
-  onRun: () => void;
-  onRunFresh: () => void;
-  onClearCache: () => void;
-}) {
-  return (
-    <section className={styles.section}>
-      <h2>🔧 Build Custom Workflow</h2>
-
-      {/* Current Steps */}
-      <div className={styles.stepsContainer}>
-        <h3>Current Steps ({workflow.steps.length})</h3>
-        {workflow.steps.length === 0 ? (
-          <p className={styles.muted}>No steps added yet</p>
-        ) : (
-          <div className={styles.stepsList}>
-            {workflow.steps.map((step, index) => (
-              <div key={step.id} className={styles.stepItem}>
-                <div>
-                  <strong>{index + 1}. {step.id}</strong><br />
-                  <span className={styles.muted}>Tool: {step.toolId}</span><br />
-                  <span className={styles.small}>Inputs: {JSON.stringify(step.inputs)}</span>
-                  {step.cache?.enabled && (
-                    <div className={styles.small} style={{ color: '#4ade80' }}>
-                      📦 Cached (persistent: {step.cache.persistent ? 'yes' : 'no'}
-                      {step.cache.ttl && `, ttl: ${step.cache.ttl}ms`})
-                    </div>
-                  )}
-                </div>
-                <button
-                  onClick={() => onRemoveStep(step.id)}
-                  className={styles.dangerButton}
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Add Step Form */}
-      <div className={styles.addStepForm}>
-        <h4>Add New Step</h4>
-        <div className={styles.formGrid}>
-          <input
-            type="text"
-            placeholder="Step ID"
-            value={newStep.id || ''}
-            onChange={(e) => onUpdateStep({ id: e.target.value })}
-          />
-          <select
-            value={newStep.toolId || ''}
-            onChange={(e) => onUpdateStep({ toolId: e.target.value })}
-          >
-            <option value="">Select tool...</option>
-            {tools.map(tool => (
-              <option key={tool.id} value={tool.id}>{tool.name}</option>
-            ))}
-          </select>
-          <input
-            type="text"
-            placeholder='{"key": "value"}'
-            value={newStep.inputs || '{}'}
-            onChange={(e) => onUpdateStep({ inputs: e.target.value })}
-            className={styles.monoInput}
-          />
-          <button onClick={onAddStep} className={styles.successButton}>
-            Add Step
-          </button>
-        </div>
-
-        {/* Cache Configuration */}
-        <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#2a2a2a', borderRadius: '6px' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <input
-              type="checkbox"
-              checked={newStep.cacheEnabled || false}
-              onChange={(e) => onUpdateStep({ cacheEnabled: e.target.checked })}
-            />
-            <span>Enable caching for this step</span>
-          </label>
-
-          {newStep.cacheEnabled && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginTop: '8px' }}>
-              <input
-                type="text"
-                placeholder="Custom cache key (optional)"
-                value={newStep.cacheKey || ''}
-                onChange={(e) => onUpdateStep({ cacheKey: e.target.value })}
-                style={{ padding: '6px', borderRadius: '4px', border: '1px solid #555', backgroundColor: '#333', color: '#fff' }}
-              />
-              <input
-                type="number"
-                placeholder="TTL (ms, optional)"
-                value={newStep.cacheTtl || ''}
-                onChange={(e) => onUpdateStep({ cacheTtl: e.target.value })}
-                style={{ padding: '6px', borderRadius: '4px', border: '1px solid #555', backgroundColor: '#333', color: '#fff' }}
-              />
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <input
-                  type="checkbox"
-                  checked={newStep.cachePersistent !== false}
-                  onChange={(e) => onUpdateStep({ cachePersistent: e.target.checked })}
-                />
-                <span style={{ fontSize: '12px' }}>Persistent</span>
-              </label>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Controls */}
-      <div className={styles.controls}>
-        <button
-          onClick={onRun}
-          disabled={isRunning || workflow.steps.length === 0}
-          className={styles.primaryButton}
-        >
-          {isRunning ? '🔄 Running...' : '▶️ Run Custom Workflow'}
-        </button>
-        <button
-          onClick={onRunFresh}
-          disabled={isRunning || workflow.steps.length === 0}
-          className={styles.secondaryButton}
-        >
-          🔥 Run Fresh (Clear Cache)
-        </button>
-        <button
-          onClick={onClear}
-          disabled={workflow.steps.length === 0}
-          className={styles.secondaryButton}
-        >
-          🗑️ Clear All Steps
-        </button>
-      </div>
-    </section>
-  );
+interface CacheSectionProps {
+  onClearWorkflowCache: () => Promise<void>;
+  onClearAllCaches: () => Promise<void>;
+  workflowId: string;
 }
 
 function CacheSection({
   onClearWorkflowCache,
   onClearAllCaches,
   workflowId
-}: {
-  onClearWorkflowCache: () => void;
-  onClearAllCaches: () => void;
-  workflowId: string;
-}) {
+}: CacheSectionProps) {
   return (
     <section className={styles.section}>
       <h3>🗄️ Cache Management</h3>
@@ -358,19 +254,21 @@ function CacheSection({
   );
 }
 
+interface ResultsSectionProps {
+  tools: Tool[];
+  isLoadingTools: boolean;
+  onReloadTools: () => void;
+  progress: WorkflowProgress | null;
+  result: WorkflowResult | null;
+}
+
 function ResultsSection({
   tools,
   isLoadingTools,
   onReloadTools,
   progress,
   result
-}: {
-  tools: Tool[];
-  isLoadingTools: boolean;
-  onReloadTools: () => void;
-  progress: WorkflowProgress | null;
-  result: WorkflowResult | null;
-}) {
+}: ResultsSectionProps) {
   return (
     <>
       {/* Tools */}
@@ -392,6 +290,16 @@ function ResultsSection({
               <div key={tool.id} className={styles.toolCard}>
                 <strong>{tool.name}</strong>
                 <small>{tool.id}</small>
+                {tool.category && (
+                  <div className={styles.toolCategory}>
+                    📂 {tool.category}
+                  </div>
+                )}
+                {tool.description && (
+                  <div className={styles.toolDescription}>
+                    {tool.description}
+                  </div>
+                )}
               </div>
             ))}
           </div>

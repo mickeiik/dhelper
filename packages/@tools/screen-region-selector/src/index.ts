@@ -1,5 +1,5 @@
 // packages/@tools/screen-region-selector/src/index.ts
-import type { Tool } from '@app/types';
+import type { Tool, ToolInputField } from '@app/types';
 import { BrowserWindow, screen, ipcMain } from 'electron';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
@@ -26,6 +26,49 @@ export type ScreenRegionSelectorOutput = PointSelection | RectangleSelection;
 export class ScreenRegionSelectorTool implements Tool {
   id = 'screen-region-selector' as const;
   name = 'Screen Region Selector';
+  description = 'Interactive tool to select a point or rectangle area on the screen';
+  category = 'Input';
+
+  inputFields: ToolInputField[] = [
+    {
+      name: 'mode',
+      type: 'select',
+      description: 'Selection mode - point for single click, rectangle for area selection',
+      required: true,
+      defaultValue: 'rectangle',
+      options: [
+        { value: 'point', label: 'Point (single click)' },
+        { value: 'rectangle', label: 'Rectangle (drag area)' }
+      ]
+    },
+    {
+      name: 'timeout',
+      type: 'number',
+      description: 'Maximum time to wait for user selection (milliseconds)',
+      required: false,
+      defaultValue: 30000,
+      placeholder: '30000'
+    }
+  ];
+
+  examples = [
+    {
+      name: 'Select Rectangle Area',
+      description: 'Most common use case - select a rectangular area on screen',
+      inputs: {
+        mode: 'rectangle',
+        timeout: 30000
+      }
+    },
+    {
+      name: 'Select Single Point',
+      description: 'Select a specific point on screen (e.g., for clicking)',
+      inputs: {
+        mode: 'point',
+        timeout: 15000
+      }
+    }
+  ];
 
   // Configure caching for this tool
   cacheConfig = {

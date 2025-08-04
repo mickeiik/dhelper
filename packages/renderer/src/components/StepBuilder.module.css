@@ -1,0 +1,380 @@
+/* packages/renderer/src/components/StepBuilder.module.css */
+.stepBuilder {
+    background-color: #2a2a2a;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.error {
+    background-color: #4a1a1a;
+    border: 1px solid #8b4a4a;
+    color: #ff6b6b;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+}
+
+.section {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #444;
+}
+
+.section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.section h4 {
+    color: #fff;
+    margin: 0 0 16px 0;
+    font-size: 16px;
+}
+
+.sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.field label {
+    color: #ccc;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.inputGroup {
+    display: flex;
+    gap: 8px;
+}
+
+.input,
+.select,
+.textarea {
+    padding: 10px;
+    border: 1px solid #555;
+    border-radius: 6px;
+    background-color: #333;
+    color: #fff;
+    font-family: inherit;
+    font-size: 14px;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+    outline: none;
+    border-color: #646cff;
+}
+
+.generateButton {
+    padding: 10px 12px;
+    background-color: #646cff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.generateButton:hover {
+    background-color: #5a63e8;
+}
+
+.toolDescription {
+    background-color: #1a3a1a;
+    border: 1px solid #4a8b4a;
+    color: #4ade80;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    margin-top: 12px;
+}
+
+.inputModeToggle {
+    display: flex;
+    gap: 4px;
+}
+
+.inputModeToggle button {
+    padding: 8px 16px;
+    background-color: #444;
+    color: #ccc;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.inputModeToggle button.active {
+    background-color: #646cff;
+    color: white;
+}
+
+.examples {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.example {
+    background-color: #1a1a1a;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.exampleHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.exampleHeader strong {
+    color: #fff;
+}
+
+.applyButton {
+    padding: 4px 12px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.applyButton:hover {
+    background-color: #218838;
+}
+
+.exampleDescription {
+    color: #ccc;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.exampleCode {
+    background-color: #0d1117;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 8px;
+    font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+    font-size: 12px;
+    color: #ccc;
+    overflow-x: auto;
+}
+
+.formInputs {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.noFields {
+    background-color: #3a3a1a;
+    border: 1px solid #8b8b4a;
+    color: #ffeb3b;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.formField {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.fieldHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.fieldHeader label {
+    color: #ccc;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.fieldHeader label.required {
+    color: #fff;
+}
+
+.fieldHeader label.required::after {
+    content: ' *';
+    color: #ff6b6b;
+}
+
+.refButton {
+    padding: 4px 8px;
+    background-color: #444;
+    color: #ccc;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.refButton.active {
+    background-color: #646cff;
+    color: white;
+}
+
+.fieldDescription {
+    color: #aaa;
+    font-size: 12px;
+    font-style: italic;
+}
+
+.refInput {
+    border-color: #646cff !important;
+    background-color: #1a1a3a !important;
+}
+
+.fieldExample {
+    color: #888;
+    font-size: 12px;
+}
+
+.fieldExample code {
+    background-color: #333;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+}
+
+.checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    color: #ccc;
+}
+
+.checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+}
+
+.textarea {
+    min-height: 80px;
+    resize: vertical;
+    font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+}
+
+.cacheOptions {
+    margin-top: 12px;
+    padding: 12px;
+    background-color: #1a1a1a;
+    border-radius: 6px;
+    border: 1px solid #444;
+}
+
+.jsonInputs {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.jsonHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.jsonHeader span {
+    color: #ccc;
+    font-weight: 500;
+}
+
+.defaultsButton {
+    padding: 6px 12px;
+    background-color: #444;
+    color: #ccc;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.defaultsButton:hover {
+    background-color: #555;
+}
+
+.jsonTextarea {
+    min-height: 200px;
+    font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.fieldReference {
+    background-color: #1a1a1a;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.fieldReference h5 {
+    color: #fff;
+    margin: 0 0 8px 0;
+    font-size: 14px;
+}
+
+.fieldReference ul {
+    margin: 0;
+    padding-left: 16px;
+    color: #ccc;
+}
+
+.fieldReference li {
+    margin-bottom: 4px;
+    font-size: 12px;
+}
+
+.fieldReference code {
+    background-color: #333;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+    color: #4ade80;
+}
+
+.submitButton {
+    width: 100%;
+    padding: 16px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: 16px;
+}
+
+.submitButton:hover:not(:disabled) {
+    background-color: #218838;
+}
+
+.submitButton:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+}

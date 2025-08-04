@@ -15,7 +15,14 @@ export class ToolModule implements AppModule {
 
         // IPC handlers
         ipcMain.handle('get-tools', () => {
-            return toolManager.getTools()
+            const tools = toolManager.getTools();
+            console.log('Returning tools to renderer:', tools.map(t => ({
+                id: t.id,
+                name: t.name,
+                hasInputFields: !!t.inputFields?.length,
+                inputFieldCount: t.inputFields?.length || 0
+            }))); // Debug log
+            return tools;
         });
 
         ipcMain.handle('run-tool', async (_, toolId: string, inputs: any) => {

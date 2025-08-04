@@ -92,18 +92,29 @@ export class ToolManager {
                 return new ToolClass();
             };
 
-            // Register with factory for lazy initialization
-            const tempTool = await factory(); // Get metadata
-            this.registerTool(tempTool.id, tempTool.name, factory);
+            // Create tool instance to get full metadata
+            const tempTool = await factory();
+            this.registerToolWithMetadata(tempTool, factory);
 
         } catch (error) {
             console.warn(`ToolManager: Failed to load tool from ${toolName}:`, error);
         }
     }
 
+    private registerToolWithMetadata(tool: Tool, factory: () => Promise<Tool>) {
+        // Store the full tool instance with all metadata
+        this.tools.set(tool.id, {
+            tool: tool, // Full tool instance with metadata
+            initialized: false, // Mark as not initialized for execution
+            factory
+        });
+        console.log(`ToolManager: "${tool.name}" tool registered with metadata`);
+    }
+
     registerTool(id: string, name: string, factory: () => Promise<Tool>) {
+        // Fallback for manual registration - create minimal tool object
         this.tools.set(id, {
-            tool: { id, name } as Tool, // Temporary object for metadata
+            tool: { id, name } as Tool,
             initialized: false,
             factory
         });
@@ -139,25 +150,24 @@ export class ToolManager {
         if (!registration || registration.initialized) return;
 
         try {
-            // If we have a factory, create the actual tool instance
-            if (registration.factory) {
-                registration.tool = await registration.factory();
+            // If we have a factory and tool isn't fully initialized, reinitialize
+            if (registration.factory && !registration.initialized) {
+                const newToolInstance = await registration.factory();
+                // Copy metadata but mark as initialized
+                registration.tool = newToolInstance;
+                await registration.tool.initialize({});
+                registration.initialized = true;
+                console.log(`ToolManager: "${registration.tool.name}" initialized for execution`);
             }
-
-            await registration.tool.initialize({});
-            registration.initialized = true;
-            console.log(`ToolManager: "${registration.tool.name}" initialized`);
         } catch (error) {
             console.error(`ToolManager: Failed to initialize tool "${id}":`, error);
             throw error;
         }
     }
 
-    getTools(): ToolMetadata[] {
-        return Array.from(this.tools.values()).map(({ tool }): ToolMetadata => ({
-            id: tool.id,
-            name: tool.name,
-        }));
+    getTools(): Tool[] {
+        // Return full tool objects with all metadata
+        return Array.from(this.tools.values()).map(({ tool }) => tool);
     }
 
     // Initialize all tools (useful for development/testing)

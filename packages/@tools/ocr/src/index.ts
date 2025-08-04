@@ -1,5 +1,5 @@
 // packages/@tools/ocr/src/index.ts
-import { Tool } from '@app/tools';
+import { Tool, ToolInputField } from '@app/types';
 import Tesseract from 'tesseract.js';
 
 export type TesseractOcrToolInput = Tesseract.ImageLike;
@@ -8,7 +8,39 @@ export type TesseractOcrToolOutput = string;
 
 export class TesseractOcrTool implements Tool {
   id = 'tesseract-ocr' as const;
-  name = 'Tesseract Ocr Tool';
+  name = 'Tesseract OCR Tool';
+  description = 'Extract text from images using Tesseract OCR engine';
+  category = 'Text Processing';
+
+  inputFields: ToolInputField[] = [
+    {
+      name: 'image',
+      type: 'string',
+      description: 'Image data (base64 data URL, file path, or buffer)',
+      required: true,
+      placeholder: 'data:image/png;base64,... or /path/to/image.png',
+      example: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...'
+    }
+  ];
+
+  examples = [
+    {
+      name: 'From Screenshot Step',
+      description: 'Use output from a screenshot tool step',
+      inputs: { $ref: 'screenshot-step-id' }
+    },
+    {
+      name: 'From File Path',
+      description: 'Load image from a file path',
+      inputs: '/path/to/your/image.png'
+    },
+    {
+      name: 'From Data URL',
+      description: 'Process a base64 encoded image',
+      inputs: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...'
+    }
+  ];
+
   worker: Tesseract.Worker | null = null;
 
   async initialize() {

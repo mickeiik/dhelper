@@ -42,7 +42,8 @@
 }
 
 /* Banners */
-.errorBanner, .successBanner {
+.errorBanner,
+.successBanner {
   padding: 12px;
   border-radius: 6px;
   margin-bottom: 16px;
@@ -153,7 +154,8 @@
   align-items: end;
 }
 
-.formGrid input, .formGrid select {
+.formGrid input,
+.formGrid select {
   padding: 8px;
   border: 1px solid #555;
   border-radius: 4px;
@@ -255,4 +257,17 @@
   cursor: pointer;
   margin-bottom: 8px;
   color: #ccc;
+}
+
+.toolCategory {
+  color: #888;
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+.toolDescription {
+  color: #aaa;
+  font-size: 11px;
+  margin-top: 4px;
+  font-style: italic;
 }

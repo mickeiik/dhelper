@@ -1,3 +1,4 @@
+// packages/types/src/index.ts
 // Tool-related types
 export type {
   Tool,
@@ -5,7 +6,8 @@ export type {
   ToolRegistry,
   ToolId,
   ToolInput,
-  ToolOutput
+  ToolOutput,
+  ToolInputField
 } from './tool.js';
 
 // Workflow-related types

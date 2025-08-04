@@ -1,7 +1,26 @@
 // packages/types/src/tool.ts
+export interface ToolInputField {
+  name: string;
+  type: 'string' | 'number' | 'boolean' | 'select' | 'object';
+  description: string;
+  required?: boolean;
+  defaultValue?: any;
+  options?: { value: any; label: string }[]; // For select type
+  example?: any;
+  placeholder?: string;
+}
+
 export interface ToolMetadata {
   id: string;
   name: string;
+  description?: string;
+  category?: string;
+  inputFields?: ToolInputField[];
+  examples?: Array<{
+    name: string;
+    description: string;
+    inputs: any;
+  }>;
 }
 
 export interface Tool extends ToolMetadata {
