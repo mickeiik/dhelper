@@ -171,9 +171,10 @@ export class TemplateMatcherTool implements Tool {
     try {
       // Get screen image - either from input or by capturing current screen
       const screenImage = input.screenImage || await this.captureCurrentScreen();
-      
+
       // Load and process the screen image
       const screenMat = this.loadImage(screenImage);
+
       if (!screenMat) {
         throw new Error('Failed to load screen image');
       }

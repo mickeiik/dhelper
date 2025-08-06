@@ -17,18 +17,27 @@ export function initializeWorkflows() {
             }
 
             // Fallback to example workflow for demo purposes
+            // const exampleWorkflow = workflow('auto-example', 'Auto-Discovery Example')
+            //     .cachedStep('region', 'screen-region-selector', {
+            //         mode: 'rectangle'
+            //     }, {
+            //         persistent: true,
+            //         ttl: 24 * 60 * 60 * 1000
+            //     })
+            //     .step('capture', 'screenshot', ref('region'))
+            //     .step('extract', 'tesseract-ocr', ref('capture'))
+            //     .step('log', 'hello-world', {
+            //         message: 'OCR Result:',
+            //         data: ref('extract')
+            //     })
+            //     .build();
+
+            //Fallback to example workflow for demo purposes
             const exampleWorkflow = workflow('auto-example', 'Auto-Discovery Example')
-                .cachedStep('region', 'screen-region-selector', {
-                    mode: 'rectangle'
-                }, {
-                    persistent: true,
-                    ttl: 24 * 60 * 60 * 1000
-                })
-                .step('capture', 'screenshot', ref('region'))
-                .step('extract', 'tesseract-ocr', ref('capture'))
-                .step('log', 'hello-world', {
-                    message: 'OCR Result:',
-                    data: ref('extract')
+                .step('allTemplateMatch', 'template-matcher', {
+                    "minConfidence": 0.8,
+                    "maxResults": 5,
+                    "showVisualIndicators": true
                 })
                 .build();
 

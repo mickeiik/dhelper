@@ -62,6 +62,7 @@ class OverlayWindowImpl implements OverlayWindow {
   }
 
   async drawShapes(shapes: OverlayShape[]): Promise<void> {
+    console.log('Shapes:', shapes)
     if (!this.window.isDestroyed()) {
       this.window.webContents.send('overlay-draw-shapes', shapes);
     }
@@ -138,15 +139,16 @@ class OverlayServiceImpl implements OverlayService {
     if (options.bounds) {
       bounds = options.bounds;
     } else {
+      // Always use primary display with full screen bounds
       const primaryDisplay = screen.getPrimaryDisplay();
-      const screenBounds = screen.dipToScreenRect(null, primaryDisplay.bounds);
       bounds = {
-        x: screenBounds.x,
-        y: screenBounds.y,
-        width: screenBounds.width,
-        height: screenBounds.height
+        x: primaryDisplay.bounds.x,
+        y: primaryDisplay.bounds.y,
+        width: primaryDisplay.bounds.width,
+        height: primaryDisplay.bounds.height
       };
     }
+    console.log('Primary display overlay bounds:', bounds);
 
     // Create overlay window
     const window = new BrowserWindow({
@@ -171,6 +173,9 @@ class OverlayServiceImpl implements OverlayService {
       }
     });
 
+    // Force the window to the exact bounds after creation
+    window.setBounds(bounds);
+
     // Set click-through if requested
     if (options.clickThrough) {
       window.setIgnoreMouseEvents(true, { forward: true });
@@ -179,6 +184,7 @@ class OverlayServiceImpl implements OverlayService {
     // Load the overlay HTML
     const __dirname = fileURLToPath(new URL('.', import.meta.url));
     const overlayHtmlPath = join(__dirname, '..', '..', 'overlay', 'overlay.html');
+    console.log('Loading overlay HTML from:', overlayHtmlPath);
     await window.loadFile(overlayHtmlPath);
 
     // Send initialization data to overlay
