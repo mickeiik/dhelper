@@ -6,6 +6,7 @@ import '@tools/hello-world';
 import '@tools/ocr';
 import '@tools/screen-region-selector';
 import '@tools/screenshot';
+import '@tools/template-matcher';
 
 // This export is required to make this a module
 export {};

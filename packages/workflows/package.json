@@ -13,7 +13,8 @@
   },
   "dependencies": {
     "@app/types": "*",
-    "@app/storage": "*"
+    "@app/storage": "*",
+    "@app/templates": "*"
   },
   "devDependencies": {
     "@app/electron-versions": "*",

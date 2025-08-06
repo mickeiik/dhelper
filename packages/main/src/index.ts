@@ -9,6 +9,7 @@ import { allowInternalOrigins } from './modules/electron/BlockNotAllowdOrigins.j
 import { allowExternalUrls } from './modules/electron/ExternalUrls.js';
 import { initializeToolModule } from './modules/ToolModule.js';
 import { initializeWorkflowModule } from './modules/WorkflowModule.js';
+import { initializeTemplateModule } from './modules/TemplateModule.js';
 
 export async function initApp(initConfig: AppInitConfig) {
   const moduleRunner = createModuleRunner()
@@ -36,7 +37,8 @@ export async function initApp(initConfig: AppInitConfig) {
     )
 
     .init(initializeToolModule())
-    .init(initializeWorkflowModule());
+    .init(initializeWorkflowModule())
+    .init(initializeTemplateModule());
 
   await moduleRunner;
 }

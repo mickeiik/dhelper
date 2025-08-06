@@ -21,6 +21,22 @@ export type {
   ReferenceResolutionContext
 } from './workflow.js';
 
+// Template-related types
+export type {
+  Template,
+  TemplateMetadata,
+  TemplateMatchResult,
+  TemplateMatchOptions,
+  CreateTemplateInput,
+  UpdateTemplateInput,
+  TemplateCategory,
+  TemplateStorageStats
+} from './template.js';
+
+export {
+  TEMPLATE_CATEGORIES
+} from './template.js';
+
 // Common utilities
 export type {
   DeepPartial

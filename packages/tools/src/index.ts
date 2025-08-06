@@ -72,7 +72,7 @@ export class ToolManager {
 
             // Create a factory function for lazy loading
             const factory = async (): Promise<Tool> => {
-                const module = await import(modulePath);
+                const module = await import(/* @vite-ignore */modulePath);
 
                 // Look for tool class exports (convention: ends with 'Tool')
                 const ToolClass = Object.values(module).find(

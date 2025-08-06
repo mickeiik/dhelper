@@ -55,3 +55,43 @@ export {
   validateSemanticReferences,
   resolveSemanticReferences
 };
+
+import {
+  listTemplates,
+  getTemplate,
+  createTemplate,
+  updateTemplate,
+  deleteTemplate,
+  searchTemplates,
+  getTemplatesByCategory,
+  getTemplatesByTags,
+  getTemplateCategories,
+  getAllTemplateTags,
+  matchTemplates,
+  recordTemplateUsage,
+  resolveTemplateReference,
+  getTemplateStats,
+  exportTemplate,
+  importTemplate,
+  createTemplateFromScreenshot
+} from './templates.js';
+
+export {
+  listTemplates,
+  getTemplate,
+  createTemplate,
+  updateTemplate,
+  deleteTemplate,
+  searchTemplates,
+  getTemplatesByCategory,
+  getTemplatesByTags,
+  getTemplateCategories,
+  getAllTemplateTags,
+  matchTemplates,
+  recordTemplateUsage,
+  resolveTemplateReference,
+  getTemplateStats,
+  exportTemplate,
+  importTemplate,
+  createTemplateFromScreenshot
+};

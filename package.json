@@ -11,8 +11,8 @@
   },
   "main": "packages/entry-point.mjs",
   "workspaces": [
-    "packages/*",
-    "packages/@tools/*"
+    "packages/@tools/*",
+    "packages/*"
   ],
   "engines": {
     "node": ">=23.0.0"
@@ -36,10 +36,20 @@
     "create-vite": "7.0.3",
     "electron": "37.2.4",
     "electron-builder": "26.0.12",
+    "electron-rebuild": "^3.2.9",
     "glob": "11.0.3",
     "playwright": "^1.54.1"
   },
   "dependencies": {
-    "@app/main": "*"
+    "@app/main": "*",
+    "@u4/opencv-build": "^1.1.1",
+    "@u4/opencv4nodejs": "^7.1.2",
+    "node-gyp": "^11.2.0"
+  },
+  "opencv4nodejs": {
+    "disableAutoBuild": "1",
+    "OPENCV_INCLUDE_DIR": "C:\\opencv\\build\\include",
+    "OPENCV_LIB_DIR": "C:\\opencv\\build\\x64\\vc16\\lib",
+    "OPENCV_BIN_DIR": "C:\\opencv\\build\\x64\\vc16\\bin"
   }
 }

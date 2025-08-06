@@ -1,7 +1,7 @@
 // packages/main/src/modules/ToolModule.ts
 import { ipcMain } from 'electron'
-import { AppModule } from '../AppModule.js';
-import { ModuleContext } from '../ModuleContext.js';
+import type { AppModule } from '../AppModule.js';
+import type { ModuleContext } from '../ModuleContext.js';
 import { ToolManager } from '@app/tools'
 
 const toolManager = new ToolManager()

@@ -133,7 +133,7 @@ export class WorkflowRunner extends WorkflowEventEmitter {
     while (retryCount <= maxRetries) {
       try {
         // Resolve inputs by replacing references with actual data
-        const resolvedInputs = this.resolveInputs(step.inputs, previousResults, workflow, stepIndex);
+        const resolvedInputs = await this.resolveInputs(step.inputs, previousResults, workflow, stepIndex);
 
         // Check cache first if enabled
         let result: any = null;
@@ -256,12 +256,12 @@ export class WorkflowRunner extends WorkflowEventEmitter {
     }
   }
 
-  private resolveInputs(
+  private async resolveInputs(
     inputs: WorkflowInputs<any>,
     previousResults: Record<string, StepResult>,
     workflow?: Workflow,
     stepIndex?: number
-  ): any {
+  ): Promise<any> {
     if (inputs === null || inputs === undefined) {
       return inputs;
     }
@@ -275,7 +275,7 @@ export class WorkflowRunner extends WorkflowEventEmitter {
       };
 
       try {
-        inputs = resolveSemanticReferences(inputs, context);
+        inputs = await resolveSemanticReferences(inputs, context);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown semantic reference error';
         throw new Error(`Semantic reference resolution failed: ${errorMessage}`);
@@ -291,17 +291,21 @@ export class WorkflowRunner extends WorkflowEventEmitter {
 
       // Handle $merge - merge multiple inputs
       if ('$merge' in inputs && Array.isArray(inputs.$merge)) {
-        const resolved = inputs.$merge.map((input: any) => this.resolveInputs(input, previousResults, workflow, stepIndex));
+        const resolved = await Promise.all(inputs.$merge.map((input: any) => this.resolveInputs(input, previousResults, workflow, stepIndex)));
         return Object.assign({}, ...resolved);
       }
 
       // Handle regular objects - recursively resolve properties
       if (Array.isArray(inputs)) {
-        return inputs.map(item => this.resolveInputs(item, previousResults, workflow, stepIndex));
+        const resolved = [];
+        for (const item of inputs) {
+          resolved.push(await this.resolveInputs(item, previousResults, workflow, stepIndex));
+        }
+        return resolved;
       } else {
         const resolved: any = {};
         for (const [key, value] of Object.entries(inputs)) {
-          resolved[key] = this.resolveInputs(value, previousResults, workflow, stepIndex);
+          resolved[key] = await this.resolveInputs(value, previousResults, workflow, stepIndex);
         }
         return resolved;
       }

@@ -1,5 +1,5 @@
 {
-  "name": "@app/main",
+  "name": "@app/templates",
   "type": "module",
   "scripts": {
     "build": "vite build",
@@ -12,17 +12,12 @@
     }
   },
   "dependencies": {
-    "@app/preload": "*",
-    "@app/renderer": "*",
-    "@app/tools": "*",
     "@app/types": "*",
-    "@app/workflows": "*",
-    "@app/templates": "*",
-    "electron-updater": "6.6.2"
+    "@app/storage": "*",
+    "sharp": "^0.33.5"
   },
   "devDependencies": {
     "@app/electron-versions": "*",
-    "electron-devtools-installer": "4.0.0",
     "typescript": "5.8.3",
     "vite": "7.0.6"
   }

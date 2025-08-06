@@ -14,7 +14,8 @@
     }
   },
   "dependencies": {
-    "@app/types": "*"
+    "@app/types": "*",
+    "@tools/template-matcher": "*"
   },
   "devDependencies": {
     "@app/electron-versions": "*",

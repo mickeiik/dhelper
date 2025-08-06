@@ -1,10 +1,12 @@
 // packages/workflows/src/reference-templates.ts
-import type { WorkflowStep, StepResult, ReferenceResolutionContext } from '@app/types';
+import type { WorkflowStep, ReferenceResolutionContext } from '@app/types';
+import { templateManager } from '@app/templates';
 
 export interface SemanticReference {
-  type: 'previous' | 'previous:toolType' | 'step';
+  type: 'previous' | 'previous:toolType' | 'step' | 'template';
   toolType?: string;
   stepId?: string;
+  templateRef?: string; // For template references like "template-id" or "category/name"
   property?: string;
 }
 
@@ -37,6 +39,11 @@ export class ReferenceTemplateParser {
       return { type: 'step', stepId, property };
     }
 
+    if (refPart.startsWith('template:')) {
+      const templateRef = refPart.substring('template:'.length);
+      return { type: 'template', templateRef, property };
+    }
+
     return null;
   }
 
@@ -58,10 +65,10 @@ export class ReferenceTemplateParser {
   /**
    * Resolve a semantic reference to an actual step ID
    */
-  static resolveReference(
+  static async resolveReference(
     semanticRef: SemanticReference,
     context: ReferenceResolutionContext
-  ): string {
+  ): Promise<string | any> {
     switch (semanticRef.type) {
       case 'previous':
         return this.resolvePrevious(context, semanticRef.property);
@@ -77,6 +84,12 @@ export class ReferenceTemplateParser {
           throw new Error('Step ID is required for step references');
         }
         return this.resolveStepReference(semanticRef.stepId, semanticRef.property);
+      
+      case 'template':
+        if (!semanticRef.templateRef) {
+          throw new Error('Template reference is required for template references');
+        }
+        return await this.resolveTemplateReference(semanticRef.templateRef, semanticRef.property);
       
       default:
         throw new Error(`Unknown semantic reference type: ${(semanticRef as any).type}`);
@@ -147,6 +160,33 @@ export class ReferenceTemplateParser {
     return property ? `${stepId}.${property}` : stepId;
   }
 
+  private static async resolveTemplateReference(templateRef: string, property?: string): Promise<any> {
+    // Resolve template reference through templateManager
+    const template = await templateManager.resolveTemplateReference(`{{template:${templateRef}}}`);
+    if (!template) {
+      throw new Error(`Template not found: ${templateRef}`);
+    }
+
+    if (property) {
+      // Extract specific property from template
+      const keys = property.split('.');
+      let value: any = template;
+      
+      for (const key of keys) {
+        if (value && typeof value === 'object' && key in value) {
+          value = value[key];
+        } else {
+          throw new Error(`Property ${property} not found in template ${templateRef}`);
+        }
+      }
+      
+      return value;
+    }
+
+    // Return the full template object
+    return template;
+  }
+
   /**
    * Check if a tool ID matches a tool type pattern
    * This handles common patterns like:
@@ -182,10 +222,10 @@ export class ReferenceTemplateParser {
 /**
  * Resolve all semantic references in a workflow input object
  */
-export function resolveSemanticReferences(
+export async function resolveSemanticReferences(
   inputs: any,
   context: ReferenceResolutionContext
-): any {
+): Promise<any> {
   if (inputs === null || inputs === undefined) {
     return inputs;
   }
@@ -196,9 +236,16 @@ export function resolveSemanticReferences(
     if ('$ref' in inputs && typeof inputs.$ref === 'string') {
       const semanticRef = ReferenceTemplateParser.parseReference(inputs.$ref);
       if (semanticRef) {
-        // Replace semantic reference with actual step ID
-        const resolvedRef = ReferenceTemplateParser.resolveReference(semanticRef, context);
-        return { $ref: resolvedRef };
+        // Replace semantic reference with resolved value
+        const resolvedValue = await ReferenceTemplateParser.resolveReference(semanticRef, context);
+        
+        // For template references, return the actual template data
+        if (semanticRef.type === 'template') {
+          return resolvedValue;
+        }
+        
+        // For other references, return as $ref
+        return { $ref: resolvedValue };
       }
       // Return as-is if not a semantic reference
       return inputs;
@@ -206,13 +253,17 @@ export function resolveSemanticReferences(
 
     // Handle arrays
     if (Array.isArray(inputs)) {
-      return inputs.map(item => resolveSemanticReferences(item, context));
+      const resolved = [];
+      for (const item of inputs) {
+        resolved.push(await resolveSemanticReferences(item, context));
+      }
+      return resolved;
     }
 
     // Handle regular objects - recursively resolve properties
     const resolved: any = {};
     for (const [key, value] of Object.entries(inputs)) {
-      resolved[key] = resolveSemanticReferences(value, context);
+      resolved[key] = await resolveSemanticReferences(value, context);
     }
     return resolved;
   }
@@ -223,7 +274,7 @@ export function resolveSemanticReferences(
     // This could be extended in the future
     const semanticRef = ReferenceTemplateParser.parseReference(inputs);
     if (semanticRef) {
-      return ReferenceTemplateParser.resolveReference(semanticRef, context);
+      return await ReferenceTemplateParser.resolveReference(semanticRef, context);
     }
   }
 
@@ -316,6 +367,16 @@ function validateReference(
       if (!stepExists) {
         throw new Error(`Step "${semanticRef.stepId}" not found in workflow`);
       }
+      break;
+
+    case 'template':
+      if (!semanticRef.templateRef) {
+        throw new Error('Template reference is required for template references');
+      }
+      
+      // Note: We could validate template existence here, but it would require
+      // making this function async. For now, we'll do basic syntax validation.
+      // Template existence will be validated at runtime during resolution.
       break;
 
     default:
