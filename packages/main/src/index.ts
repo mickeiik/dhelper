@@ -10,9 +10,14 @@ import { allowExternalUrls } from './modules/electron/ExternalUrls.js';
 import { initializeToolModule } from './modules/ToolModule.js';
 import { initializeWorkflowModule } from './modules/WorkflowModule.js';
 import { initializeTemplateModule } from './modules/TemplateModule.js';
+import { createOverlayModule } from './modules/OverlayModule.js';
 
 export async function initApp(initConfig: AppInitConfig) {
+  // Create overlay module early so we can set it on the module runner
+  const overlayModule = createOverlayModule();
+  
   const moduleRunner = createModuleRunner()
+    .setOverlayService(overlayModule.getOverlayService())
     .init(createWindowManagerModule({ initConfig, openDevTools: import.meta.env.DEV }))
     .init(disallowMultipleAppInstance())
     .init(terminateAppOnLastWindowClose())
@@ -36,6 +41,7 @@ export async function initApp(initConfig: AppInitConfig) {
       )),
     )
 
+    .init(overlayModule)
     .init(initializeToolModule())
     .init(initializeWorkflowModule())
     .init(initializeTemplateModule());

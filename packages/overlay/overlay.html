@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Overlay Window</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            cursor: crosshair;
+            overflow: hidden;
+            user-select: none;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .instructions {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(26, 26, 26, 0.95);
+            color: #ffffff;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            font-size: 14px;
+            z-index: 1000;
+            pointer-events: none;
+            display: none;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        .instructions.visible {
+            display: block;
+        }
+
+        .coordinates {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(26, 26, 26, 0.95);
+            color: #ffffff;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            z-index: 1000;
+            pointer-events: none;
+            display: none;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        .coordinates.visible {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="instructions" id="instructions">
+        <div id="instruction-text">Loading...</div>
+        <div style="margin-top: 8px; font-size: 12px; opacity: 0.8;">
+            ESC: Close overlay
+        </div>
+    </div>
+
+    <div class="coordinates" id="coordinates">
+        Mouse: (0, 0)
+    </div>
+
+    <canvas id="overlay-canvas"></canvas>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        class OverlayRenderer {
+            constructor() {
+                this.canvas = document.getElementById('overlay-canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.overlayId = null;
+                this.options = {};
+                this.currentX = 0;
+                this.currentY = 0;
+                this.shapes = [];
+                this.texts = [];
+
+                this.setupCanvas();
+                this.setupEventListeners();
+                this.startRenderLoop();
+            }
+
+            startRenderLoop() {
+                const loop = () => {
+                    this.render();
+                    requestAnimationFrame(loop);
+                };
+                requestAnimationFrame(loop);
+            }
+
+            setupCanvas() {
+                // Set canvas size to window size
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+
+            setupEventListeners() {
+                // Mouse events
+                window.addEventListener('mousemove', (e) => this.onMouseMove(e));
+                window.addEventListener('mousedown', (e) => this.onMouseDown(e));
+                window.addEventListener('click', (e) => this.onMouseClick(e));
+
+                // Keyboard events
+                document.addEventListener('keydown', (e) => this.onKeyDown(e));
+
+                // IPC events from main process
+                ipcRenderer.on('overlay-init', (event, data) => {
+                    this.overlayId = data.id;
+                    this.options = data.options || {};
+                    this.updateInstructions();
+                });
+
+                ipcRenderer.on('overlay-draw-shapes', (event, shapes) => {
+                    this.shapes = shapes || [];
+                });
+
+                ipcRenderer.on('overlay-draw-text', (event, texts) => {
+                    this.texts = texts || [];
+                });
+
+                ipcRenderer.on('overlay-clear', () => {
+                    this.shapes = [];
+                    this.texts = [];
+                });
+
+                // Prevent context menu
+                this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+                // Handle window resize
+                window.addEventListener('resize', () => this.setupCanvas());
+            }
+
+            updateInstructions() {
+                const instructions = document.getElementById('instructions');
+                const instructionText = document.getElementById('instruction-text');
+                const coordinates = document.getElementById('coordinates');
+
+                if (this.options.showInstructions) {
+                    instructionText.textContent = this.options.instructionText || 'Overlay active';
+                    instructions.classList.add('visible');
+                }
+
+                // Always show coordinates for debugging (can be disabled later)
+                coordinates.classList.add('visible');
+            }
+
+            onMouseMove(e) {
+                this.currentX = e.clientX;
+                this.currentY = e.clientY;
+
+                // Update coordinates display
+                document.getElementById('coordinates').textContent =
+                    `Mouse: (${this.currentX}, ${this.currentY})`;
+
+                // Send to main process if there are listeners
+                if (this.overlayId) {
+                    ipcRenderer.send(`overlay-mouse-move-${this.overlayId}`, {
+                        x: this.currentX,
+                        y: this.currentY
+                    });
+                }
+            }
+
+            onMouseDown(e) {
+                if (e.button !== 0) return; // Only left click
+                
+                if (this.overlayId) {
+                    ipcRenderer.send(`overlay-mouse-click-${this.overlayId}`, {
+                        x: e.clientX,
+                        y: e.clientY
+                    });
+                }
+            }
+
+            onMouseClick(e) {
+                // Handle click events if needed
+            }
+
+            onKeyDown(e) {
+                if (e.key === 'Escape') {
+                    // Close overlay
+                    if (this.overlayId) {
+                        ipcRenderer.send(`overlay-key-press-${this.overlayId}`, { key: 'Escape' });
+                    }
+                    window.close();
+                } else if (this.overlayId) {
+                    ipcRenderer.send(`overlay-key-press-${this.overlayId}`, { key: e.key });
+                }
+            }
+
+            render() {
+                this.clearCanvas();
+                this.drawShapes();
+                this.drawTexts();
+            }
+
+            clearCanvas() {
+                // Fill with fully transparent pixels so the OS thinks it's drawn
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.003)'; // Subtle alpha to force hit-testing
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            }
+
+            drawShapes() {
+                this.shapes.forEach(shape => this.drawShape(shape));
+            }
+
+            drawShape(shape) {
+                const ctx = this.ctx;
+                const { type, bounds, style = {}, label, labelPosition = 'top' } = shape;
+
+                // Apply style
+                ctx.strokeStyle = style.color || '#00ff00';
+                ctx.fillStyle = style.fillColor || 'transparent';
+                ctx.lineWidth = style.lineWidth || 2;
+                ctx.globalAlpha = style.opacity !== undefined ? style.opacity : 1;
+                
+                if (style.lineDash) {
+                    ctx.setLineDash(style.lineDash);
+                } else {
+                    ctx.setLineDash([]);
+                }
+
+                ctx.beginPath();
+
+                switch (type) {
+                    case 'rectangle':
+                        ctx.rect(bounds.x, bounds.y, bounds.width, bounds.height);
+                        if (style.fillColor && style.fillColor !== 'transparent') {
+                            ctx.fill();
+                        }
+                        ctx.stroke();
+                        break;
+
+                    case 'circle':
+                        const centerX = bounds.x + bounds.width / 2;
+                        const centerY = bounds.y + bounds.height / 2;
+                        const radius = Math.min(bounds.width, bounds.height) / 2;
+                        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+                        if (style.fillColor && style.fillColor !== 'transparent') {
+                            ctx.fill();
+                        }
+                        ctx.stroke();
+                        break;
+
+                    case 'crosshair':
+                        const crossX = bounds.x + bounds.width / 2;
+                        const crossY = bounds.y + bounds.height / 2;
+                        const size = Math.min(bounds.width, bounds.height) / 4;
+                        
+                        // Vertical line
+                        ctx.moveTo(crossX, crossY - size);
+                        ctx.lineTo(crossX, crossY + size);
+                        
+                        // Horizontal line
+                        ctx.moveTo(crossX - size, crossY);
+                        ctx.lineTo(crossX + size, crossY);
+                        
+                        ctx.stroke();
+                        
+                        // Center dot
+                        ctx.beginPath();
+                        ctx.arc(crossX, crossY, 3, 0, 2 * Math.PI);
+                        ctx.fillStyle = style.color || '#00ff00';
+                        ctx.fill();
+                        break;
+
+                    case 'point':
+                        const pointX = bounds.x + bounds.width / 2;
+                        const pointY = bounds.y + bounds.height / 2;
+                        ctx.arc(pointX, pointY, style.lineWidth || 5, 0, 2 * Math.PI);
+                        ctx.fillStyle = style.color || '#00ff00';
+                        ctx.fill();
+                        break;
+                }
+
+                // Draw label if provided
+                if (label) {
+                    this.drawLabel(label, bounds, labelPosition, style);
+                }
+
+                ctx.globalAlpha = 1; // Reset alpha
+            }
+
+            drawLabel(text, bounds, position, style) {
+                const ctx = this.ctx;
+                const fontSize = style.fontSize || 12;
+                const fontFamily = style.fontFamily || 'system-ui, -apple-system, sans-serif';
+                
+                ctx.font = `${fontSize}px ${fontFamily}`;
+                ctx.fillStyle = style.color || '#00ff00';
+                
+                const textMetrics = ctx.measureText(text);
+                const textWidth = textMetrics.width;
+                const textHeight = fontSize;
+
+                let x, y;
+                switch (position) {
+                    case 'top':
+                        x = bounds.x + (bounds.width - textWidth) / 2;
+                        y = bounds.y - 5;
+                        break;
+                    case 'bottom':
+                        x = bounds.x + (bounds.width - textWidth) / 2;
+                        y = bounds.y + bounds.height + textHeight + 5;
+                        break;
+                    case 'left':
+                        x = bounds.x - textWidth - 5;
+                        y = bounds.y + bounds.height / 2 + textHeight / 2;
+                        break;
+                    case 'right':
+                        x = bounds.x + bounds.width + 5;
+                        y = bounds.y + bounds.height / 2 + textHeight / 2;
+                        break;
+                    case 'center':
+                    default:
+                        x = bounds.x + (bounds.width - textWidth) / 2;
+                        y = bounds.y + bounds.height / 2 + textHeight / 2;
+                        break;
+                }
+
+                ctx.fillText(text, x, y);
+            }
+
+            drawTexts() {
+                this.texts.forEach(textItem => this.drawText(textItem));
+            }
+
+            drawText(textItem) {
+                const ctx = this.ctx;
+                const { text, position, style = {}, backgroundColor, padding = 5, borderRadius = 4 } = textItem;
+
+                const fontSize = style.fontSize || 14;
+                const fontFamily = style.fontFamily || 'system-ui, -apple-system, sans-serif';
+                
+                ctx.font = `${fontSize}px ${fontFamily}`;
+                
+                const textMetrics = ctx.measureText(text);
+                const textWidth = textMetrics.width;
+                const textHeight = fontSize;
+
+                // Draw background if specified
+                if (backgroundColor) {
+                    const bgX = position.x - padding;
+                    const bgY = position.y - textHeight - padding;
+                    const bgWidth = textWidth + padding * 2;
+                    const bgHeight = textHeight + padding * 2;
+
+                    if (borderRadius > 0) {
+                        this.drawRoundedRect(ctx, bgX, bgY, bgWidth, bgHeight, borderRadius);
+                        ctx.fillStyle = backgroundColor;
+                        ctx.fill();
+                    } else {
+                        ctx.fillStyle = backgroundColor;
+                        ctx.fillRect(bgX, bgY, bgWidth, bgHeight);
+                    }
+                }
+
+                // Draw text
+                ctx.fillStyle = style.color || '#ffffff';
+                ctx.fillText(text, position.x, position.y);
+            }
+
+            drawRoundedRect(ctx, x, y, width, height, radius) {
+                ctx.beginPath();
+                ctx.moveTo(x + radius, y);
+                ctx.lineTo(x + width - radius, y);
+                ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+                ctx.lineTo(x + width, y + height - radius);
+                ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+                ctx.lineTo(x + radius, y + height);
+                ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+                ctx.lineTo(x, y + radius);
+                ctx.quadraticCurveTo(x, y, x + radius, y);
+                ctx.closePath();
+            }
+        }
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            new OverlayRenderer();
+        });
+    </script>
+</body>
+
+</html>

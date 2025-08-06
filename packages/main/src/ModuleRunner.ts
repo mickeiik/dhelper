@@ -1,9 +1,11 @@
 import { AppModule } from './AppModule.js';
 import { ModuleContext } from './ModuleContext.js';
+import type { OverlayService } from '@app/types';
 import { app } from 'electron';
 
 class ModuleRunner implements PromiseLike<void> {
   #promise: Promise<void>;
+  #overlayService?: OverlayService;
 
   constructor() {
     this.#promise = Promise.resolve();
@@ -23,9 +25,15 @@ class ModuleRunner implements PromiseLike<void> {
     return this;
   }
 
+  setOverlayService(overlayService: OverlayService) {
+    this.#overlayService = overlayService;
+    return this;
+  }
+
   #createModuleContext(): ModuleContext {
     return {
       app,
+      overlayService: this.#overlayService,
     };
   }
 }

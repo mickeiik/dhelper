@@ -115,7 +115,7 @@ if (toolPackages.length > 0) {
   console.log('📦 No tool packages found');
 }
 
-console.log(`🔧 Building ${packagesToStart.length} packages...`);
+console.log(`🔧 Building ${packagesToStart.length} packages...\n`);
 
 // Build packages with progress tracking
 let built = 0;
@@ -131,7 +131,7 @@ for (const pkg of packagesToStart) {
         rendererWatchServerProvider,
       ],
     });
-    console.log('✅');
+    console.log('✅ ${packageName} Done');
     built++;
   } catch (error) {
     console.log('❌');

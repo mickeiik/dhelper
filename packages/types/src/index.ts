@@ -3,6 +3,7 @@
 export type {
   Tool,
   ToolMetadata,
+  ToolInitContext,
   ToolRegistry,
   ToolId,
   ToolInput,
@@ -18,7 +19,6 @@ export type {
   WorkflowResult,
   StepResult,
   WorkflowProgress,
-  ReferenceResolutionContext
 } from './workflow.js';
 
 // Template-related types
@@ -36,6 +36,23 @@ export type {
 export {
   TEMPLATE_CATEGORIES
 } from './template.js';
+
+// Overlay-related types
+export type {
+  Point,
+  Rectangle,
+  OverlayStyle,
+  OverlayShape,
+  OverlayText,
+  OverlayOptions,
+  OverlayService,
+  OverlayWindow,
+  OverlayEvents
+} from './overlay.js';
+
+export {
+  OVERLAY_STYLES
+} from './overlay.js';
 
 // Common utilities
 export type {

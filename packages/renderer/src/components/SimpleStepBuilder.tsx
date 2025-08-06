@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { ToolInputField, ToolMetadata, WorkflowStep, ReferenceResolutionContext } from '@app/types';
+import type { ToolInputField, ToolMetadata, WorkflowStep } from '@app/types';
 import type { StepBuilderData } from '../hooks/useWorkflowBuilder';
 import { validateSemanticReferences, resolveSemanticReferences } from '@app/preload';
 import styles from './SimpleStepBuilder.module.css';
@@ -75,7 +75,7 @@ export function SimpleStepBuilder({ tools, onAddStep, existingStepIds = [], exis
 
             // Try to resolve semantic references to show user what will happen
             try {
-                const context: ReferenceResolutionContext = {
+                const context = {
                     currentStepIndex,
                     workflowSteps: existingSteps,
                     previousResults: {} // Empty for UI preview

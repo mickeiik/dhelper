@@ -1,18 +1,19 @@
 .simpleStepBuilder {
-    background: white;
+    background: rgb(42, 41, 41);
     border-radius: 8px;
     padding: 24px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     max-width: 600px;
+    color: white
 }
 
 .error {
-    background: #fee;
-    border: 1px solid #fcc;
+    background: rgba(255, 20, 20, 0.1);
+    border: 1px solid rgba(255, 20, 20, 0.3);
     border-radius: 4px;
     padding: 12px;
     margin-bottom: 16px;
-    color: #c00;
+    color: #ff6666;
     font-size: 14px;
 }
 
@@ -21,12 +22,12 @@
 }
 
 .warning {
-    background: #fff8e1;
-    border: 1px solid #ffcc02;
+    background: rgba(255, 204, 2, 0.1);
+    border: 1px solid rgba(255, 204, 2, 0.3);
     border-radius: 4px;
     padding: 10px;
     margin-bottom: 8px;
-    color: #bf8f00;
+    color: #ffcc02;
     font-size: 14px;
 }
 
@@ -42,17 +43,18 @@
     display: block;
     font-weight: 600;
     margin-bottom: 8px;
-    color: #333;
+    color: #ffffff;
     font-size: 14px;
 }
 
 .toolSelect {
     width: 100%;
     padding: 12px;
-    border: 2px solid #e0e0e0;
+    border: 2px solid #444;
     border-radius: 6px;
     font-size: 14px;
-    background: white;
+    background: #1a1a1a;
+    color: #ffffff;
     transition: border-color 0.2s;
 }
 
@@ -62,13 +64,13 @@
 }
 
 .toolDescription {
-    background: #f8f9fa;
+    background: #2a2a2a;
     border-left: 4px solid #007acc;
     padding: 12px;
     margin-top: 12px;
     border-radius: 0 4px 4px 0;
     font-size: 13px;
-    color: #555;
+    color: #cccccc;
 }
 
 .examples {
@@ -78,12 +80,12 @@
 }
 
 .exampleButton {
-    background: #f0f8ff;
     border: 1px solid #007acc;
     border-radius: 20px;
     padding: 6px 16px;
     font-size: 13px;
     color: #007acc;
+    background: transparent;
     cursor: pointer;
     transition: all 0.2s;
 }
@@ -117,16 +119,17 @@
 
 .refToggle {
     background: none;
-    border: 1px solid #ddd;
+    border: 1px solid #444;
     border-radius: 4px;
     padding: 4px 8px;
     font-size: 12px;
+    color: #cccccc;
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .refToggle:hover {
-    background: #f0f0f0;
+    background: #333333;
 }
 
 .refToggle.active {
@@ -137,15 +140,17 @@
 
 .fieldDescription {
     font-size: 12px;
-    color: #666;
+    color: #cccccc;
     margin-bottom: 6px;
 }
 
 .input, .select, .referenceSelect {
     padding: 10px;
-    border: 1px solid #ddd;
+    border: 1px solid #444;
     border-radius: 4px;
     font-size: 14px;
+    background: #1a1a1a;
+    color: #ffffff;
     transition: border-color 0.2s;
 }
 
@@ -155,7 +160,6 @@
 }
 
 .referenceSelect {
-    background: #f8f9fa;
     border-color: #007acc;
 }
 
@@ -174,7 +178,7 @@
 .advancedToggle {
     background: none;
     border: none;
-    color: #666;
+    color: #cccccc;
     font-size: 14px;
     cursor: pointer;
     padding: 8px 0;
@@ -191,7 +195,7 @@
 .advancedOptions {
     margin-top: 12px;
     padding-top: 12px;
-    border-top: 1px solid #eee;
+    border-top: 1px solid #444;
 }
 
 .addButton {
@@ -218,11 +222,11 @@
 }
 
 .noInputs {
-    background: #f8f9fa;
-    border: 1px solid #e0e0e0;
+    background: #2a2a2a;
+    border: 1px solid #444;
     border-radius: 4px;
     padding: 16px;
     text-align: center;
-    color: #666;
+    color: #cccccc;
     font-size: 14px;
 }

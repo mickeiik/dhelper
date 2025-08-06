@@ -23,8 +23,12 @@ export interface ToolMetadata {
   }>;
 }
 
+export interface ToolInitContext {
+  overlayService?: import('./overlay.js').OverlayService;
+}
+
 export interface Tool extends ToolMetadata {
-  initialize(inputs: any): Promise<any>;
+  initialize(context: ToolInitContext): Promise<any>;
   execute(inputs: any): Promise<any>;
   cacheConfig?: {
     enabled: boolean;

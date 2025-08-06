@@ -1,4 +1,4 @@
-import type { Tool, ToolInputField } from '@app/types';
+import type { Tool, ToolInputField, ToolInitContext, OverlayService, OverlayShape, OverlayText, OVERLAY_STYLES } from '@app/types';
 import type { TemplateMatchResult, TemplateMetadata } from '@app/templates';
 import cv from '@u4/opencv4nodejs';
 import screenshot from 'screenshot-desktop';
@@ -23,6 +23,10 @@ export interface TemplateMatcherInput {
     width: number;
     height: number;
   };
+
+  // Visual options
+  showVisualIndicators?: boolean; // Show results on screen overlay
+  overlayTimeout?: number; // Auto-dismiss overlay after milliseconds (default: 5000)
 }
 
 export type TemplateMatcherOutput = TemplateMatchResult[];
@@ -34,6 +38,7 @@ export class TemplateMatcherTool implements Tool {
   category = 'Computer Vision';
   
   private templateManager: any; // Will be injected during initialization
+  private overlayService?: OverlayService;
 
   inputFields: ToolInputField[] = [
     {
@@ -80,6 +85,22 @@ export class TemplateMatcherTool implements Tool {
       required: false,
       defaultValue: 10,
       example: 5
+    },
+    {
+      name: 'showVisualIndicators',
+      type: 'boolean',
+      description: 'Show visual indicators on screen highlighting the found matches',
+      required: false,
+      defaultValue: false,
+      example: true
+    },
+    {
+      name: 'overlayTimeout',
+      type: 'number',
+      description: 'Auto-dismiss visual overlay after specified milliseconds (default: 5000ms)',
+      required: false,
+      defaultValue: 5000,
+      example: 3000
     }
   ];
 
@@ -89,7 +110,8 @@ export class TemplateMatcherTool implements Tool {
       description: 'Search for all available templates on the current screen (auto-captures screenshot)',
       inputs: {
         minConfidence: 0.8,
-        maxResults: 5
+        maxResults: 5,
+        showVisualIndicators: true
       }
     },
     {
@@ -97,7 +119,8 @@ export class TemplateMatcherTool implements Tool {
       description: 'Search only for button templates on the current screen',
       inputs: {
         categories: ['Buttons'],
-        minConfidence: 0.7
+        minConfidence: 0.7,
+        showVisualIndicators: true
       }
     },
     {
@@ -130,13 +153,16 @@ export class TemplateMatcherTool implements Tool {
     }
   ];
 
-  async initialize() {
+  async initialize(context: ToolInitContext) {
     // opencv4nodejs is ready to use immediately
     
     // Create a new templateManager instance for this tool
     // The tool should be independent and not rely on the main process
     const { TemplateManager } = await import('@app/templates');
     this.templateManager = new TemplateManager();
+    
+    // Store overlay service for visual indicators
+    this.overlayService = context.overlayService;
     
     return;
   }
@@ -188,6 +214,11 @@ export class TemplateMatcherTool implements Tool {
       // Update usage statistics
       for (const result of limitedResults) {
         await this.templateManager.recordTemplateUsage(result.templateId, true);
+      }
+
+      // Show visual indicators if requested
+      if (input.showVisualIndicators && limitedResults.length > 0) {
+        await this.showVisualIndicators(limitedResults, input.overlayTimeout || 5000);
       }
 
       return limitedResults;
@@ -353,6 +384,78 @@ export class TemplateMatcherTool implements Tool {
     } catch (error) {
       console.error('Template matching error:', error);
       return [];
+    }
+  }
+
+  private async showVisualIndicators(results: TemplateMatchResult[], timeout: number): Promise<void> {
+    if (!this.overlayService) {
+      console.warn('[Template Matcher] Overlay service not available, skipping visual indicators');
+      return;
+    }
+
+    try {
+      // Import OVERLAY_STYLES after we know overlay service is available
+      const { OVERLAY_STYLES } = await import('@app/types');
+      
+      // Create overlay window
+      const overlay = await this.overlayService.createOverlay({
+        showInstructions: true,
+        instructionText: `Found ${results.length} template match(es)`,
+        timeout: timeout,
+        clickThrough: false
+      });
+
+      // Convert results to overlay shapes and text
+      const shapes: OverlayShape[] = [];
+      const texts: OverlayText[] = [];
+
+      results.forEach((result, index) => {
+        const { location, template, confidence } = result;
+        
+        // Create rectangle shape for each match
+        shapes.push({
+          id: `match-${index}`,
+          type: 'rectangle',
+          bounds: location,
+          style: {
+            ...OVERLAY_STYLES.HIGHLIGHT,
+            color: confidence > 0.9 ? '#00ff00' : confidence > 0.8 ? '#ffaa00' : '#ff8800',
+            lineWidth: 3,
+            fillColor: confidence > 0.9 ? 'rgba(0, 255, 0, 0.1)' : 'rgba(255, 170, 0, 0.1)'
+          },
+          label: `${template.name}`,
+          labelPosition: 'top'
+        });
+
+        // Add confidence text
+        texts.push({
+          id: `confidence-${index}`,
+          text: `${Math.round(confidence * 100)}%`,
+          position: {
+            x: location.x + location.width + 5,
+            y: location.y + 20
+          },
+          style: {
+            color: '#ffffff',
+            fontSize: 14,
+            fontFamily: 'system-ui, -apple-system, sans-serif'
+          },
+          backgroundColor: 'rgba(26, 26, 26, 0.9)',
+          padding: 6,
+          borderRadius: 4
+        });
+      });
+
+      // Draw shapes and text
+      await overlay.drawShapes(shapes);
+      await overlay.drawText(texts);
+
+      // Show the overlay
+      await overlay.show();
+
+      console.log(`[Template Matcher] Visual indicators displayed for ${results.length} matches (auto-close in ${timeout}ms)`);
+    } catch (error) {
+      console.error('[Template Matcher] Failed to show visual indicators:', error);
     }
   }
 }

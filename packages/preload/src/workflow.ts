@@ -1,6 +1,6 @@
 // packages/preload/src/workflow.ts
 import { ipcRenderer } from 'electron';
-import type { Workflow, WorkflowProgress, WorkflowStep, ReferenceResolutionContext } from '@app/types';
+import type { Workflow, WorkflowProgress, WorkflowStep } from '@app/types';
 import type { WorkflowListItem, SaveWorkflowOptions, StorageStats } from '@app/storage';
 
 // Existing workflow execution
@@ -85,7 +85,7 @@ export async function validateSemanticReferences(
 
 export async function resolveSemanticReferences(
     inputs: any,
-    context: ReferenceResolutionContext
+    context: { currentStepIndex: number; workflowSteps: WorkflowStep[]; previousResults: Record<string, any> }
 ): Promise<any> {
     return await ipcRenderer.invoke('resolve-semantic-references', inputs, context)
 }

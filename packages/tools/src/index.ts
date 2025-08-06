@@ -7,7 +7,7 @@ import { existsSync } from 'node:fs';
 // Import auto-generated tool imports for TypeScript autocomplete
 import './auto-imports.js';
 
-import type { Tool, ToolMetadata } from '@app/types';
+import type { Tool, ToolMetadata, OverlayService } from '@app/types';
 
 interface ToolRegistration {
     tool: Tool;
@@ -18,6 +18,7 @@ interface ToolRegistration {
 export class ToolManager {
     private tools = new Map<string, ToolRegistration>()
     private autoDiscovered = false;
+    private overlayService?: OverlayService;
 
     // Auto-discover tools from @tools packages
     async autoDiscoverTools() {
@@ -138,6 +139,10 @@ export class ToolManager {
         }
     }
 
+    setOverlayService(overlayService: OverlayService) {
+        this.overlayService = overlayService;
+    }
+
     private async initializeTool(id: string) {
         const registration = this.tools.get(id);
         if (!registration || registration.initialized) return;
@@ -148,7 +153,12 @@ export class ToolManager {
                 const newToolInstance = await registration.factory();
                 // Copy metadata but mark as initialized
                 registration.tool = newToolInstance;
-                await registration.tool.initialize({});
+                
+                // Pass overlay service to tool initialization
+                const initContext = {
+                    overlayService: this.overlayService
+                };
+                await registration.tool.initialize(initContext);
                 registration.initialized = true;
             }
         } catch (error) {

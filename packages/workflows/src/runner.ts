@@ -6,7 +6,6 @@ import type {
   WorkflowStep,
   StepResult,
   WorkflowInputs,
-  ReferenceResolutionContext,
 } from '@app/types';
 import { WorkflowEventEmitter } from './events.js';
 import { WorkflowCacheManager } from './cache.js';
@@ -132,7 +131,7 @@ export class WorkflowRunner extends WorkflowEventEmitter {
 
     while (retryCount <= maxRetries) {
       try {
-        // Resolve inputs by replacing references with actual data
+        // Resolve all input references in a single pass
         const resolvedInputs = await this.resolveInputs(step.inputs, previousResults, workflow, stepIndex);
 
         // Check cache first if enabled
@@ -266,16 +265,16 @@ export class WorkflowRunner extends WorkflowEventEmitter {
       return inputs;
     }
 
-    // First, resolve semantic references if workflow context is available
+    // Resolve semantic references first if workflow context is available
     if (workflow && stepIndex !== undefined) {
-      const context: ReferenceResolutionContext = {
+      const context = {
         currentStepIndex: stepIndex,
         workflowSteps: workflow.steps,
         previousResults
       };
 
       try {
-        inputs = await resolveSemanticReferences(inputs, context);
+        inputs = resolveSemanticReferences(inputs, context);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown semantic reference error';
         throw new Error(`Semantic reference resolution failed: ${errorMessage}`);
