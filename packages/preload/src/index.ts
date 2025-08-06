@@ -29,7 +29,9 @@ import {
   exportWorkflow,
   importWorkflow,
   duplicateWorkflow,
-  searchWorkflows
+  searchWorkflows,
+  validateSemanticReferences,
+  resolveSemanticReferences
 } from './workflow.js';
 
 export {
@@ -49,5 +51,7 @@ export {
   exportWorkflow,
   importWorkflow,
   duplicateWorkflow,
-  searchWorkflows
+  searchWorkflows,
+  validateSemanticReferences,
+  resolveSemanticReferences
 };

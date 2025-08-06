@@ -1,5 +1,5 @@
 // packages/@tools/screenshot/src/index.ts
-import { Tool, ToolInputField } from '@app/types';
+import type { Tool, ToolInputField } from '@app/types';
 import { nativeImage } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -74,13 +74,28 @@ export class ScreenshotTool implements Tool {
       }
     },
     {
+      name: 'Use Region Selector',
+      description: 'Use coordinates from the most recent region selector step',
+      inputs: {
+        top: { $ref: '{{previous:region-selector.top}}' },
+        left: { $ref: '{{previous:region-selector.left}}' },
+        width: { $ref: '{{previous:region-selector.width}}' },
+        height: { $ref: '{{previous:region-selector.height}}' }
+      }
+    },
+    {
       name: 'Use Previous Step',
-      description: 'Use output from screen-region-selector step',
-      inputs: { $ref: 'region-step-id' }
+      description: 'Use coordinates from the immediately previous step (if it returns coordinates)',
+      inputs: {
+        top: { $ref: '{{previous.top}}' },
+        left: { $ref: '{{previous.left}}' },
+        width: { $ref: '{{previous.width}}' },
+        height: { $ref: '{{previous.height}}' }
+      }
     }
   ];
 
-  async initialize(inputs: any) { }
+  async initialize() { }
 
   async execute(input: ScreenshotToolInput): Promise<ScreenshotToolOutput> {
     try {

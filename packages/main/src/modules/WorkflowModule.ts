@@ -1,5 +1,5 @@
 // packages/main/src/modules/WorkflowModule.ts
-import { WorkflowRunner, ref, workflow } from '@app/workflows'
+import { WorkflowRunner, ref, workflow, validateSemanticReferences, resolveSemanticReferences } from '@app/workflows'
 import { WorkflowStorage } from '@app/storage'
 import { ipcMain } from 'electron'
 import { AppModule } from '../AppModule.js';
@@ -101,6 +101,14 @@ export class WorkflowModule implements AppModule {
         );
         ipcMain.handle('get-cache-stats', (_, workflowId) => 
             workflowRunner.getCacheStats(workflowId)
+        );
+
+        // Semantic reference handlers
+        ipcMain.handle('validate-semantic-references', (_, inputs, availableSteps, currentStepIndex) => 
+            validateSemanticReferences(inputs, availableSteps, currentStepIndex)
+        );
+        ipcMain.handle('resolve-semantic-references', (_, inputs, context) => 
+            resolveSemanticReferences(inputs, context)
         );
     }
 }

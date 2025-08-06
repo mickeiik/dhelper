@@ -17,7 +17,8 @@ export type {
   WorkflowInputs,
   WorkflowResult,
   StepResult,
-  WorkflowProgress
+  WorkflowProgress,
+  ReferenceResolutionContext
 } from './workflow.js';
 
 // Common utilities

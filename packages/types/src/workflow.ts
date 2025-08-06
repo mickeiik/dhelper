@@ -68,3 +68,9 @@ export interface WorkflowProgress {
   message?: string;
   fromCache?: boolean; // Indicates if step used cache
 }
+
+export interface ReferenceResolutionContext {
+  currentStepIndex: number;
+  workflowSteps: WorkflowStep[];
+  previousResults: Record<string, StepResult>;
+}

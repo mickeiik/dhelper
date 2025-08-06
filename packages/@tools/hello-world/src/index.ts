@@ -1,5 +1,5 @@
 // packages/@tools/hello-world/src/index.ts
-import { Tool, ToolInputField } from '@app/types';
+import type { Tool, ToolInputField } from '@app/types';
 
 export interface HelloWorldToolInput {
   message?: string;
@@ -45,11 +45,19 @@ export class HelloWorldTool implements Tool {
       }
     },
     {
+      name: 'Process Previous Step',
+      description: 'Log and return output from the previous step',
+      inputs: {
+        message: 'Previous step result:',
+        data: { $ref: '{{previous}}' }
+      }
+    },
+    {
       name: 'Process OCR Result',
       description: 'Log and return OCR text result',
       inputs: {
         message: 'OCR Result:',
-        data: { $ref: 'ocr-step-id' }
+        data: { $ref: '{{previous:ocr}}' }
       }
     },
     {
@@ -66,7 +74,7 @@ export class HelloWorldTool implements Tool {
     }
   ];
 
-  async initialize(inputs: any) {
+  async initialize() {
     return;
   }
 

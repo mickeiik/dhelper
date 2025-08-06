@@ -4,8 +4,9 @@ import { useWorkflowExecution } from '../hooks/useWorkflowExecution';
 import { useWorkflowBuilder } from '../hooks/useWorkflowBuilder';
 import { useWorkflowProgress } from '../hooks/useWorkflowProgress';
 import { clearWorkflowCache, clearAllCaches, saveWorkflow, loadWorkflow, listWorkflows, deleteWorkflow } from '@app/preload';
-import { StepBuilder } from './StepBuilder';
-import type { ToolMetadata, WorkflowResult, WorkflowProgress, Workflow } from '@app/types';
+import { SimpleStepBuilder } from './SimpleStepBuilder';
+import { AdvancedStepBuilder } from './AdvancedStepBuilder';
+import type { ToolMetadata, WorkflowResult, WorkflowProgress, Workflow, WorkflowStep } from '@app/types';
 import type { WorkflowListItem } from '@app/storage';
 import styles from './WorkflowPage.module.css';
 import React, { useState } from 'react';
@@ -263,6 +264,8 @@ export function WorkflowPage() {
         showAdvanced={showAdvancedBuilder}
         onToggleAdvanced={() => setShowAdvancedBuilder(!showAdvancedBuilder)}
         hasSteps={workflow.steps.length > 0}
+        existingStepIds={workflow.steps.map(step => step.id)}
+        existingSteps={workflow.steps}
       />
 
       {/* Tools Overview */}
@@ -507,6 +510,8 @@ interface WorkflowBuilderSectionProps {
   showAdvanced: boolean;
   onToggleAdvanced: () => void;
   hasSteps: boolean;
+  existingStepIds: string[];
+  existingSteps: WorkflowStep[];
 }
 
 function WorkflowBuilderSection({
@@ -514,7 +519,9 @@ function WorkflowBuilderSection({
   onAddStep,
   showAdvanced,
   onToggleAdvanced,
-  hasSteps
+  hasSteps,
+  existingStepIds,
+  existingSteps
 }: WorkflowBuilderSectionProps) {
   return (
     <section className={styles.builderSection}>
@@ -539,9 +546,23 @@ function WorkflowBuilderSection({
         </div>
       )}
 
-      {showAdvanced && (
+      {!showAdvanced ? (
+        <div className={styles.simpleBuilder}>
+          <SimpleStepBuilder 
+            tools={tools} 
+            onAddStep={onAddStep}
+            existingStepIds={existingStepIds}
+            existingSteps={existingSteps}
+          />
+        </div>
+      ) : (
         <div className={styles.advancedBuilder}>
-          <StepBuilder tools={tools} onAddStep={onAddStep} />
+          <AdvancedStepBuilder 
+            tools={tools} 
+            onAddStep={onAddStep}
+            existingStepIds={existingStepIds}
+            existingSteps={existingSteps}
+          />
         </div>
       )}
     </section>

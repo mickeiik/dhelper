@@ -6,17 +6,19 @@ import type {
   WorkflowStep,
   StepResult,
   WorkflowInputs,
-  WorkflowProgress
+  ReferenceResolutionContext,
 } from '@app/types';
 import { WorkflowEventEmitter } from './events.js';
 import { WorkflowCacheManager } from './cache.js';
 import { WorkflowStorage } from '@app/storage';
+import { resolveSemanticReferences } from './reference-templates.js';
 
 export class WorkflowRunner extends WorkflowEventEmitter {
   private cacheManager: WorkflowCacheManager;
-
-  constructor(private toolManager: ToolManager, private storage: WorkflowStorage) {
+  private toolManager: ToolManager;
+  constructor(toolManager: ToolManager, storage: WorkflowStorage) {
     super();
+    this.toolManager = toolManager;
     this.cacheManager = new WorkflowCacheManager(storage);
   }
 
@@ -46,7 +48,7 @@ export class WorkflowRunner extends WorkflowEventEmitter {
         const step = workflow.steps[i];
         const stepProgress = Math.round(((i + 1) / workflow.steps.length) * 100);
 
-        const stepResult = await this.executeStep(step, stepResults, workflow.id, stepProgress);
+        const stepResult = await this.executeStep(step, stepResults, workflow.id, stepProgress, workflow, i);
         stepResults[step.id] = stepResult;
 
         // Update cache stats
@@ -113,7 +115,9 @@ export class WorkflowRunner extends WorkflowEventEmitter {
     step: WorkflowStep,
     previousResults: Record<string, StepResult>,
     workflowId: string,
-    progress: number
+    progress: number,
+    workflow?: Workflow,
+    stepIndex?: number
   ): Promise<StepResult> {
     const startTime = new Date();
     let retryCount = 0;
@@ -129,7 +133,7 @@ export class WorkflowRunner extends WorkflowEventEmitter {
     while (retryCount <= maxRetries) {
       try {
         // Resolve inputs by replacing references with actual data
-        const resolvedInputs = this.resolveInputs(step.inputs, previousResults);
+        const resolvedInputs = this.resolveInputs(step.inputs, previousResults, workflow, stepIndex);
 
         // Check cache first if enabled
         let result: any = null;
@@ -137,9 +141,9 @@ export class WorkflowRunner extends WorkflowEventEmitter {
         let cacheKey: string | undefined;
 
         if (step.cache?.enabled) {
-          // Get tool for cache configuration
-          const tool = await this.getToolInstance(step.toolId);
-          const toolCacheConfig = tool?.cacheConfig;
+          // // Get tool for cache configuration
+          // const tool = await this.getToolInstance(step.toolId);
+          // const toolCacheConfig = tool?.cacheConfig;
 
           // Generate cache key
           cacheKey = this.cacheManager.generateCacheKey(
@@ -252,9 +256,30 @@ export class WorkflowRunner extends WorkflowEventEmitter {
     }
   }
 
-  private resolveInputs(inputs: WorkflowInputs<any>, previousResults: Record<string, StepResult>): any {
+  private resolveInputs(
+    inputs: WorkflowInputs<any>,
+    previousResults: Record<string, StepResult>,
+    workflow?: Workflow,
+    stepIndex?: number
+  ): any {
     if (inputs === null || inputs === undefined) {
       return inputs;
+    }
+
+    // First, resolve semantic references if workflow context is available
+    if (workflow && stepIndex !== undefined) {
+      const context: ReferenceResolutionContext = {
+        currentStepIndex: stepIndex,
+        workflowSteps: workflow.steps,
+        previousResults
+      };
+
+      try {
+        inputs = resolveSemanticReferences(inputs, context);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown semantic reference error';
+        throw new Error(`Semantic reference resolution failed: ${errorMessage}`);
+      }
     }
 
     // Handle reference objects
@@ -266,17 +291,17 @@ export class WorkflowRunner extends WorkflowEventEmitter {
 
       // Handle $merge - merge multiple inputs
       if ('$merge' in inputs && Array.isArray(inputs.$merge)) {
-        const resolved = inputs.$merge.map((input: any) => this.resolveInputs(input, previousResults));
+        const resolved = inputs.$merge.map((input: any) => this.resolveInputs(input, previousResults, workflow, stepIndex));
         return Object.assign({}, ...resolved);
       }
 
       // Handle regular objects - recursively resolve properties
       if (Array.isArray(inputs)) {
-        return inputs.map(item => this.resolveInputs(item, previousResults));
+        return inputs.map(item => this.resolveInputs(item, previousResults, workflow, stepIndex));
       } else {
         const resolved: any = {};
         for (const [key, value] of Object.entries(inputs)) {
-          resolved[key] = this.resolveInputs(value, previousResults);
+          resolved[key] = this.resolveInputs(value, previousResults, workflow, stepIndex);
         }
         return resolved;
       }

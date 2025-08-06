@@ -1,5 +1,5 @@
 // packages/@tools/ocr/src/index.ts
-import { Tool, ToolInputField } from '@app/types';
+import type { Tool, ToolInputField } from '@app/types';
 import Tesseract from 'tesseract.js';
 
 export type TesseractOcrToolInput = Tesseract.ImageLike;
@@ -26,8 +26,13 @@ export class TesseractOcrTool implements Tool {
   examples = [
     {
       name: 'From Screenshot Step',
-      description: 'Use output from a screenshot tool step',
-      inputs: { $ref: 'screenshot-step-id' }
+      description: 'Use output from the most recent screenshot step',
+      inputs: { $ref: '{{previous:screenshot}}' }
+    },
+    {
+      name: 'From Previous Step',
+      description: 'Use output from the immediately previous step',
+      inputs: { $ref: '{{previous}}' }
     },
     {
       name: 'From File Path',
