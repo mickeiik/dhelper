@@ -2,16 +2,12 @@
 import { WorkflowRunner, ref, workflow, validateSemanticReferences, resolveSemanticReferences } from '@app/workflows'
 import { WorkflowStorage } from '@app/storage'
 import { ipcMain } from 'electron'
-import { AppModule } from '../AppModule.js';
-import { ModuleContext } from '../ModuleContext.js';
 import { getToolManager } from './ToolModule.js';
 
 const storage = new WorkflowStorage()
 const workflowRunner = new WorkflowRunner(getToolManager(), storage)
 
-export class WorkflowModule implements AppModule {
-    enable({ app }: ModuleContext): void {
-        app.whenReady();
+export function initializeWorkflows() {
 
         // Workflow execution handlers
         ipcMain.handle('run-workflow', async (_, workflowId) => {
@@ -110,7 +106,4 @@ export class WorkflowModule implements AppModule {
         ipcMain.handle('resolve-semantic-references', (_, inputs, context) => 
             resolveSemanticReferences(inputs, context)
         );
-    }
 }
-
-export const initializeWorkflowModule = () => new WorkflowModule()

@@ -18,7 +18,7 @@ export class WorkflowRunner extends WorkflowEventEmitter {
   constructor(toolManager: ToolManager, storage: WorkflowStorage) {
     super();
     this.toolManager = toolManager;
-    this.cacheManager = new WorkflowCacheManager(storage);
+    this.cacheManager = new WorkflowCacheManager();
   }
 
 

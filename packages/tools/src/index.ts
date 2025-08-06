@@ -1,122 +1,39 @@
 // packages/tools/src/index.ts
-import { readdir } from 'node:fs/promises';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { existsSync } from 'node:fs';
-
-// Import auto-generated tool imports for TypeScript autocomplete
-import './auto-imports.js';
-
 import type { Tool, ToolMetadata, OverlayService } from '@app/types';
+
+// Direct imports - no auto-discovery needed
+import { HelloWorldTool } from '@tools/hello-world';
+import { TesseractOcrTool } from '@tools/ocr';
+import { ScreenRegionSelectorTool } from '@tools/screen-region-selector';
+import { ScreenshotTool } from '@tools/screenshot';
+import { TemplateMatcherTool } from '@tools/template-matcher';
 
 interface ToolRegistration {
     tool: Tool;
     initialized: boolean;
-    factory?: () => Promise<Tool>;
 }
 
 export class ToolManager {
-    private tools = new Map<string, ToolRegistration>()
-    private autoDiscovered = false;
+    private tools = new Map<string, ToolRegistration>();
     private overlayService?: OverlayService;
 
-    // Auto-discover tools from @tools packages
     async autoDiscoverTools() {
-        if (this.autoDiscovered) return;
+        // Register all tools directly - no discovery needed
+        const toolClasses = [
+            HelloWorldTool,
+            TesseractOcrTool,
+            ScreenRegionSelectorTool,
+            ScreenshotTool,
+            TemplateMatcherTool
+        ];
 
-        try {
-            const toolsPath = this.resolveToolsDirectory();
-
-            if (!existsSync(toolsPath)) {
-                this.autoDiscovered = true;
-                return;
-            }
-
-            const entries = await readdir(toolsPath, { withFileTypes: true });
-
-            for (const entry of entries) {
-                if (entry.isDirectory()) {
-                    await this.loadToolFromDirectory(entry.name);
-                }
-            }
-
-            this.autoDiscovered = true;
-        } catch (error) {
-            console.warn('ToolManager: Auto-discovery failed:', error);
+        for (const ToolClass of toolClasses) {
+            const tool = new ToolClass();
+            this.tools.set(tool.id, {
+                tool,
+                initialized: false
+            });
         }
-    }
-
-    private resolveToolsDirectory(): string {
-        // Get the current file path and navigate to project root
-        const currentFilePath = fileURLToPath(import.meta.url);
-        const currentDir = dirname(currentFilePath);
-
-        // Navigate up to find the project root (contains packages directory)
-        let projectRoot = currentDir;
-
-        // Keep going up until we find a directory that contains 'packages'
-        while (projectRoot !== dirname(projectRoot)) { // Stop at filesystem root
-            const packagesDir = join(projectRoot, 'packages');
-            if (existsSync(packagesDir)) {
-                break;
-            }
-            projectRoot = dirname(projectRoot);
-        }
-
-        const toolsPath = join(projectRoot, 'packages', '@tools');
-        return toolsPath;
-    }
-
-    private async loadToolFromDirectory(toolName: string) {
-        try {
-            const modulePath = `@tools/${toolName}`;
-
-            // Create a factory function for lazy loading
-            const factory = async (): Promise<Tool> => {
-                const module = await import(/* @vite-ignore */modulePath);
-
-                // Look for tool class exports (convention: ends with 'Tool')
-                const ToolClass = Object.values(module).find(
-                    (exp: any) =>
-                        typeof exp === 'function' &&
-                        exp.prototype &&
-                        typeof exp.prototype.execute === 'function'
-                ) as new () => Tool;
-
-                if (!ToolClass) {
-                    throw new Error(`No valid Tool class found in ${modulePath}`);
-                }
-
-                return new ToolClass();
-            };
-
-            // Create tool instance to get full metadata
-            const tempTool = await factory();
-            this.registerToolWithMetadata(tempTool, factory);
-
-        } catch (error) {
-            console.warn(`Failed to load tool ${toolName}:`, error);
-        }
-    }
-
-    private registerToolWithMetadata(tool: Tool, factory: () => Promise<Tool>) {
-        // Store the full tool instance with all metadata
-        this.tools.set(tool.id, {
-            tool: tool, // Full tool instance with metadata
-            initialized: false, // Mark as not initialized for execution
-            factory
-        });
-        // Tool registered with metadata
-    }
-
-    registerTool(id: string, name: string, factory: () => Promise<Tool>) {
-        // Fallback for manual registration - create minimal tool object
-        this.tools.set(id, {
-            tool: { id, name } as Tool,
-            initialized: false,
-            factory
-        });
-        // Tool registered (lazy)
     }
 
     async runTool(id: string, inputs: any) {
@@ -131,11 +48,10 @@ export class ToolManager {
                 await this.initializeTool(id);
             }
 
-            const result = await registration.tool.execute(inputs);
-            return result;
+            return await registration.tool.execute(inputs);
         } catch (error) {
             console.error(`Tool "${id}" execution failed:`, error);
-            throw error; // Re-throw so caller can handle it
+            throw error;
         }
     }
 
@@ -148,19 +64,11 @@ export class ToolManager {
         if (!registration || registration.initialized) return;
 
         try {
-            // If we have a factory and tool isn't fully initialized, reinitialize
-            if (registration.factory && !registration.initialized) {
-                const newToolInstance = await registration.factory();
-                // Copy metadata but mark as initialized
-                registration.tool = newToolInstance;
-                
-                // Pass overlay service to tool initialization
-                const initContext = {
-                    overlayService: this.overlayService
-                };
-                await registration.tool.initialize(initContext);
-                registration.initialized = true;
-            }
+            const initContext = {
+                overlayService: this.overlayService
+            };
+            await registration.tool.initialize(initContext);
+            registration.initialized = true;
         } catch (error) {
             console.error(`Failed to initialize tool "${id}":`, error);
             throw error;
@@ -168,32 +76,18 @@ export class ToolManager {
     }
 
     getTools(): Tool[] {
-        // Return full tool objects with all metadata
         return Array.from(this.tools.values()).map(({ tool }) => tool);
     }
 
     getToolsMetadata(): ToolMetadata[] {
-        return Array.from(this.tools.values()).map(({ tool }) => {
-            return {
-                id: tool.id,
-                name: tool.name,
-                description: tool.description,
-                category: tool.category,
-                inputFields: tool.inputFields,
-                examples: tool.examples
-            }
-
-        });
-    }
-
-    // Initialize all tools (useful for development/testing)
-    async initializeAllTools() {
-        const initPromises = Array.from(this.tools.keys()).map(id =>
-            this.initializeTool(id).catch(error =>
-                console.warn(`Failed to initialize tool ${id}:`, error)
-            )
-        );
-        await Promise.all(initPromises);
+        return Array.from(this.tools.values()).map(({ tool }) => ({
+            id: tool.id,
+            name: tool.name,
+            description: tool.description,
+            category: tool.category,
+            inputFields: tool.inputFields,
+            examples: tool.examples
+        }));
     }
 }
 

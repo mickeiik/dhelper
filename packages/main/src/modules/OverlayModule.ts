@@ -1,6 +1,4 @@
 // packages/main/src/modules/OverlayModule.ts
-import type { AppModule } from '../AppModule.js';
-import type { ModuleContext } from '../ModuleContext.js';
 import type {
   OverlayService,
   OverlayWindow,
@@ -141,7 +139,7 @@ class OverlayServiceImpl implements OverlayService {
       bounds = options.bounds;
     } else {
       const primaryDisplay = screen.getPrimaryDisplay();
-      const screenBounds = primaryDisplay.bounds;
+      const screenBounds = screen.dipToScreenRect(null, primaryDisplay.bounds);
       bounds = {
         x: screenBounds.x,
         y: screenBounds.y,
@@ -230,23 +228,9 @@ class OverlayServiceImpl implements OverlayService {
   }
 }
 
-export class OverlayModule implements AppModule {
-  private overlayService: OverlayServiceImpl;
+const overlayService = new OverlayServiceImpl();
 
-  constructor() {
-    this.overlayService = new OverlayServiceImpl();
-  }
-
-  async enable({ app }: ModuleContext): Promise<void> {
-    // The service is now available and can be accessed by tools
-    // We'll expose it through the ModuleContext in a future update
-  }
-
-  getOverlayService(): OverlayService {
-    return this.overlayService;
-  }
-}
-
-export function createOverlayModule() {
-  return new OverlayModule();
+export async function initializeOverlay(): Promise<OverlayService> {
+  // The service is initialized and ready to use
+  return overlayService;
 }
