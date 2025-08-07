@@ -114,11 +114,11 @@ export class ScreenshotTool implements Tool {
       });
 
       // Save debug file
-      const __filename = fileURLToPath(import.meta.url);
-      const __dirname = path.dirname(__filename);
-      const outputPath = path.join(__dirname, 'screenshot.png');
-      fs.writeFileSync(outputPath, croppedImage.toPNG());
-      console.log(`Screenshot saved to: ${outputPath}`);
+      // const __filename = fileURLToPath(import.meta.url);
+      // const __dirname = path.dirname(__filename);
+      // const outputPath = path.join(__dirname, 'screenshot.png');
+      // fs.writeFileSync(outputPath, croppedImage.toPNG());
+      // console.log(`Screenshot saved to: ${outputPath}`);
 
       return croppedImage.toDataURL();
 

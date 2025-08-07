@@ -62,7 +62,6 @@ class OverlayWindowImpl implements OverlayWindow {
   }
 
   async drawShapes(shapes: OverlayShape[]): Promise<void> {
-    console.log('Shapes:', shapes)
     if (!this.window.isDestroyed()) {
       this.window.webContents.send('overlay-draw-shapes', shapes);
     }
@@ -148,7 +147,6 @@ class OverlayServiceImpl implements OverlayService {
         height: primaryDisplay.bounds.height
       };
     }
-    console.log('Primary display overlay bounds:', bounds);
 
     // Create overlay window
     const window = new BrowserWindow({
@@ -184,7 +182,6 @@ class OverlayServiceImpl implements OverlayService {
     // Load the overlay HTML
     const __dirname = fileURLToPath(new URL('.', import.meta.url));
     const overlayHtmlPath = join(__dirname, '..', '..', 'overlay', 'overlay.html');
-    console.log('Loading overlay HTML from:', overlayHtmlPath);
     await window.loadFile(overlayHtmlPath);
 
     // Send initialization data to overlay

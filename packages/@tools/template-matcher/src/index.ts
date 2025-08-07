@@ -231,9 +231,7 @@ export class TemplateMatcherTool implements Tool {
 
   private async captureCurrentScreen(): Promise<Buffer> {
     try {
-      console.log('[Template Matcher] Capturing current screen...');
       const imgBuffer = await screenshot({ format: 'png' });
-      console.log(`[Template Matcher] Screen captured: ${Math.round(imgBuffer.length / 1024)}KB`);
       return imgBuffer;
     } catch (error) {
       throw new Error(`Failed to capture screen: ${error}`);
@@ -249,22 +247,18 @@ export class TemplateMatcherTool implements Tool {
           // Base64 data URL
           const base64Data = imageInput.split(',')[1];
           const imageData = Buffer.from(base64Data, 'base64');
-          console.log(`[Template Matcher] Loading base64 image: ${Math.round(imageData.length / 1024)}KB`);
           imageMat = cv.imdecode(imageData);
         } else {
           // File path
-          console.log(`[Template Matcher] Loading image from file: ${imageInput}`);
           imageMat = cv.imread(imageInput);
         }
       } else {
         // Buffer
-        console.log(`[Template Matcher] Loading image from buffer: ${Math.round(imageInput.length / 1024)}KB`);
         imageMat = cv.imdecode(imageInput);
       }
       
       if (imageMat) {
         const size = imageMat.sizes;
-        console.log(`[Template Matcher] Loaded image dimensions: ${size[1]}x${size[0]}`);
       }
       
       return imageMat;
@@ -352,7 +346,6 @@ export class TemplateMatcherTool implements Tool {
       const templateWidth = templateSize[1];
       const templateHeight = templateSize[0];
       
-      console.log(`[Template Matcher] Screen: ${screenWidth}x${screenHeight}, Template: ${templateWidth}x${templateHeight}`);
 
       // Perform template matching using normalized cross correlation
       const result = searchMat.matchTemplate(templateMat, cv.TM_CCOEFF_NORMED);
@@ -363,9 +356,7 @@ export class TemplateMatcherTool implements Tool {
 
       // Find min/max locations and values
       const minMaxLoc = result.minMaxLoc();
-      
-      console.log(`[Template Matcher] Template ${templateMetadata.name}: confidence=${minMaxLoc.maxVal}, position=(${minMaxLoc.maxLoc.x}, ${minMaxLoc.maxLoc.y}), threshold=${threshold}`);
-      
+            
       if (minMaxLoc.maxVal >= threshold) {
         // Found at least one good match - create the match result
         matches.push({
@@ -454,7 +445,6 @@ export class TemplateMatcherTool implements Tool {
       // Show the overlay
       await overlay.show();
 
-      console.log(`[Template Matcher] Visual indicators displayed for ${results.length} matches (auto-close in ${timeout}ms)`);
     } catch (error) {
       console.error('[Template Matcher] Failed to show visual indicators:', error);
     }

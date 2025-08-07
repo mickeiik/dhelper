@@ -37,8 +37,6 @@ export function useWorkflowExecution() {
       setError(null);
       setLastResult(null);
 
-      console.log('Running custom workflow:', workflow);
-
       const result = await runCustomWorkflow(workflow);
       setLastResult(result);
 

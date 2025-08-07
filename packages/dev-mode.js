@@ -131,7 +131,7 @@ for (const pkg of packagesToStart) {
         rendererWatchServerProvider,
       ],
     });
-    console.log('✅ ${packageName} Done');
+    console.log(`✅ ${packageName} Done`);
     built++;
   } catch (error) {
     console.log('❌');

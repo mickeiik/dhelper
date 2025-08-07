@@ -79,7 +79,6 @@ export class HelloWorldTool implements Tool {
   }
 
   async execute(input: HelloWorldToolInput): Promise<HelloWorldToolOutput> {
-    console.log('Hello World: ', input);
     return { success: true, data: input };
   }
 }
