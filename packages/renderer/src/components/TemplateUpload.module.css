@@ -2,7 +2,6 @@
 .templateUpload {
   width: 100%;
   max-width: 600px;
-  background: white;
   padding: 0;
   border-radius: 8px;
 }
@@ -17,7 +16,6 @@
 
 .header h3 {
   margin: 0;
-  color: #333;
 }
 
 .closeButton {
@@ -25,7 +23,6 @@
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
-  color: #666;
   padding: 0;
   width: 30px;
   height: 30px;
@@ -37,7 +34,7 @@
 }
 
 .closeButton:hover {
-  background: #f0f0f0;
+  background: #4e4e4e;
 }
 
 .form {
@@ -64,6 +61,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  color: black;
 }
 
 .dropZone:hover {
@@ -80,12 +78,10 @@
 
 .uploadIcon {
   font-size: 3rem;
-  color: #666;
 }
 
 .fileInfo {
   font-size: 0.8rem;
-  color: #999;
   margin: 0;
 }
 
@@ -106,7 +102,6 @@
   top: 0.5rem;
   right: 0.5rem;
   background: rgba(0, 0, 0, 0.7);
-  color: white;
   border: none;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
@@ -133,7 +128,6 @@
 
 .field label {
   font-weight: 500;
-  color: #333;
   font-size: 0.9rem;
 }
 
@@ -169,12 +163,10 @@
   padding: 0.5rem;
   border: 1px solid #e0e0e0;
   border-radius: 4px;
-  background: #fafafa;
 }
 
 .selectedTag {
   background: #007bff;
-  color: white;
   padding: 0.25rem 0.5rem;
   border-radius: 12px;
   font-size: 0.8rem;
@@ -186,7 +178,6 @@
 .removeTag {
   background: none;
   border: none;
-  color: white;
   cursor: pointer;
   font-size: 0.9rem;
   padding: 0;
@@ -211,7 +202,6 @@
 .availableTag {
   background: #f8f9fa;
   border: 1px solid #e0e0e0;
-  color: #666;
   padding: 0.25rem 0.5rem;
   border-radius: 12px;
   font-size: 0.8rem;
@@ -238,7 +228,6 @@
 
 .customTag button {
   background: #28a745;
-  color: white;
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 4px;
@@ -278,7 +267,6 @@
 
 .field small {
   font-size: 0.75rem;
-  color: #666;
   margin-top: 0.25rem;
 }
 
@@ -302,8 +290,7 @@
 }
 
 .cancelButton {
-  background: #6c757d;
-  color: white;
+  background: white;
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 4px;
@@ -318,7 +305,6 @@
 
 .submitButton {
   background: #007bff;
-  color: white;
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 4px;

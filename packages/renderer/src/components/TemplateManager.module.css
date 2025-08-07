@@ -5,6 +5,7 @@
   gap: 1rem;
   padding: 1rem;
   height: 100%;
+  color: white;
 }
 
 .loading {
@@ -12,7 +13,6 @@
   justify-content: center;
   align-items: center;
   padding: 2rem;
-  color: #666;
 }
 
 /* Header */
@@ -26,7 +26,6 @@
 
 .header h2 {
   margin: 0;
-  color: #333;
 }
 
 .headerActions {
@@ -36,7 +35,6 @@
 
 .uploadButton {
   background: #007bff;
-  color: white;
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 4px;
@@ -51,7 +49,6 @@
 
 .refreshButton {
   background: #6c757d;
-  color: white;
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 4px;
@@ -74,7 +71,7 @@
   display: flex;
   gap: 2rem;
   padding: 1rem;
-  background: #f8f9fa;
+  background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
   border-radius: 8px;
 }
 
@@ -86,13 +83,12 @@
   display: block;
   font-size: 1.5rem;
   font-weight: bold;
-  color: #007bff;
+  color: #007bff83;
 }
 
 .statLabel {
   display: block;
   font-size: 0.8rem;
-  color: #666;
   margin-top: 0.25rem;
 }
 
@@ -102,7 +98,7 @@
   flex-direction: column;
   gap: 1rem;
   padding: 1rem;
-  background: white;
+  background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
   border-radius: 8px;
   border: 1px solid #e0e0e0;
 }
@@ -130,7 +126,6 @@
   padding: 0.5rem;
   border: 1px solid #ccc;
   border-radius: 4px;
-  background: white;
 }
 
 .tagFilter {
@@ -144,7 +139,7 @@
   align-items: center;
   gap: 0.25rem;
   padding: 0.25rem 0.5rem;
-  background: #f8f9fa;
+  background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.8rem;
@@ -169,7 +164,7 @@
 .viewToggle button {
   padding: 0.5rem 1rem;
   border: none;
-  background: white;
+  background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
   cursor: pointer;
   transition: all 0.2s;
   font-size: 0.8rem;
@@ -181,13 +176,11 @@
 
 .viewToggle button.active {
   background: #007bff;
-  color: white;
 }
 
 .clearFilters {
   padding: 0.5rem 1rem;
   background: #dc3545;
-  color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -245,7 +238,6 @@
   justify-content: center;
   align-items: center;
   padding: 3rem;
-  color: #666;
   text-align: center;
 }
 
@@ -264,7 +256,7 @@
 }
 
 .modalContent {
-  background: white;
+  background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
   border-radius: 8px;
   max-width: 800px;
   max-height: 90vh;

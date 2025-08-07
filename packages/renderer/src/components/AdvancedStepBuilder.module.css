@@ -1,5 +1,5 @@
 .advancedStepBuilder {
-    background: #f8f9fa;
+    background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
     border: 2px solid #e9ecef;
     border-radius: 8px;
     padding: 24px;
@@ -14,13 +14,11 @@
 
 .header h3 {
     margin: 0 0 8px 0;
-    color: #495057;
     font-size: 18px;
 }
 
 .header p {
     margin: 0;
-    color: #6c757d;
     font-size: 14px;
 }
 
@@ -35,7 +33,7 @@
 }
 
 .section {
-    background: white;
+    background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
     border: 1px solid #dee2e6;
     border-radius: 6px;
     padding: 20px;
@@ -44,7 +42,6 @@
 
 .section h4 {
     margin: 0 0 16px 0;
-    color: #495057;
     font-size: 16px;
     font-weight: 600;
 }
@@ -70,7 +67,6 @@
 .field label {
     font-weight: 600;
     margin-bottom: 6px;
-    color: #495057;
     font-size: 14px;
 }
 
@@ -83,7 +79,9 @@
     gap: 8px;
 }
 
-.input, .select, .textarea {
+.input,
+.select,
+.textarea {
     padding: 10px;
     border: 1px solid #ced4da;
     border-radius: 4px;
@@ -91,7 +89,9 @@
     transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
-.input:focus, .select:focus, .textarea:focus {
+.input:focus,
+.select:focus,
+.textarea:focus {
     outline: none;
     border-color: #80bdff;
     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
@@ -99,7 +99,6 @@
 
 .generateButton {
     background: #007bff;
-    color: white;
     border: none;
     border-radius: 4px;
     padding: 10px 12px;
@@ -113,7 +112,7 @@
 }
 
 .toolDescription {
-    background: #e3f2fd;
+    background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
     border-left: 4px solid #2196f3;
     padding: 12px;
     margin-top: 12px;
@@ -129,7 +128,6 @@
 }
 
 .example {
-    background: #f8f9fa;
     border: 1px solid #e9ecef;
     border-radius: 4px;
     padding: 16px;
@@ -142,13 +140,8 @@
     margin-bottom: 8px;
 }
 
-.exampleHeader strong {
-    color: #495057;
-}
-
 .applyButton {
     background: #28a745;
-    color: white;
     border: none;
     border-radius: 4px;
     padding: 4px 12px;
@@ -162,13 +155,12 @@
 }
 
 .exampleDescription {
-    color: #6c757d;
     font-size: 13px;
     margin-bottom: 8px;
 }
 
 .exampleCode {
-    background: #f1f3f4;
+    background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
     border: 1px solid #e9ecef;
     border-radius: 4px;
     padding: 8px;
@@ -185,7 +177,7 @@
 }
 
 .inputModeToggle button {
-    background: white;
+    background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
     border: none;
     padding: 8px 16px;
     font-size: 14px;
@@ -194,12 +186,11 @@
 }
 
 .inputModeToggle button:hover {
-    background: #f8f9fa;
+    background: #f8f9fa38;
 }
 
 .inputModeToggle button.active {
     background: #007bff;
-    color: white;
 }
 
 .formInputs {
@@ -236,29 +227,26 @@
 
 .refButton.active {
     background: #007bff;
-    color: white;
     border-color: #007bff;
 }
 
 .fieldDescription {
     font-size: 12px;
-    color: #6c757d;
     margin-bottom: 6px;
 }
 
-.refInput, .refSelect {
+.refInput,
+.refSelect {
     background: #fff3cd;
     border-color: #ffeaa7;
 }
 
 .fieldExample {
     font-size: 12px;
-    color: #6c757d;
     margin-top: 4px;
 }
 
 .fieldExample code {
-    background: #f8f9fa;
     padding: 2px 4px;
     border-radius: 2px;
     font-family: monospace;
@@ -278,7 +266,7 @@
 }
 
 .cacheOptions {
-    background: #f8f9fa;
+    background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
     border: 1px solid #e9ecef;
     border-radius: 4px;
     padding: 16px;
@@ -299,7 +287,6 @@
 
 .defaultsButton {
     background: #6c757d;
-    color: white;
     border: none;
     border-radius: 4px;
     padding: 6px 12px;
@@ -319,7 +306,6 @@
 }
 
 .fieldReference {
-    background: #f8f9fa;
     border: 1px solid #e9ecef;
     border-radius: 4px;
     padding: 12px;
@@ -328,7 +314,6 @@
 .fieldReference h5 {
     margin: 0 0 8px 0;
     font-size: 14px;
-    color: #495057;
 }
 
 .fieldReference ul {
@@ -359,7 +344,6 @@
 .submitButton {
     width: 100%;
     background: #007bff;
-    color: white;
     border: none;
     border-radius: 6px;
     padding: 14px;

@@ -50,7 +50,7 @@ export function TemplateCard({ template, viewMode, onEdit, onDelete }: TemplateC
         URL.revokeObjectURL(thumbnailUrl);
       }
     };
-  }, [template.id, template.thumbnailPath, thumbnailUrl]);
+  }, [template.id, template.thumbnailPath]); //Don't put thumbnailUrl here
 
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString();

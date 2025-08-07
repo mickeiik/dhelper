@@ -2,7 +2,7 @@
 .templateEditor {
   width: 100%;
   max-width: 800px;
-  background: white;
+  background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
   padding: 0;
   border-radius: 8px;
   max-height: 90vh;
@@ -21,7 +21,6 @@
 
 .header h3 {
   margin: 0;
-  color: #333;
 }
 
 .closeButton {
@@ -29,7 +28,6 @@
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
-  color: #666;
   padding: 0;
   width: 30px;
   height: 30px;
@@ -41,7 +39,7 @@
 }
 
 .closeButton:hover {
-  background: #f0f0f0;
+  background: #4a4a4a;
 }
 
 .content {
@@ -59,7 +57,7 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  background: #fafafa;
+  background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
 }
 
 .image {
@@ -77,15 +75,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #666;
-  background: white;
+  background: rgba(236, 235, 235, 0.332);
   border: 1px solid #e0e0e0;
   border-radius: 4px;
 }
 
 .imageInfo {
   font-size: 0.8rem;
-  color: #666;
 }
 
 .imageInfo p {
@@ -110,7 +106,6 @@
 
 .field label {
   font-weight: 500;
-  color: #333;
   font-size: 0.9rem;
 }
 
@@ -151,7 +146,6 @@
 
 .selectedTag {
   background: #007bff;
-  color: white;
   padding: 0.25rem 0.5rem;
   border-radius: 12px;
   font-size: 0.8rem;
@@ -163,7 +157,6 @@
 .removeTag {
   background: none;
   border: none;
-  color: white;
   cursor: pointer;
   font-size: 0.9rem;
   padding: 0;
@@ -188,7 +181,6 @@
 .availableTag {
   background: #f8f9fa;
   border: 1px solid #e0e0e0;
-  color: #666;
   padding: 0.25rem 0.5rem;
   border-radius: 12px;
   font-size: 0.8rem;
@@ -215,7 +207,6 @@
 
 .customTag button {
   background: #28a745;
-  color: white;
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 4px;
@@ -239,7 +230,6 @@
 .matchingSettings legend {
   font-weight: 500;
   padding: 0 0.5rem;
-  color: #333;
 }
 
 .matchingSettings .field {
@@ -252,7 +242,6 @@
 
 .field small {
   font-size: 0.75rem;
-  color: #666;
   margin-top: 0.25rem;
   font-style: italic;
 }
@@ -279,7 +268,6 @@
 
 .cancelButton {
   background: #6c757d;
-  color: white;
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 4px;
@@ -294,7 +282,6 @@
 
 .submitButton {
   background: #007bff;
-  color: white;
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 4px;
