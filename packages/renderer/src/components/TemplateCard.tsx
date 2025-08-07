@@ -1,6 +1,8 @@
 // packages/renderer/src/components/TemplateCard.tsx
 import type { TemplateMetadata } from '@app/types';
 import styles from './TemplateCard.module.css';
+import { useEffect, useState } from 'react';
+import { getTemplate } from '@app/preload';
 
 interface TemplateCardProps {
   template: TemplateMetadata;
@@ -10,6 +12,46 @@ interface TemplateCardProps {
 }
 
 export function TemplateCard({ template, viewMode, onEdit, onDelete }: TemplateCardProps) {
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const [isLoadingThumbnail, setIsLoadingThumbnail] = useState(false);
+
+  useEffect(() => {
+    let isCancelled = false;
+    
+    const loadThumbnail = async () => {
+      if (template.thumbnailPath) {
+        setIsLoadingThumbnail(true);
+        try {
+          const fullTemplate = await getTemplate(template.id);
+          if (!isCancelled && fullTemplate?.thumbnailData) {
+            const blob = new Blob([fullTemplate.thumbnailData.buffer as BlobPart], { type: 'image/png' });
+            const url = URL.createObjectURL(blob);
+            setThumbnailUrl(url);
+            
+            return () => {
+              URL.revokeObjectURL(url);
+            };
+          }
+        } catch (error) {
+          console.warn('Failed to load thumbnail for template:', template.id, error);
+        } finally {
+          if (!isCancelled) {
+            setIsLoadingThumbnail(false);
+          }
+        }
+      }
+    };
+    
+    loadThumbnail();
+    
+    return () => {
+      isCancelled = true;
+      if (thumbnailUrl) {
+        URL.revokeObjectURL(thumbnailUrl);
+      }
+    };
+  }, [template.id, template.thumbnailPath, thumbnailUrl]);
+
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString();
   };
@@ -31,12 +73,16 @@ export function TemplateCard({ template, viewMode, onEdit, onDelete }: TemplateC
     <div className={`${styles.templateCard} ${styles[viewMode]}`}>
       {/* Template Preview */}
       <div className={styles.preview}>
-        {template.thumbnailPath ? (
+        {thumbnailUrl ? (
           <img 
-            src={`file://${template.thumbnailPath}`} 
+            src={thumbnailUrl} 
             alt={template.name}
             className={styles.thumbnail}
           />
+        ) : isLoadingThumbnail ? (
+          <div className={styles.noPreview}>
+            <span>Loading...</span>
+          </div>
         ) : (
           <div className={styles.noPreview}>
             <span>No Preview</span>
