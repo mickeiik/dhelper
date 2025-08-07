@@ -128,12 +128,3 @@ export class ScreenshotTool implements Tool {
   }
 }
 
-// Self-register types for autocomplete
-declare module '@app/tools' {
-  interface ToolRegistry {
-    'screenshot': {
-      input: ScreenshotToolInput;
-      output: ScreenshotToolOutput;
-    };
-  }
-}

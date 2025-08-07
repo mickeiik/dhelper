@@ -451,12 +451,3 @@ export class TemplateMatcherTool implements Tool {
   }
 }
 
-// Self-register types for autocomplete
-declare module '@app/tools' {
-  interface ToolRegistry {
-    'template-matcher': {
-      input: TemplateMatcherInput;
-      output: TemplateMatcherOutput;
-    };
-  }
-}

@@ -83,12 +83,3 @@ export class HelloWorldTool implements Tool {
   }
 }
 
-// Self-register types for autocomplete
-declare module '@app/tools' {
-  interface ToolRegistry {
-    'hello-world': {
-      input: HelloWorldToolInput;
-      output: HelloWorldToolOutput;
-    };
-  }
-}

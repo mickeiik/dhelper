@@ -230,12 +230,3 @@ export class ScreenRegionSelectorTool implements Tool {
   }
 }
 
-// Self-register types for autocomplete
-declare module '@app/tools' {
-  interface ToolRegistry {
-    'screen-region-selector': {
-      input: ScreenRegionSelectorInput;
-      output: ScreenRegionSelectorOutput;
-    };
-  }
-}

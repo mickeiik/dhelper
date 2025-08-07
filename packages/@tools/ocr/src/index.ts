@@ -76,12 +76,3 @@ export class TesseractOcrTool implements Tool {
   }
 }
 
-// Self-register types for autocomplete
-declare module '@app/tools' {
-  interface ToolRegistry {
-    'tesseract-ocr': {
-      input: TesseractOcrToolInput;
-      output: TesseractOcrToolOutput;
-    };
-  }
-}

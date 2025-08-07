@@ -2,10 +2,8 @@
   "name": "@app/tools",
   "type": "module",
   "scripts": {
-    "prebuild": "node scripts/generate-tool-imports.js",
     "build": "vite build",
-    "typecheck": "tsc --noEmit",
-    "generate-imports": "node scripts/generate-tool-imports.js"
+    "typecheck": "tsc --noEmit"
   },
   "exports": {
     ".": {

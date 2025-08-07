@@ -1,6 +1,5 @@
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { generateToolImports } from './tools/scripts/generate-tool-imports.js';
 
 const toolName = process.argv[2];
 if (!toolName) {
@@ -63,15 +62,6 @@ export class ${pascalCase(toolName)}Tool implements Tool {
   }
 }
 
-// Self-register types for autocomplete
-declare module '@app/tools' {
-  interface ToolRegistry {
-    '${toolName}': {
-      input: ${pascalCase(toolName)}Input;
-      output: ${pascalCase(toolName)}Output;
-    };
-  }
-}
 `;
 
 // Vite config template
@@ -174,14 +164,12 @@ await writeFile(join(toolDir, 'src', 'index.ts'), indexTs);
 await writeFile(join(toolDir, 'vite.config.js'), viteConfig);
 await writeFile(join(toolDir, 'tsconfig.json'), tsConfig);
 
-// Regenerate tool imports after creating new tool
 console.log(`✅ Created tool package: @tools/${toolName}`);
-console.log(`📝 Regenerating tool imports...`);
-await generateToolImports();
-
 console.log(`📁 Location: ${toolDir}`);
-console.log(`🎯 Auto-registered for TypeScript autocomplete`);
-console.log(`🔧 To use: npm run start (auto-discovery will pick it up)`);
+console.log(`⚠️  Remember to:`);
+console.log(`   1. Add tool to ToolRegistry in packages/tools/src/registry.ts`);
+console.log(`   2. Add tool import and registration in packages/tools/src/index.ts`);
+console.log(`🔧 To use: npm run start (after manual registration)`);
 
 function pascalCase(str) {
   return str.split('-').map(word =>
