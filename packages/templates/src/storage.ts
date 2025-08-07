@@ -1,4 +1,4 @@
-import type { Template, TemplateMetadata, CreateTemplateInput, UpdateTemplateInput } from './types.js';
+import type { Template, TemplateMetadata, CreateTemplateInput, UpdateTemplateInput } from '@app/types';
 import { writeFile, readFile, mkdir, unlink, readdir, stat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -53,7 +53,7 @@ export class FileTemplateStorage {
     return join(this.thumbnailsDir, `${templateId}_thumb.${extension}`);
   }
 
-  private async processImage(imageData: Buffer, templateId: string): Promise<{ width: number; height: number; thumbnailData: Buffer }> {
+  private async processImage(imageData: Uint8Array<ArrayBufferLike>, templateId: string): Promise<{ width: number; height: number; thumbnailData: Buffer }> {
     try {
       const image = sharp(imageData);
       const metadata = await image.metadata();

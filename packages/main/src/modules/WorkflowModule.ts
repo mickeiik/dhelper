@@ -42,14 +42,49 @@ export function initializeWorkflows() {
         //     .build();
 
         // return workflowRunner.run(exampleWorkflow);
+        // const exampleWorkflow = workflow('auto-example', 'Auto-Discovery Example')
+        //     .step('region-selector', 'screen-region-selector', {
+        //         "mode": "region",
+        //         "timeout": 15000
+        //     })
+        //     .step('click-test', 'click', {
+        //         "x": { "$ref": "{{previous:region-selector.x}}"},
+        //         "y": { "$ref": "{{previous:region-selector.x}}"}
+        //     })
+        //     .build();
         const exampleWorkflow = workflow('auto-example', 'Auto-Discovery Example')
-            .step('region-selector', 'screen-region-selector', {
-                "mode": "region",
-                "timeout": 15000
+            .step('region-selectora', 'screen-region-selector', {
+                "mode": "point",
+                "timeout": 15000,
+                cache: {
+                    enabled: true
+                }
             })
-            .step('click-test', 'click', {
-                "x": { "$ref": "{{previous:region-selector.x}}"},
-                "y": { "$ref": "{{previous:region-selector.x}}"}
+            .step('click-testa', 'click', {
+                "x": { "$ref": "{{previous:region-selector.x}}" },
+                "y": { "$ref": "{{previous:region-selector.y}}" }
+            })
+            .step('region-selectorz', 'screen-region-selector', {
+                "mode": "point",
+                "timeout": 15000,
+                "cache": {
+                    "enabled": true
+                }
+            })
+            .step('click-testz', 'click', {
+                "x": { "$ref": "{{previous:region-selector.x}}" },
+                "y": { "$ref": "{{previous:region-selector.y}}" }
+            })
+            .step('region-selectore', 'screen-region-selector', {
+                "mode": "point",
+                "timeout": 15000,
+                cache: {
+                    enabled: true
+                }
+            })
+            .step('click-teste', 'click', {
+                "x": { "$ref": "{{previous:region-selector.x}}" },
+                "y": { "$ref": "{{previous:region-selector.y}}" }
             })
             .build();
 
