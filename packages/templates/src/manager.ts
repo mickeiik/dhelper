@@ -5,7 +5,7 @@ import type {
   UpdateTemplateInput,
   TemplateMatchResult,
   TemplateMatchOptions 
-} from './types.js';
+} from '@app/types';
 import { FileTemplateStorage } from './storage.js';
 import { ToolManager } from '@app/tools';
 
@@ -159,8 +159,8 @@ export class TemplateManager {
     // Export template with image data as base64
     const exportData = {
       ...template,
-      imageData: template.imageData?.toString('base64'),
-      thumbnailData: template.thumbnailData?.toString('base64')
+      imageData: template.imageData?.toString(),
+      thumbnailData: template.thumbnailData?.toString()
     };
     
     return JSON.stringify(exportData, null, 2);

@@ -1,18 +1,4 @@
 import { getChromeMajorVersion } from '@app/electron-versions';
-import path from 'path';
-import fs from 'fs';
-
-function copyOverlayPlugin() {
-  return {
-    name: 'copy-html',
-    generateBundle() {
-      console.log('bundle')
-      const srcPath = path.resolve(__dirname, 'src/overlay.html');
-      const destPath = path.resolve(__dirname, 'dist/overlay.html');
-      fs.copyFileSync(srcPath, destPath);
-    }
-  };
-}
 
 export default /**
  * @type {import('vite').UserConfig}
@@ -32,8 +18,7 @@ export default /**
       rollupOptions: {
         output: {
           entryFileNames: '[name].js',
-        },
-        plugins: [copyOverlayPlugin()],
+        }
       },
       emptyOutDir: true,
       reportCompressedSize: false,
@@ -50,7 +35,7 @@ function handleHotReload() {
   let rendererWatchServer = null;
 
   return {
-    name: '@tools/screen-region-selector-tool-process-hot-reload',
+    name: 'screen-region-selector-tool-process-hot-reload',
 
     config(config, env) {
       if (env.mode !== 'development') {

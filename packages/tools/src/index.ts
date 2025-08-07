@@ -7,6 +7,7 @@ import { TesseractOcrTool } from '@tools/ocr';
 import { ScreenRegionSelectorTool } from '@tools/screen-region-selector';
 import { ScreenshotTool } from '@tools/screenshot';
 import { TemplateMatcherTool } from '@tools/template-matcher';
+import { ClickTool } from '@tools/click';
 
 interface ToolRegistration {
     tool: Tool;
@@ -16,15 +17,16 @@ interface ToolRegistration {
 export class ToolManager {
     private tools = new Map<string, ToolRegistration>();
     private overlayService?: OverlayService;
+    private templateManager?: any;
 
     async autoDiscoverTools() {
-        // Register all tools directly - no discovery needed
         const toolClasses = [
             HelloWorldTool,
             TesseractOcrTool,
             ScreenRegionSelectorTool,
             ScreenshotTool,
-            TemplateMatcherTool
+            TemplateMatcherTool,
+            ClickTool
         ];
 
         for (const ToolClass of toolClasses) {
@@ -59,13 +61,18 @@ export class ToolManager {
         this.overlayService = overlayService;
     }
 
+    setTemplateManager(templateManager: any) {
+        this.templateManager = templateManager;
+    }
+
     private async initializeTool(id: string) {
         const registration = this.tools.get(id);
         if (!registration || registration.initialized) return;
 
         try {
             const initContext = {
-                overlayService: this.overlayService
+                overlayService: this.overlayService,
+                templateManager: this.templateManager
             };
             await registration.tool.initialize(initContext);
             registration.initialized = true;

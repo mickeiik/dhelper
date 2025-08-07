@@ -49,9 +49,13 @@ class OverlayWindowImpl implements OverlayWindow {
       }
     };
 
-    ipcMain.on(`overlay-mouse-click-${this.id}`, handleMouseClick);
-    ipcMain.on(`overlay-mouse-move-${this.id}`, handleMouseMove);
-    ipcMain.on(`overlay-key-press-${this.id}`, handleKeyPress);
+    const clickChannel = `overlay-mouse-click-${this.id}`;
+    const moveChannel = `overlay-mouse-move-${this.id}`;
+    const keyChannel = `overlay-key-press-${this.id}`;
+    
+    ipcMain.on(clickChannel, handleMouseClick);
+    ipcMain.on(moveChannel, handleMouseMove);
+    ipcMain.on(keyChannel, handleKeyPress);
 
     // Clean up when window is closed
     this.window.on('closed', () => {
@@ -174,18 +178,48 @@ class OverlayServiceImpl implements OverlayService {
     // Force the window to the exact bounds after creation
     window.setBounds(bounds);
 
-    // Set click-through if requested
+    // Set mouse event handling based on clickThrough option
     if (options.clickThrough) {
       window.setIgnoreMouseEvents(true, { forward: true });
+    } else {
+      // Explicitly enable mouse events for interactive overlays
+      window.setIgnoreMouseEvents(false);
     }
 
-    // Load the overlay HTML
+    // Load the overlay HTML - try multiple possible paths
     const __dirname = fileURLToPath(new URL('.', import.meta.url));
-    const overlayHtmlPath = join(__dirname, '..', '..', 'overlay', 'overlay.html');
-    await window.loadFile(overlayHtmlPath);
-
-    // Send initialization data to overlay
-    window.webContents.once('dom-ready', () => {
+    const possiblePaths = [
+      join(__dirname, '..', '..', 'overlay', 'overlay.html'),  // From source
+      join(__dirname, '..', '..', '..', 'overlay', 'overlay.html'), // From dist
+      join(process.cwd(), 'packages', 'overlay', 'overlay.html'), // From project root
+    ];
+    
+    let overlayHtmlPath: string | null = null;
+    for (const path of possiblePaths) {
+      try {
+        // Check if file exists by trying to load it
+        await window.loadFile(path);
+        overlayHtmlPath = path;
+        break;
+      } catch (error) {
+      }
+    }
+    
+    if (!overlayHtmlPath) {
+      const error = new Error(`Failed to load overlay HTML from any of the tried paths: ${possiblePaths.join(', ')}`);
+      console.error(`[OverlayModule] Critical error:`, error);
+      throw error;
+    }    
+    
+    // Send initialization data to overlay - use did-finish-load instead of dom-ready
+    const initializeOverlay = () => {     
+      // Ensure window is focused and activated for interactive overlays
+      if (!options.clickThrough) {
+        window.focus();
+        window.moveTop();
+        window.setAlwaysOnTop(true, 'screen-saver'); // Higher priority
+      }
+      
       window.webContents.send('overlay-init', {
         id: overlayId,
         options: {
@@ -194,7 +228,26 @@ class OverlayServiceImpl implements OverlayService {
           timeout: options.timeout
         }
       });
-    });
+    };
+
+    // Try both events - whichever fires first
+    let initialized = false;
+    const safeInitialize = () => {
+      if (!initialized) {
+        initialized = true;
+        initializeOverlay();
+      }
+    };
+    
+    window.webContents.once('dom-ready', safeInitialize);
+    
+    // Fallback: force initialization after 500ms if no events fired
+    setTimeout(() => {
+      if (!initialized) {
+        console.log(`[OverlayModule] Force initializing overlay ${overlayId} after timeout`);
+        safeInitialize();
+      }
+    }, 500);
 
     // Handle auto-close timeout
     if (options.timeout && options.timeout > 0) {

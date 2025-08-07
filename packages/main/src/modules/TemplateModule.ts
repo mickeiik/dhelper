@@ -1,6 +1,7 @@
 // packages/main/src/modules/TemplateModule.ts
 import { ipcMain } from 'electron';
-import { TemplateManager, type CreateTemplateInput, type UpdateTemplateInput } from '@app/templates';
+import { TemplateManager } from '@app/templates';
+import type { CreateTemplateInput, UpdateTemplateInput } from '@app/types';
 import { getToolManager } from './ToolModule.js';
 
 const templateManager = new TemplateManager(undefined, getToolManager());

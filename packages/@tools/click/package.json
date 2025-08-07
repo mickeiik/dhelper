@@ -1,5 +1,5 @@
 {
-  "name": "@app/templates",
+  "name": "@tools/click",
   "type": "module",
   "scripts": {
     "build": "vite build",
@@ -12,10 +12,8 @@
     }
   },
   "dependencies": {
-    "@app/types": "*",
-    "@app/storage": "*",
-    "@app/tools": "*",
-    "sharp": "^0.33.5"
+    "@nut-tree-fork/nut-js": "^4.2.6",
+    "@app/types": "*"
   },
   "devDependencies": {
     "@app/electron-versions": "*",

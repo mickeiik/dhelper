@@ -1,21 +1,22 @@
-import type { Tool, ToolInputField, ToolInitContext, OverlayService, OverlayShape, OverlayText, OVERLAY_STYLES } from '@app/types';
-import type { TemplateMatchResult, TemplateMetadata } from '@app/templates';
+import type { Tool, ToolInputField, ToolInitContext, OverlayService, OverlayShape, OverlayText } from '@app/types';
+import { OVERLAY_STYLES } from '@app/types';
+import type { TemplateMatchResult, TemplateMetadata } from '@app/types';
 import cv from '@u4/opencv4nodejs';
 import screenshot from 'screenshot-desktop';
 
 export interface TemplateMatcherInput {
   // Screen image to search in (base64 data URL, file path, or buffer) - optional, will capture current screen if not provided
   screenImage?: string | Buffer;
-  
+
   // Template selection options
   templateIds?: string[]; // Specific template IDs to match against
   categories?: string[]; // Match templates in these categories
   tags?: string[]; // Match templates with these tags
-  
+
   // Matching options
   minConfidence?: number; // Minimum confidence threshold (0-1)
   maxResults?: number; // Maximum number of results to return
-  
+
   // Search region (optional)
   searchRegion?: {
     x: number;
@@ -36,7 +37,7 @@ export class TemplateMatcherTool implements Tool {
   name = 'Template Matcher Tool';
   description = 'Find template matches on the current screen or provided image using OpenCV template matching';
   category = 'Computer Vision';
-  
+
   private templateManager: any; // Will be injected during initialization
   private overlayService?: OverlayService;
 
@@ -155,15 +156,14 @@ export class TemplateMatcherTool implements Tool {
 
   async initialize(context: ToolInitContext) {
     // opencv4nodejs is ready to use immediately
-    
+
     // Create a new templateManager instance for this tool
     // The tool should be independent and not rely on the main process
-    const { TemplateManager } = await import('@app/templates');
-    this.templateManager = new TemplateManager();
-    
+    this.templateManager = context.templateManager;
+
     // Store overlay service for visual indicators
     this.overlayService = context.overlayService;
-    
+
     return;
   }
 
@@ -196,9 +196,9 @@ export class TemplateMatcherTool implements Tool {
           if (!templateMat) continue;
 
           const matches = this.matchTemplate(
-            screenMat, 
-            templateMat, 
-            template, 
+            screenMat,
+            templateMat,
+            template,
             minConfidence,
             input.searchRegion
           );
@@ -241,7 +241,7 @@ export class TemplateMatcherTool implements Tool {
   private loadImage(imageInput: string | Buffer): any | null {
     try {
       let imageMat: any = null;
-      
+
       if (typeof imageInput === 'string') {
         if (imageInput.startsWith('data:')) {
           // Base64 data URL
@@ -256,11 +256,11 @@ export class TemplateMatcherTool implements Tool {
         // Buffer
         imageMat = cv.imdecode(imageInput);
       }
-      
+
       if (imageMat) {
         const size = imageMat.sizes;
       }
-      
+
       return imageMat;
     } catch (error) {
       console.error('Failed to load image:', error);
@@ -290,7 +290,7 @@ export class TemplateMatcherTool implements Tool {
     }
 
     if (input.tags && input.tags.length > 0) {
-      templates = templates.filter((t: TemplateMetadata) => 
+      templates = templates.filter((t: TemplateMetadata) =>
         input.tags!.some(tag => t.tags.includes(tag))
       );
     }
@@ -341,11 +341,11 @@ export class TemplateMatcherTool implements Tool {
       const screenSize = searchMat.sizes;
       const screenWidth = screenSize[1];
       const screenHeight = screenSize[0];
-      
+
       const templateSize = templateMat.sizes;
       const templateWidth = templateSize[1];
       const templateHeight = templateSize[0];
-      
+
 
       // Perform template matching using normalized cross correlation
       const result = searchMat.matchTemplate(templateMat, cv.TM_CCOEFF_NORMED);
@@ -356,7 +356,7 @@ export class TemplateMatcherTool implements Tool {
 
       // Find min/max locations and values
       const minMaxLoc = result.minMaxLoc();
-            
+
       if (minMaxLoc.maxVal >= threshold) {
         // Found at least one good match - create the match result
         matches.push({
@@ -386,9 +386,6 @@ export class TemplateMatcherTool implements Tool {
     }
 
     try {
-      // Import OVERLAY_STYLES after we know overlay service is available
-      const { OVERLAY_STYLES } = await import('@app/types');
-      
       // Create overlay window
       const overlay = await this.overlayService.createOverlay({
         showInstructions: true,
@@ -403,7 +400,7 @@ export class TemplateMatcherTool implements Tool {
 
       results.forEach((result, index) => {
         const { location, template, confidence } = result;
-        
+
         // Create rectangle shape for each match
         shapes.push({
           id: `match-${index}`,

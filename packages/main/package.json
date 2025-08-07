@@ -12,9 +12,9 @@
     }
   },
   "dependencies": {
+    "@app/tools": "*",
     "@app/preload": "*",
     "@app/renderer": "*",
-    "@app/tools": "*",
     "@app/types": "*",
     "@app/workflows": "*",
     "@app/templates": "*",

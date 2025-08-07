@@ -173,21 +173,26 @@
 
                 // Send to main process if there are listeners
                 if (this.overlayId) {
-                    ipcRenderer.send(`overlay-mouse-move-${this.overlayId}`, {
-                        x: this.currentX,
-                        y: this.currentY
-                    });
+                    const channel = `overlay-mouse-move-${this.overlayId}`;
+                    const data = { x: this.currentX, y: this.currentY };
+                    ipcRenderer.send(channel, data);
+                } else {
+                    console.warn('[Overlay HTML] Mouse move event but no overlayId set');
                 }
             }
 
             onMouseDown(e) {
-                if (e.button !== 0) return; // Only left click
+              
+                if (e.button !== 0) {
+                    return; // Only left click
+                }
                 
                 if (this.overlayId) {
-                    ipcRenderer.send(`overlay-mouse-click-${this.overlayId}`, {
-                        x: e.clientX,
-                        y: e.clientY
-                    });
+                    const channel = `overlay-mouse-click-${this.overlayId}`;
+                    const data = { x: e.clientX, y: e.clientY };
+                    ipcRenderer.send(channel, data);
+                } else {
+                    console.error('[Overlay HTML] Mouse click event but no overlayId set!');
                 }
             }
 
@@ -195,7 +200,7 @@
                 // Handle click events if needed
             }
 
-            onKeyDown(e) {
+            onKeyDown(e) {               
                 if (e.key === 'Escape') {
                     // Close overlay
                     if (this.overlayId) {
@@ -204,6 +209,8 @@
                     window.close();
                 } else if (this.overlayId) {
                     ipcRenderer.send(`overlay-key-press-${this.overlayId}`, { key: e.key });
+                } else {
+                    console.warn('[Overlay HTML] Key event but no overlayId set');
                 }
             }
 

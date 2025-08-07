@@ -1,11 +1,10 @@
 // packages/@tools/screen-region-selector/src/index.ts
-import type { Tool, ToolInputField } from '@app/types';
-import { BrowserWindow, screen, ipcMain } from 'electron';
-import { join } from 'path';
-import { fileURLToPath } from 'url';
+import type { Tool, ToolInputField, ToolInitContext, OverlayService, OverlayShape, OverlayText, OverlayWindow, Point } from '@app/types';
+import { OVERLAY_STYLES } from '@app/types';
+import { screen } from 'electron';
 
 export interface ScreenRegionSelectorInput {
-  mode: 'point' | 'rectangle';
+  mode: 'point' | 'rectangle' | 'region'; // 'region' is alias for 'rectangle'
   timeout?: number; // Optional timeout in milliseconds (default: 30000)
 }
 
@@ -29,6 +28,13 @@ export class ScreenRegionSelectorTool implements Tool {
   description = 'Interactive tool to select a point or rectangle area on the screen';
   category = 'Input';
 
+  private overlayService?: OverlayService;
+  private selectionPromise?: {
+    resolve: (value: ScreenRegionSelectorOutput) => void;
+    reject: (error: Error) => void;
+    cleanup?: () => void;
+  };
+
   inputFields: ToolInputField[] = [
     {
       name: 'mode',
@@ -38,7 +44,8 @@ export class ScreenRegionSelectorTool implements Tool {
       defaultValue: 'rectangle',
       options: [
         { value: 'point', label: 'Point (single click)' },
-        { value: 'rectangle', label: 'Rectangle (drag area)' }
+        { value: 'rectangle', label: 'Rectangle (drag area)' },
+        { value: 'region', label: 'Region (drag area)' }
       ]
     },
     {
@@ -77,156 +84,260 @@ export class ScreenRegionSelectorTool implements Tool {
     ttl: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
   };
 
-  private overlayWindow: BrowserWindow | null = null;
-
-  async initialize() {
+  async initialize(context: ToolInitContext) {
+    this.overlayService = context.overlayService;
     return;
   }
 
-  async execute(input: ScreenRegionSelectorInput): Promise<ScreenRegionSelectorOutput> {
+  async execute(input: ScreenRegionSelectorInput): Promise<ScreenRegionSelectorOutput> {    
+    if (!this.overlayService) {
+      throw new Error('Overlay service not available for screen region selection');
+    }
+
     const timeout = input.timeout || 30000; // 30 second default timeout
+    
+    // Normalize mode - handle both 'rectangle' and 'region' for backward compatibility
+    const normalizedMode = (input.mode === 'region' ? 'rectangle' : input.mode) as 'point' | 'rectangle';
 
     try {
       const primaryDisplay = screen.getPrimaryDisplay();
       const totalBounds = primaryDisplay.bounds;
 
-      // Create overlay window
-      this.overlayWindow = this.createOverlayWindow(totalBounds);
+      // Create overlay for selection
+      const overlay = await this.overlayService.createOverlay({
+        showInstructions: true,
+        instructionText: normalizedMode === 'point' 
+          ? 'Click to select a point on screen. Press ESC to cancel.'
+          : 'Click and drag to select a rectangle area. Press ESC to cancel.',
+        timeout: timeout,
+        clickThrough: false // Allow interaction
+      });
 
-      // Setup selection handling
-      const result = await this.handleSelection(input.mode, timeout);
+      // Setup crosshairs for visual feedback
+      await this.setupCrosshairs(overlay);
+
+      // Show the overlay
+      await overlay.show();
+
+      // Add a small delay to ensure overlay is fully ready
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Handle selection based on mode
+      const result = await this.handleSelection(overlay, normalizedMode, timeout);
+
+      // Hide overlay
+      await overlay.hide();
 
       return result;
+
     } catch (error) {
-      throw new Error(`Screen region selection failed: ${error}`);
-    } finally {
-      this.cleanup();
+      throw new Error(`Screen region selection failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
-  private createOverlayWindow(bounds: { x: number, y: number, width: number, height: number }) {
-    const __dirname = fileURLToPath(new URL('.', import.meta.url));
+  private async setupCrosshairs(overlay: any): Promise<void> {
+    // Add crosshair indicators (will follow mouse via overlay service)
+    const shapes: OverlayShape[] = [];
+    const texts: OverlayText[] = [];
 
-    const window = new BrowserWindow({
-      x: bounds.x,
-      y: bounds.y,
-      width: bounds.width,
-      height: bounds.height,
-      transparent: true,
-      frame: false,
-      alwaysOnTop: true,
-      skipTaskbar: true,
-      resizable: false,
-      movable: false,
-      minimizable: false,
-      maximizable: false,
-      closable: true,
-      focusable: true,
-      webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: false,
+    // Initial crosshair setup - the overlay service should handle mouse tracking
+    shapes.push({
+      id: 'crosshair-horizontal',
+      type: 'rectangle',
+      bounds: { x: 0, y: 100, width: screen.getPrimaryDisplay().bounds.width, height: 2 },
+      style: {
+        color: '#00ff00',
+        lineWidth: 1,
+        fillColor: '#00ff00'
       }
     });
 
-    // Load the overlay HTML
-    window.loadFile(join(__dirname, 'overlay.html'));
+    shapes.push({
+      id: 'crosshair-vertical',
+      type: 'rectangle', 
+      bounds: { x: 100, y: 0, width: 2, height: screen.getPrimaryDisplay().bounds.height },
+      style: {
+        color: '#00ff00',
+        lineWidth: 1,
+        fillColor: '#00ff00'
+      }
+    });
 
-    return window;
+    await overlay.drawShapes(shapes);
   }
 
-  private async handleSelection(mode: 'point' | 'rectangle', timeout: number): Promise<ScreenRegionSelectorOutput> {
+  private async handleSelection(overlay: OverlayWindow, mode: 'point' | 'rectangle', timeout: number): Promise<ScreenRegionSelectorOutput> {
     return new Promise((resolve, reject) => {
-      if (!this.overlayWindow) {
-        reject(new Error('Overlay window not created'));
-        return;
-      }
+      this.selectionPromise = { resolve, reject };
 
       let timeoutId: NodeJS.Timeout;
-      const webContentsId = this.overlayWindow.webContents.id;
+      let isSelecting = false;
+      let startPoint: Point | null = null;
+      let currentMousePos: Point = { x: 0, y: 0 };
 
       // Setup timeout
       if (timeout > 0) {
         timeoutId = setTimeout(() => {
-          this.cleanup();
+          cleanup();
           reject(new Error('Selection timeout'));
         }, timeout);
       }
 
-      // Setup IPC handlers
-      const handleComplete = async (event: Electron.IpcMainEvent, data: any) => {
-        if (event.sender.id === webContentsId) {
-          if (timeoutId) clearTimeout(timeoutId);
-          ipcMain.removeListener('selection-complete', handleComplete);
-          ipcMain.removeListener('selection-cancelled', handleCancelled);
-
-          if (!this.overlayWindow) {
-            reject(new Error('Overlay window missing'));
-            return;
-          }
-
-          const dipCursorPos = screen.getCursorScreenPoint();
-
-          if ('width' in data && 'height' in data) {
-            const width = data.width;
-            const height = data.height;
-
-            const rect = screen.dipToScreenRect(null, {
-              height: height,
-              width: width,
-              x: dipCursorPos.x - width, // We are called when the rectangle selection ends
-              y: dipCursorPos.y - height
-            });
-
-            resolve({
-              top: rect.y,
-              left: rect.x,
-              width: rect.width,
-              height: rect.height
-            });
-          } else {
-            const screenPoint = screen.dipToScreenPoint(dipCursorPos)
-            // Point selection — just return the cursor position
-            resolve({ x: screenPoint.x, y: screenPoint.y });
-          }
+      // Cleanup function
+      const cleanup = () => {
+        if (timeoutId) clearTimeout(timeoutId);
+        if (this.selectionPromise) {
+          this.selectionPromise = undefined;
         }
       };
 
+      const updateVisuals = async () => {
+        try {
+          // Update crosshairs position
+          const shapes: OverlayShape[] = [
+            {
+              id: 'crosshair-horizontal',
+              type: 'rectangle',
+              bounds: { x: 0, y: currentMousePos.y - 1, width: screen.getPrimaryDisplay().bounds.width, height: 2 },
+              style: {
+                ...OVERLAY_STYLES.SUCCESS,
+                lineWidth: 1,
+                fillColor: '#00ff00'
+              }
+            },
+            {
+              id: 'crosshair-vertical',
+              type: 'rectangle',
+              bounds: { x: currentMousePos.x - 1, y: 0, width: 2, height: screen.getPrimaryDisplay().bounds.height },
+              style: {
+                ...OVERLAY_STYLES.SUCCESS,
+                lineWidth: 1,
+                fillColor: '#00ff00'
+              }
+            },
+            // Center dot
+            {
+              id: 'crosshair-center',
+              type: 'rectangle',
+              bounds: { x: currentMousePos.x - 3, y: currentMousePos.y - 3, width: 6, height: 6 },
+              style: {
+                ...OVERLAY_STYLES.SUCCESS,
+                lineWidth: 2,
+                fillColor: '#00ff00'
+              }
+            }
+          ];
 
-      const handleCancelled = (event: Electron.IpcMainEvent) => {
-        if (event.sender.id === webContentsId) {
-          if (timeoutId) clearTimeout(timeoutId);
-          ipcMain.removeListener('selection-complete', handleComplete);
-          ipcMain.removeListener('selection-cancelled', handleCancelled);
+          // If selecting rectangle, add selection rectangle
+          if (isSelecting && startPoint) {
+            const width = currentMousePos.x - startPoint.x;
+            const height = currentMousePos.y - startPoint.y;
+            
+            shapes.push({
+              id: 'selection-rect',
+              type: 'rectangle',
+              bounds: {
+                x: Math.min(startPoint.x, currentMousePos.x),
+                y: Math.min(startPoint.y, currentMousePos.y),
+                width: Math.abs(width),
+                height: Math.abs(height)
+              },
+              style: {
+                color: OVERLAY_STYLES.SELECTION.color,
+                lineWidth: OVERLAY_STYLES.SELECTION.lineWidth,
+                lineDash: [...OVERLAY_STYLES.SELECTION.lineDash],
+                fillColor: 'rgba(0, 255, 0, 0.1)'
+              },
+              label: `${Math.abs(width)} × ${Math.abs(height)}`,
+              labelPosition: 'center'
+            });
+          }
+
+          await overlay.drawShapes(shapes);
+
+          // Update coordinates text
+          const texts: OverlayText[] = [
+            {
+              id: 'coordinates',
+              text: `Mouse: (${currentMousePos.x}, ${currentMousePos.y})`,
+              position: { x: currentMousePos.x + 10, y: currentMousePos.y - 20 },
+              style: {
+                color: '#ffffff',
+                fontSize: 12,
+                fontFamily: 'Courier New, monospace'
+              },
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              padding: 6,
+              borderRadius: 4
+            }
+          ];
+
+          await overlay.drawText(texts);
+        } catch (error) {
+          console.error('Error updating visuals:', error);
+        }
+      };
+      
+      // Handle mouse click
+      overlay.onMouseClick((point: Point) => {
+        if (mode === 'point') {
+          // Point mode - immediate selection
+          cleanup();
+          resolve({ x: point.x, y: point.y });
+        } else if (mode === 'rectangle') {
+          if (!isSelecting) {
+            // Rectangle mode - start selection
+            isSelecting = true;
+            startPoint = { x: point.x, y: point.y };
+            updateVisuals();
+          } else {
+            // Rectangle mode - end selection
+            if (!startPoint) return;
+            
+            const width = Math.abs(point.x - startPoint.x);
+            const height = Math.abs(point.y - startPoint.y);
+
+            if (width < 5 || height < 5) {
+              // Too small, reset selection
+              isSelecting = false;
+              startPoint = null;
+              updateVisuals();
+              return;
+            }
+
+            const result = {
+              top: Math.min(startPoint.y, point.y),
+              left: Math.min(startPoint.x, point.x),
+              width: width,
+              height: height
+            };
+            cleanup();
+            resolve(result);
+          }
+        } else {
+          console.warn(`[Screen Region Selector] Unknown mode: ${mode}`);
+        }
+      });
+
+      // Handle mouse move
+      overlay.onMouseMove((point: Point) => {
+        currentMousePos = { x: point.x, y: point.y };
+        updateVisuals();
+      });
+
+      // Handle key press
+      overlay.onKeyPress((key: string) => {
+        if (key === 'Escape') {
+          cleanup();
           reject(new Error('Selection cancelled by user'));
         }
-      };
-
-      ipcMain.on('selection-complete', handleComplete);
-      ipcMain.on('selection-cancelled', handleCancelled);
-
-      // Setup overlay window communication
-      this.overlayWindow.webContents.once('dom-ready', () => {
-        if (!this.overlayWindow) return;
-
-        // Send mode to overlay
-        this.overlayWindow.webContents.send('selection-mode', mode);
       });
 
-      // Handle window close
-      this.overlayWindow.on('closed', () => {
-        if (timeoutId) clearTimeout(timeoutId);
-        ipcMain.removeListener('selection-complete', handleComplete);
-        ipcMain.removeListener('selection-cancelled', handleCancelled);
-        reject(new Error('Selection window closed'));
-      });
+      // Initial visual update
+      updateVisuals();
+
+      // Store cleanup for later use
+      this.selectionPromise!.cleanup = cleanup;
     });
   }
-
-  private cleanup() {
-    if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
-      this.overlayWindow.close();
-    }
-    this.overlayWindow = null;
-  }
 }
-

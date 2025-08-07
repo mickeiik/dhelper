@@ -20,6 +20,10 @@ export interface ToolRegistry {
     input: import('@tools/template-matcher').TemplateMatcherInput;
     output: import('@tools/template-matcher').TemplateMatcherOutput;
   };
+  'click': {
+    input: import('@tools/click').ClickToolInput;
+    output: import('@tools/click').ClickToolOutput;
+  };
 }
 
 export type ToolId = keyof ToolRegistry;

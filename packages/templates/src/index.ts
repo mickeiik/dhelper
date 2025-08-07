@@ -1,20 +1,5 @@
 import { TemplateManager } from './manager.js';
 
-// Re-export all types
-export type {
-  Template,
-  TemplateMetadata,
-  TemplateMatchResult,
-  TemplateMatchOptions,
-  CreateTemplateInput,
-  UpdateTemplateInput,
-  TemplateCategory
-} from './types.js';
-
-export { 
-  TEMPLATE_CATEGORIES 
-} from './types.js';
-
 // Re-export template registry types
 export type {
   TemplateRegistry,
@@ -25,8 +10,7 @@ export type {
 
 // Re-export storage classes
 export { 
-  FileTemplateStorage,
-  type TemplateStorageStats 
+  FileTemplateStorage
 } from './storage.js';
 
 // Re-export main manager class

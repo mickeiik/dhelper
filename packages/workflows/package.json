@@ -12,6 +12,7 @@
     }
   },
   "dependencies": {
+    "@app/tools": "*",
     "@app/types": "*",
     "@app/storage": "*",
     "@app/templates": "*"

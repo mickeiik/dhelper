@@ -25,6 +25,7 @@ export interface ToolMetadata {
 
 export interface ToolInitContext {
   overlayService?: import('./overlay.js').OverlayService;
+  templateManager?: any; // Template manager instance - avoid circular dependency by using any
 }
 
 export interface Tool extends ToolMetadata {

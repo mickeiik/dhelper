@@ -1,8 +1,8 @@
 import type { AppInitConfig } from './AppInitConfig.js';
 import { app, BrowserWindow } from 'electron';
-import { initializeTools } from './modules/ToolModule.js';
+import { getToolManager, initializeTools } from './modules/ToolModule.js';
 import { initializeWorkflows } from './modules/WorkflowModule.js';
-import { initializeTemplates } from './modules/TemplateModule.js';
+import { getTemplateManager, initializeTemplates } from './modules/TemplateModule.js';
 import { initializeOverlay } from './modules/OverlayModule.js';
 import { initializeSecurity } from './modules/security.js';
 import { initializeElectron } from './modules/electron.js';
@@ -24,4 +24,7 @@ export async function initApp(initConfig: AppInitConfig) {
   await initializeTools(overlayService);
   initializeWorkflows();
   initializeTemplates();
+
+  const templateManagerService = getTemplateManager()
+  getToolManager().setTemplateManager(templateManagerService)
 }
