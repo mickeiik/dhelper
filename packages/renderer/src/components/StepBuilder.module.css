@@ -1,24 +1,16 @@
-/* packages/renderer/src/components/StepBuilder.module.css */
 .stepBuilder {
-    background-color: #2a2a2a;
-    border-radius: 8px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
     padding: 20px;
     margin-bottom: 20px;
 }
 
-.error {
-    background-color: #4a1a1a;
-    border: 1px solid #8b4a4a;
-    color: #ff6b6b;
-    padding: 12px;
-    border-radius: 6px;
-    margin-bottom: 16px;
-}
 
 .section {
     margin-bottom: 24px;
     padding-bottom: 16px;
-    border-bottom: 1px solid #444;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .section:last-child {
@@ -26,11 +18,6 @@
     margin-bottom: 0;
 }
 
-.section h4 {
-    color: #fff;
-    margin: 0 0 16px 0;
-    font-size: 16px;
-}
 
 .sectionHeader {
     display: flex;
@@ -41,7 +28,7 @@
 
 .row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 16px;
 }
 
@@ -52,7 +39,7 @@
 }
 
 .field label {
-    color: #ccc;
+    color: var(--text-secondary);
     font-size: 14px;
     font-weight: 500;
 }
@@ -62,43 +49,27 @@
     gap: 8px;
 }
 
-.input,
-.select,
-.textarea {
-    padding: 10px;
-    border: 1px solid #555;
-    border-radius: 6px;
-    background-color: #333;
-    color: #fff;
-    font-family: inherit;
-    font-size: 14px;
-}
 
-.input:focus,
-.select:focus,
-.textarea:focus {
-    outline: none;
-    border-color: #646cff;
-}
 
 .generateButton {
     padding: 10px 12px;
-    background-color: #646cff;
-    color: white;
+    background-color: var(--accent-primary);
+    color: var(--text-inverse);
     border: none;
     border-radius: 6px;
     cursor: pointer;
     font-size: 14px;
+    transition: all 0.2s ease;
 }
 
 .generateButton:hover {
-    background-color: #5a63e8;
+    background-color: var(--accent-primary-hover);
 }
 
 .toolDescription {
-    background-color: #1a3a1a;
-    border: 1px solid #4a8b4a;
-    color: #4ade80;
+    background: rgba(74, 222, 128, 0.1);
+    border: 1px solid var(--accent-success);
+    color: var(--accent-success);
     padding: 12px;
     border-radius: 6px;
     font-size: 14px;
@@ -112,17 +83,18 @@
 
 .inputModeToggle button {
     padding: 8px 16px;
-    background-color: #444;
-    color: #ccc;
+    background-color: var(--bg-tertiary);
+    color: var(--text-secondary);
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     font-size: 12px;
+    transition: all 0.2s ease;
 }
 
 .inputModeToggle button.active {
-    background-color: #646cff;
-    color: white;
+    background-color: var(--accent-primary);
+    color: var(--text-inverse);
 }
 
 .examples {
@@ -132,8 +104,8 @@
 }
 
 .example {
-    background-color: #1a1a1a;
-    border: 1px solid #444;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
     border-radius: 6px;
     padding: 12px;
 }
@@ -145,38 +117,36 @@
     margin-bottom: 8px;
 }
 
-.exampleHeader strong {
-    color: #fff;
-}
 
 .applyButton {
     padding: 4px 12px;
-    background-color: #28a745;
-    color: white;
+    background-color: var(--accent-success);
+    color: var(--text-inverse);
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     font-size: 12px;
+    transition: all 0.2s ease;
 }
 
 .applyButton:hover {
-    background-color: #218838;
+    background-color: var(--accent-success-hover);
 }
 
 .exampleDescription {
-    color: #ccc;
+    color: var(--text-secondary);
     font-size: 14px;
     margin-bottom: 8px;
 }
 
 .exampleCode {
-    background-color: #0d1117;
-    border: 1px solid #333;
-    border-radius: 4px;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
     padding: 8px;
     font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
     font-size: 12px;
-    color: #ccc;
+    color: var(--text-secondary);
     overflow-x: auto;
 }
 
@@ -187,9 +157,9 @@
 }
 
 .noFields {
-    background-color: #3a3a1a;
-    border: 1px solid #8b8b4a;
-    color: #ffeb3b;
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid var(--accent-warning);
+    color: var(--accent-warning);
     padding: 12px;
     border-radius: 6px;
     font-size: 14px;
@@ -214,47 +184,48 @@
 }
 
 .fieldHeader label.required {
-    color: #fff;
+    color: var(--text-primary);
 }
 
 .fieldHeader label.required::after {
     content: ' *';
-    color: #ff6b6b;
+    color: var(--accent-danger);
 }
 
 .refButton {
     padding: 4px 8px;
-    background-color: #444;
-    color: #ccc;
+    background-color: var(--bg-tertiary);
+    color: var(--text-secondary);
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     font-size: 12px;
+    transition: all 0.2s ease;
 }
 
 .refButton.active {
-    background-color: #646cff;
-    color: white;
+    background-color: var(--accent-primary);
+    color: var(--text-inverse);
 }
 
 .fieldDescription {
-    color: #aaa;
+    color: var(--text-muted);
     font-size: 12px;
     font-style: italic;
 }
 
 .refInput {
-    border-color: #646cff !important;
-    background-color: #1a1a3a !important;
+    border-color: var(--accent-primary) !important;
+    background-color: rgba(100, 108, 255, 0.1) !important;
 }
 
 .fieldExample {
-    color: #888;
+    color: var(--text-muted);
     font-size: 12px;
 }
 
 .fieldExample code {
-    background-color: #333;
+    background-color: var(--bg-tertiary);
     padding: 2px 4px;
     border-radius: 3px;
     font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
@@ -265,7 +236,7 @@
     align-items: center;
     gap: 8px;
     cursor: pointer;
-    color: #ccc;
+    color: var(--text-secondary);
 }
 
 .checkbox input[type="checkbox"] {
@@ -282,9 +253,9 @@
 .cacheOptions {
     margin-top: 12px;
     padding: 12px;
-    background-color: #1a1a1a;
+    background-color: var(--bg-primary);
     border-radius: 6px;
-    border: 1px solid #444;
+    border: 1px solid var(--border-color);
 }
 
 .jsonInputs {
@@ -300,22 +271,23 @@
 }
 
 .jsonHeader span {
-    color: #ccc;
+    color: var(--text-secondary);
     font-weight: 500;
 }
 
 .defaultsButton {
     padding: 6px 12px;
-    background-color: #444;
-    color: #ccc;
+    background-color: var(--bg-tertiary);
+    color: var(--text-secondary);
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     font-size: 12px;
+    transition: all 0.2s ease;
 }
 
 .defaultsButton:hover {
-    background-color: #555;
+    background-color: var(--bg-secondary);
 }
 
 .jsonTextarea {
@@ -326,22 +298,17 @@
 }
 
 .fieldReference {
-    background-color: #1a1a1a;
-    border: 1px solid #444;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
     border-radius: 6px;
     padding: 12px;
 }
 
-.fieldReference h5 {
-    color: #fff;
-    margin: 0 0 8px 0;
-    font-size: 14px;
-}
 
 .fieldReference ul {
     margin: 0;
     padding-left: 16px;
-    color: #ccc;
+    color: var(--text-secondary);
 }
 
 .fieldReference li {
@@ -350,31 +317,36 @@
 }
 
 .fieldReference code {
-    background-color: #333;
+    background-color: var(--bg-tertiary);
     padding: 2px 4px;
     border-radius: 3px;
     font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
-    color: #4ade80;
+    color: var(--accent-success);
 }
 
 .submitButton {
     width: 100%;
     padding: 16px;
-    background-color: #28a745;
-    color: white;
+    background-color: var(--accent-success);
+    color: var(--text-inverse);
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     cursor: pointer;
     font-size: 16px;
     font-weight: 600;
     margin-top: 16px;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-sm);
 }
 
 .submitButton:hover:not(:disabled) {
-    background-color: #218838;
+    background-color: var(--accent-success-hover);
+    box-shadow: var(--shadow-md);
 }
 
 .submitButton:disabled {
-    background-color: #555;
+    background-color: var(--bg-tertiary);
+    color: var(--text-muted);
     cursor: not-allowed;
+    box-shadow: none;
 }

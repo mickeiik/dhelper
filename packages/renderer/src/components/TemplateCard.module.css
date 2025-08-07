@@ -1,23 +1,22 @@
-/* TemplateCard.module.css */
 .templateCard {
-  background: rgba(71, 70, 70, 0.575);
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
   padding: 1rem;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   overflow: hidden;
-  color: white;
+  box-shadow: var(--shadow-sm);
 }
 
 .templateCard:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
   transform: translateY(-1px);
 }
 
 .templateCard.grid {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: 360px;
 }
 
 .templateCard.list {
@@ -49,6 +48,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: var(--radius-sm);
 }
 
 .noPreview {
@@ -58,6 +58,9 @@
   align-items: center;
   justify-content: center;
   font-size: 0.8rem;
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
 }
 
 /* Info */
@@ -77,7 +80,7 @@
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -101,17 +104,20 @@
 }
 
 .editButton:hover {
-  background: #e3f2fd;
+  background-color: rgba(100, 108, 255, 0.1);
+  color: var(--accent-primary);
 }
 
 .deleteButton:hover {
-  background: #ffebee;
+  background-color: rgba(220, 53, 69, 0.1);
+  color: var(--accent-danger);
 }
 
 .description {
   margin: 0 0 0.75rem 0;
   font-size: 0.85rem;
   line-height: 1.4;
+  color: var(--text-secondary);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -167,7 +173,8 @@
 }
 
 .tag {
-  color: #1565c0;
+  background-color: rgba(100, 108, 255, 0.1);
+  color: var(--accent-primary);
   padding: 0.125rem 0.5rem;
   border-radius: 12px;
   font-size: 0.7rem;
@@ -177,24 +184,24 @@
 /* Confidence and Success Rate Colors */
 .confidenceHigh,
 .successRateHigh {
-  color: #28a745;
+  color: var(--accent-success);
   font-weight: 600;
 }
 
 .confidenceMedium,
 .successRateMedium {
-  color: #ffc107;
+  color: var(--accent-warning);
   font-weight: 600;
 }
 
 .confidenceLow,
 .successRateLow {
-  color: #dc3545;
+  color: var(--accent-danger);
   font-weight: 600;
 }
 
 .successRateUnknown {
-  color: #6c757d;
+  color: var(--text-muted);
   font-style: italic;
 }
 
@@ -202,7 +209,7 @@
 .dates {
   margin-top: 0.5rem;
   padding-top: 0.5rem;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--border-subtle);
 }
 
 .grid .dates {
@@ -241,8 +248,8 @@
 }
 
 .colorBadge {
-  background: #6c757d;
-  color: white;
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
   padding: 0.125rem 0.5rem;
   border-radius: 12px;
   font-size: 0.7rem;
@@ -251,11 +258,11 @@
 }
 
 .colorBadge.light {
-  background: #ffc107;
-  color: #212529;
+  background-color: var(--accent-warning);
+  color: var(--text-inverse);
 }
 
 .colorBadge.dark {
-  background: #343a40;
-  color: white;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
 }

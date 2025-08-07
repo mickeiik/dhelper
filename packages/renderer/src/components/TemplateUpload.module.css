@@ -1,7 +1,7 @@
 /* TemplateUpload.module.css */
 .templateUpload {
   width: 100%;
-  max-width: 600px;
+  /* max-width: 600px; */
   padding: 0;
   border-radius: 8px;
 }
@@ -31,6 +31,7 @@
   justify-content: center;
   border-radius: 50%;
   transition: background-color 0.2s;
+  align-items: end;
 }
 
 .closeButton:hover {
@@ -61,7 +62,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: black;
+  p {
+    color: black;
+  }
 }
 
 .dropZone:hover {
@@ -288,7 +291,7 @@
   padding-top: 1rem;
   border-top: 1px solid #e0e0e0;
 }
-
+/* 
 .cancelButton {
   background: white;
   border: none;
@@ -301,7 +304,7 @@
 
 .cancelButton:hover {
   background: #545b62;
-}
+} */
 
 .submitButton {
   background: #007bff;
