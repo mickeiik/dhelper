@@ -4,8 +4,10 @@ import type {
   CreateTemplateInput, 
   UpdateTemplateInput,
   TemplateMatchResult,
-  TemplateMatchOptions 
+  TemplateMatchOptions,
+  Result
 } from '@app/types';
+import { isSuccess } from '@app/types';
 import { SqliteTemplateStorage } from './storage.js';
 import { ToolManager } from '@app/tools';
 
@@ -24,32 +26,39 @@ export class TemplateManager {
   }
 
   async getTemplate(templateId: string): Promise<Template | null> {
-    return this.storage.get(templateId);
+    const result = await this.storage.get(templateId);
+    return isSuccess(result) ? result.data : null;
   }
 
   async getTemplateByName(templateName: string): Promise<Template | null> {
-    return this.storage.getByName(templateName);
+    const result = await this.storage.getByName(templateName);
+    return isSuccess(result) ? result.data : null;
   }
 
   async updateTemplate(input: UpdateTemplateInput): Promise<Template | null> {
-    return this.storage.update(input);
+    const result = await this.storage.update(input);
+    return isSuccess(result) ? result.data : null;
   }
 
   async deleteTemplate(templateId: string): Promise<boolean> {
-    return this.storage.delete(templateId);
+    const result = await this.storage.delete(templateId);
+    return isSuccess(result) ? result.data : false;
   }
 
   // Template discovery
   async listTemplates(): Promise<TemplateMetadata[]> {
-    return this.storage.list();
+    const result = await this.storage.list();
+    return isSuccess(result) ? result.data : [];
   }
 
   async getTemplatesByCategory(category: string): Promise<TemplateMetadata[]> {
-    return this.storage.listByCategory(category);
+    const result = await this.storage.listByCategory(category);
+    return isSuccess(result) ? result.data : [];
   }
 
   async getTemplatesByTags(tags: string[]): Promise<TemplateMetadata[]> {
-    return this.storage.listByTags(tags);
+    const result = await this.storage.listByTags(tags);
+    return isSuccess(result) ? result.data : [];
   }
 
   async searchTemplates(query: string): Promise<TemplateMetadata[]> {

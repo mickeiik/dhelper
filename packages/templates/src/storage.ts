@@ -1,4 +1,5 @@
-import type { Template, TemplateMetadata, CreateTemplateInput, UpdateTemplateInput } from '@app/types';
+import type { Template, TemplateMetadata, CreateTemplateInput, UpdateTemplateInput, Result } from '@app/types';
+import { StorageError, TemplateError, success, failure, tryAsync } from '@app/types';
 import { writeFile, readFile, mkdir, unlink, stat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -47,7 +48,7 @@ export class SqliteTemplateStorage {
   private execAsync(sql: string): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!this.db) {
-        reject(new Error('Database not initialized'));
+        reject(new StorageError('Database not initialized', 'exec'));
         return;
       }
       this.db.exec(sql, (err) => {
@@ -60,7 +61,7 @@ export class SqliteTemplateStorage {
   private runAsync(sql: string, params: any[] = []): Promise<any> {
     return new Promise((resolve, reject) => {
       if (!this.db) {
-        reject(new Error('Database not initialized'));
+        reject(new StorageError('Database not initialized', 'run'));
         return;
       }
       this.db.run(sql, params, function(err) {
@@ -73,7 +74,7 @@ export class SqliteTemplateStorage {
   private getAsync(sql: string, params: any[] = []): Promise<any> {
     return new Promise((resolve, reject) => {
       if (!this.db) {
-        reject(new Error('Database not initialized'));
+        reject(new StorageError('Database not initialized', 'get'));
         return;
       }
       this.db.get(sql, params, (err, row) => {
@@ -86,7 +87,7 @@ export class SqliteTemplateStorage {
   private allAsync(sql: string, params: any[] = []): Promise<any[]> {
     return new Promise((resolve, reject) => {
       if (!this.db) {
-        reject(new Error('Database not initialized'));
+        reject(new StorageError('Database not initialized', 'all'));
         return;
       }
       this.db.all(sql, params, (err, rows) => {
@@ -159,7 +160,7 @@ export class SqliteTemplateStorage {
       const metadata = await image.metadata();
       
       if (!metadata.width || !metadata.height) {
-        throw new Error('Could not determine image dimensions');
+        throw new TemplateError('Could not determine image dimensions', undefined, { metadata });
       }
 
       // Generate thumbnail (max 150x150, maintaining aspect ratio)
@@ -181,19 +182,13 @@ export class SqliteTemplateStorage {
         thumbnailData: thumbnailBuffer
       };
     } catch (error) {
-      console.error('Failed to process image:', error);
-      // Fallback to default dimensions
-      return {
-        width: 100,
-        height: 100,
-        thumbnailData: Buffer.alloc(0)
-      };
+      throw new TemplateError('Failed to process image', templateId, { originalError: error });
     }
   }
 
   async create(input: CreateTemplateInput): Promise<Template> {
     await this.initialize();
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) throw new StorageError('Database not initialized', 'create');
 
     const templateId = randomUUID();
     const now = new Date();
@@ -263,20 +258,22 @@ export class SqliteTemplateStorage {
 
       return template;
     } catch (error) {
-      console.error(`Failed to create template:`, error);
-      throw error;
+      if (error instanceof TemplateError || error instanceof StorageError) {
+        throw error;
+      }
+      throw new TemplateError('Failed to create template', templateId, { originalError: error });
     }
   }
 
-  async get(templateId: string): Promise<Template | null> {
+  async get(templateId: string): Promise<Result<Template, TemplateError>> {
     await this.initialize();
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) return failure(new StorageError('Database not initialized', 'get'));
 
-    try {
+    return tryAsync(async () => {
       const row = await this.getAsync('SELECT * FROM templates WHERE id = ?', [templateId]);
       
       if (!row) {
-        return null;
+        throw new TemplateError('Template not found', templateId);
       }
 
       // Parse database row into metadata
@@ -322,36 +319,34 @@ export class SqliteTemplateStorage {
       };
 
       return template;
-    } catch (error) {
-      console.error(`Failed to load template ${templateId}:`, error);
-      return null;
-    }
+    }, (error) => new TemplateError('Failed to load template', templateId, { originalError: error }));
   }
 
-  async getByName(templateName: string): Promise<Template | null> {
+  async getByName(templateName: string): Promise<Result<Template, TemplateError>> {
     await this.initialize();
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) return failure(new StorageError('Database not initialized', 'getByName'));
 
-    try {
+    return tryAsync(async () => {
       const row = await this.getAsync('SELECT * FROM templates WHERE name = ?', [templateName]);
       
       if (!row) {
-        return null;
+        throw new TemplateError('Template not found', undefined, { templateName });
       }
 
       // Use the existing get method to load full template data
-      return await this.get(row.id);
-    } catch (error) {
-      console.error(`Failed to get template by name ${templateName}:`, error);
-      return null;
-    }
+      const result = await this.get(row.id);
+      if (!result.success) {
+        throw result.error;
+      }
+      return result.data;
+    }, (error) => new TemplateError('Failed to get template by name', undefined, { templateName, originalError: error }));
   }
 
-  async update(input: UpdateTemplateInput): Promise<Template | null> {
+  async update(input: UpdateTemplateInput): Promise<Result<Template, TemplateError>> {
     await this.initialize();
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) return failure(new StorageError('Database not initialized', 'update'));
 
-    try {
+    return tryAsync(async () => {
       const updateSql = `
         UPDATE templates SET 
           name = COALESCE(?, name),
@@ -380,26 +375,27 @@ export class SqliteTemplateStorage {
       ]);
 
       if (result.changes === 0) {
-        return null;
+        throw new TemplateError('Template not found', input.id);
       }
 
       // Return the updated template
-      return await this.get(input.id);
-    } catch (error) {
-      console.error(`Failed to update template ${input.id}:`, error);
-      throw error;
-    }
+      const getResult = await this.get(input.id);
+      if (!getResult.success) {
+        throw getResult.error;
+      }
+      return getResult.data;
+    }, (error) => new TemplateError('Failed to update template', input.id, { originalError: error }));
   }
 
-  async delete(templateId: string): Promise<boolean> {
+  async delete(templateId: string): Promise<Result<boolean, TemplateError>> {
     await this.initialize();
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) return failure(new StorageError('Database not initialized', 'delete'));
 
-    try {
+    return tryAsync(async () => {
       const result = await this.runAsync('DELETE FROM templates WHERE id = ?', [templateId]);
 
       if (result.changes === 0) {
-        return false;
+        throw new TemplateError('Template not found', templateId);
       }
 
       // Delete image files
@@ -415,17 +411,14 @@ export class SqliteTemplateStorage {
       }
 
       return true;
-    } catch (error) {
-      console.error(`Failed to delete template ${templateId}:`, error);
-      return false;
-    }
+    }, (error) => new TemplateError('Failed to delete template', templateId, { originalError: error }));
   }
 
-  async list(): Promise<TemplateMetadata[]> {
+  async list(): Promise<Result<TemplateMetadata[], StorageError>> {
     await this.initialize();
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) return failure(new StorageError('Database not initialized', 'list'));
 
-    try {
+    return tryAsync(async () => {
       const rows = await this.allAsync('SELECT * FROM templates ORDER BY updated_at DESC');
 
       return rows.map(row => ({
@@ -448,17 +441,14 @@ export class SqliteTemplateStorage {
         imagePath: row.image_path,
         thumbnailPath: row.thumbnail_path
       }));
-    } catch (error) {
-      console.error('Failed to list templates:', error);
-      return [];
-    }
+    }, (error) => new StorageError('Failed to list templates', 'list', { originalError: error }));
   }
 
-  async listByCategory(category: string): Promise<TemplateMetadata[]> {
+  async listByCategory(category: string): Promise<Result<TemplateMetadata[], StorageError>> {
     await this.initialize();
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) return failure(new StorageError('Database not initialized', 'listByCategory'));
 
-    try {
+    return tryAsync(async () => {
       const rows = await this.allAsync('SELECT * FROM templates WHERE category = ? ORDER BY updated_at DESC', [category]);
 
       return rows.map(row => ({
@@ -481,17 +471,14 @@ export class SqliteTemplateStorage {
         imagePath: row.image_path,
         thumbnailPath: row.thumbnail_path
       }));
-    } catch (error) {
-      console.error(`Failed to list templates by category ${category}:`, error);
-      return [];
-    }
+    }, (error) => new StorageError('Failed to list templates by category', 'listByCategory', { category, originalError: error }));
   }
 
-  async listByTags(tags: string[]): Promise<TemplateMetadata[]> {
+  async listByTags(tags: string[]): Promise<Result<TemplateMetadata[], StorageError>> {
     await this.initialize();
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) return failure(new StorageError('Database not initialized', 'listByTags'));
 
-    try {
+    return tryAsync(async () => {
       // Build query to match any of the provided tags
       const placeholders = tags.map(() => 'tags LIKE ?').join(' OR ');
       const searchTags = tags.map(tag => `%"${tag}"%`);
@@ -517,10 +504,7 @@ export class SqliteTemplateStorage {
         imagePath: row.image_path,
         thumbnailPath: row.thumbnail_path
       }));
-    } catch (error) {
-      console.error(`Failed to list templates by tags:`, error);
-      return [];
-    }
+    }, (error) => new StorageError('Failed to list templates by tags', 'listByTags', { tags, originalError: error }));
   }
 
   async exists(templateId: string): Promise<boolean> {
@@ -570,7 +554,7 @@ export class SqliteTemplateStorage {
         templateId
       ]);
     } catch (error) {
-      console.error(`Failed to increment usage for template ${templateId}:`, error);
+      throw new TemplateError('Failed to increment usage', templateId, { originalError: error });
     }
   }
 
@@ -593,7 +577,11 @@ export class SqliteTemplateStorage {
       const dateResult = await this.getAsync('SELECT MIN(created_at) as oldest, MAX(updated_at) as newest FROM templates');
 
       // Calculate file sizes
-      const templates = await this.list();
+      const templatesResult = await this.list();
+      if (!templatesResult.success) {
+        throw templatesResult.error;
+      }
+      const templates = templatesResult.data;
       let totalSize = 0;
       let imageSize = 0;
 
@@ -650,7 +638,11 @@ export class SqliteTemplateStorage {
 
     try {
       // Get all template IDs for file cleanup
-      const templates = await this.list();
+      const templatesResult = await this.list();
+      if (!templatesResult.success) {
+        throw templatesResult.error;
+      }
+      const templates = templatesResult.data;
       
       // Clear database
       await this.runAsync('DELETE FROM templates');

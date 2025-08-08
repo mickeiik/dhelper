@@ -7,6 +7,7 @@ import type {
   StepResult,
   WorkflowInputs,
 } from '@app/types';
+import { WorkflowError, ToolExecutionError } from '@app/types';
 import { WorkflowEventEmitter } from './events.js';
 import { WorkflowCacheManager } from './cache.js';
 import { WorkflowStorage } from '@app/storage';
@@ -65,7 +66,7 @@ export class WorkflowRunner extends WorkflowEventEmitter {
           const errorStrategy = step.onError || 'stop';
 
           if (errorStrategy === 'stop') {
-            throw new Error(`Step ${step.id} failed: ${stepResult.error}`);
+            throw new WorkflowError(`Step ${step.id} failed: ${stepResult.error}`, workflow.id, { stepId: step.id, stepResult });
           }
         }
       }
@@ -179,12 +180,19 @@ export class WorkflowRunner extends WorkflowEventEmitter {
 
           // Cache the result if caching is enabled
           if (step.cache?.enabled && cacheKey) {
-            const tool = await this.getToolInstance(step.toolId);
-            const toolCacheConfig = tool?.cacheConfig;
+            try {
+              const tool = await this.getToolInstance(step.toolId);
+              const toolCacheConfig = tool?.cacheConfig;
 
-            await this.cacheManager.set(workflowId, cacheKey, result, {
-              ttl: step.cache.ttl || toolCacheConfig?.ttl
-            });
+              await this.cacheManager.set(workflowId, cacheKey, result, {
+                ttl: step.cache.ttl || toolCacheConfig?.ttl
+              });
+            } catch (error) {
+              // If tool instance can't be retrieved, use step cache config only
+              await this.cacheManager.set(workflowId, cacheKey, result, {
+                ttl: step.cache.ttl
+              });
+            }
           }
 
           this.emit('step-completed', {
@@ -247,7 +255,7 @@ export class WorkflowRunner extends WorkflowEventEmitter {
       }
     }
 
-    throw new Error('This should never be reached');
+    throw new WorkflowError('Workflow execution reached unreachable code', workflowId, { step });
   }
 
   private async getToolInstance(toolId: string): Promise<any> {
@@ -255,8 +263,8 @@ export class WorkflowRunner extends WorkflowEventEmitter {
     // In a real implementation, you might want to expose this through ToolManager
     try {
       return this.toolManager['tools']?.get(toolId)?.tool;
-    } catch {
-      return null;
+    } catch (error) {
+      throw new ToolExecutionError('Failed to get tool instance', toolId, { originalError: error });
     }
   }
 
@@ -281,8 +289,11 @@ export class WorkflowRunner extends WorkflowEventEmitter {
       try {
         inputs = resolveSemanticReferences(inputs, context);
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown semantic reference error';
-        throw new Error(`Semantic reference resolution failed: ${errorMessage}`);
+        throw new WorkflowError('Semantic reference resolution failed', workflow?.id, { 
+          stepIndex, 
+          originalError: error,
+          inputs 
+        });
       }
     }
 
@@ -325,11 +336,11 @@ export class WorkflowRunner extends WorkflowEventEmitter {
 
     const stepResult = previousResults[stepId];
     if (!stepResult) {
-      throw new Error(`Referenced step "${stepId}" not found or not yet executed`);
+      throw new WorkflowError(`Referenced step "${stepId}" not found or not yet executed`, undefined, { stepId, availableSteps: Object.keys(previousResults) });
     }
 
     if (!stepResult.success) {
-      throw new Error(`Referenced step "${stepId}" failed: ${stepResult.error}`);
+      throw new WorkflowError(`Referenced step "${stepId}" failed: ${stepResult.error}`, undefined, { stepId, stepResult });
     }
 
     // If no path specified, return the entire result
@@ -341,11 +352,11 @@ export class WorkflowRunner extends WorkflowEventEmitter {
     let current = stepResult.result;
     for (let i = 1; i < parts.length; i++) {
       if (current === null || current === undefined) {
-        throw new Error(`Cannot access property "${parts[i]}" on null/undefined value from step "${stepId}"`);
+        throw new WorkflowError(`Cannot access property "${parts[i]}" on null/undefined value from step "${stepId}"`, undefined, { stepId, property: parts[i], value: current });
       }
 
       if (typeof current !== 'object') {
-        throw new Error(`Cannot access property "${parts[i]}" on non-object value from step "${stepId}"`);
+        throw new WorkflowError(`Cannot access property "${parts[i]}" on non-object value from step "${stepId}"`, undefined, { stepId, property: parts[i], value: current, valueType: typeof current });
       }
 
       current = current[parts[i]];

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { runWorkflow, runCustomWorkflow } from '@app/preload';
+import { runCustomWorkflow, runExampleWorkflow } from '@app/preload';
 import type { Workflow, WorkflowResult } from '@app/types';
 
 export function useWorkflowExecution() {
@@ -15,7 +15,7 @@ export function useWorkflowExecution() {
       setError(null);
       setLastResult(null);
 
-      const result = await runWorkflow('my-workflow-id');
+      const result = await runExampleWorkflow();
       setLastResult(result);
 
       if (!result.success) {

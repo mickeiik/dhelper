@@ -1,5 +1,5 @@
 import type { Tool, ToolInputField, ToolInitContext, OverlayService, OverlayShape, OverlayText } from '@app/types';
-import { OVERLAY_STYLES } from '@app/types';
+import { OVERLAY_STYLES, ToolExecutionError } from '@app/types';
 import type { TemplateMatchResult, TemplateMetadata } from '@app/types';
 import screenshot from 'screenshot-desktop';
 
@@ -206,7 +206,7 @@ export class TemplateMatcherTool implements Tool {
       const screenMat = this.loadImage(screenImage);
 
       if (!screenMat) {
-        throw new Error('Failed to load screen image');
+        throw new ToolExecutionError('Failed to load screen image', 'template-matcher', { screenImage: typeof screenImage });
       }
 
       // Get candidate templates
@@ -215,10 +215,10 @@ export class TemplateMatcherTool implements Tool {
       
       if (templates.length === 0) {
         if (input.templateIds && Array.isArray(input.templateIds) && input.templateIds.length > 0) {
-          throw new Error(`No templates found for IDs: ${input.templateIds.join(', ')}`);
+          throw new ToolExecutionError(`No templates found for IDs: ${input.templateIds.join(', ')}`, 'template-matcher', { templateIds: input.templateIds });
         }
         if (input.templateNames && Array.isArray(input.templateNames) && input.templateNames.length > 0) {
-          throw new Error(`No templates found for names: ${input.templateNames.join(', ')}`);
+          throw new ToolExecutionError(`No templates found for names: ${input.templateNames.join(', ')}`, 'template-matcher', { templateNames: input.templateNames });
         }
         console.warn('[Template Matcher] No candidate templates found with current filters');
         return [];
@@ -264,7 +264,7 @@ export class TemplateMatcherTool implements Tool {
       return limitedResults;
 
     } catch (error) {
-      throw new Error(`Template matching failed: ${error}`);
+      throw new ToolExecutionError(`Template matching failed: ${error}`, 'template-matcher', { originalError: error, input });
     }
   }
 
@@ -273,7 +273,7 @@ export class TemplateMatcherTool implements Tool {
       const imgBuffer = await screenshot({ format: 'png' });
       return imgBuffer;
     } catch (error) {
-      throw new Error(`Failed to capture screen: ${error}`);
+      throw new ToolExecutionError(`Failed to capture screen: ${error}`, 'template-matcher', { originalError: error });
     }
   }
 

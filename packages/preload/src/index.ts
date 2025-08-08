@@ -14,6 +14,7 @@ export { getTools, runTool };
 
 import {
   runWorkflow,
+  runExampleWorkflow,
   runCustomWorkflow,
   onWorkflowProgress,
   clearWorkflowCache,
@@ -36,6 +37,7 @@ import {
 
 export {
   runWorkflow,
+  runExampleWorkflow,
   runCustomWorkflow,
   onWorkflowProgress,
   clearWorkflowCache,

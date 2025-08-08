@@ -8,6 +8,10 @@ export async function runWorkflow(id: string) {
     return await ipcRenderer.invoke('run-workflow', id)
 }
 
+export async function runExampleWorkflow() {
+    return await ipcRenderer.invoke('run-example-workflow')
+}
+
 export async function runCustomWorkflow(workflow: any) {
     return await ipcRenderer.invoke('run-custom-workflow', workflow)
 }

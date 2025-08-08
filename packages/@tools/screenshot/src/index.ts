@@ -1,9 +1,7 @@
 // packages/@tools/screenshot/src/index.ts
 import type { Tool, ToolInputField } from '@app/types';
+import { ToolExecutionError } from '@app/types';
 import { nativeImage } from 'electron';
-import * as fs from 'fs';
-import * as path from 'path';
-import { fileURLToPath } from 'url';
 import screenshot from 'screenshot-desktop';
 
 export type ScreenshotToolInput = {
@@ -123,7 +121,10 @@ export class ScreenshotTool implements Tool {
       return croppedImage.toDataURL();
 
     } catch (error) {
-      throw new Error(`Failed to capture screenshot: ${error}`);
+      throw new ToolExecutionError(`Failed to capture screenshot: ${error}`, 'screenshot', { 
+        originalError: error, 
+        region: { left: input.left, top: input.top, width: input.width, height: input.height }
+      });
     }
   }
 }

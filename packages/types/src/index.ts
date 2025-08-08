@@ -58,3 +58,33 @@ export {
 export type {
   DeepPartial
 } from './common.js';
+
+// Error handling types
+export type {
+  Result
+} from './errors.js';
+
+export {
+  DHelperError,
+  ToolExecutionError,
+  WorkflowError,
+  StorageError,
+  TemplateError,
+  success,
+  failure,
+  tryCatch,
+  tryAsync,
+  isSuccess,
+  isFailure
+} from './errors.js';
+
+// Error handling utilities
+export {
+  ErrorLogger,
+  LogLevel,
+  formatErrorMessage,
+  isNotFoundError,
+  isConnectionError,
+  isPermissionError,
+  createLogger
+} from './error-utils.js';

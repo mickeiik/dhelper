@@ -1,5 +1,6 @@
 // packages/tools/src/index.ts
 import type { Tool, ToolMetadata, OverlayService } from '@app/types';
+import { ToolExecutionError, ErrorLogger } from '@app/types';
 
 // Direct imports - no auto-discovery needed
 import { HelloWorldTool } from '@tools/hello-world';
@@ -18,6 +19,7 @@ export class ToolManager {
     private tools = new Map<string, ToolRegistration>();
     private overlayService?: OverlayService;
     private templateManager?: any;
+    private logger = new ErrorLogger('ToolManager');
 
     async autoDiscoverTools() {
         const toolClasses = [
@@ -41,7 +43,7 @@ export class ToolManager {
     async runTool(id: string, inputs: any) {
         const registration = this.tools.get(id);
         if (!registration) {
-            throw new Error(`Tool with id "${id}" not found`);
+            throw new ToolExecutionError(`Tool with id "${id}" not found`, id);
         }
 
         try {
@@ -52,8 +54,9 @@ export class ToolManager {
 
             return await registration.tool.execute(inputs);
         } catch (error) {
-            console.error(`Tool "${id}" execution failed:`, error);
-            throw error;
+            const toolError = error instanceof ToolExecutionError ? error : new ToolExecutionError(`Tool "${id}" execution failed`, id, { originalError: error, inputs });
+            this.logger.logError(toolError);
+            throw toolError;
         }
     }
 
@@ -77,8 +80,9 @@ export class ToolManager {
             await registration.tool.initialize(initContext);
             registration.initialized = true;
         } catch (error) {
-            console.error(`Failed to initialize tool "${id}":`, error);
-            throw error;
+            const toolError = new ToolExecutionError(`Failed to initialize tool "${id}"`, id, { originalError: error });
+            this.logger.logError(toolError);
+            throw toolError;
         }
     }
 

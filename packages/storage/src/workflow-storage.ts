@@ -1,4 +1,5 @@
-import type { Workflow } from '@app/types';
+import type { Workflow, Result } from '@app/types';
+import { StorageError, WorkflowError, success, failure, tryAsync } from '@app/types';
 import type { StoredWorkflow, WorkflowListItem, SaveWorkflowOptions, StorageStats } from './types.js';
 import { writeFile, readFile, mkdir, unlink, readdir, stat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
@@ -20,8 +21,7 @@ export class WorkflowStorage {
             await mkdir(this.storageDir, { recursive: true });
             this.initialized = true;
         } catch (error) {
-            console.error('Failed to initialize storage:', error);
-            throw error;
+            throw new StorageError('Failed to initialize workflow storage', 'initialize', { originalError: error });
         }
     }
 
@@ -37,7 +37,8 @@ export class WorkflowStorage {
         const now = new Date();
 
         // Check if workflow already exists to preserve creation date
-        const existing = await this.loadStoredWorkflow(workflow.id);
+        const existingResult = await this.loadStoredWorkflow(workflow.id);
+        const existing = existingResult.success ? existingResult.data : null;
         const createdAt = existing?.metadata.createdAt || now;
 
         const storedWorkflow: StoredWorkflow = {
@@ -61,24 +62,29 @@ export class WorkflowStorage {
             const data = JSON.stringify(storedWorkflow, null, 2);
             await writeFile(filePath, data, 'utf-8');
         } catch (error) {
-            console.error(`Failed to save workflow ${workflow.id}:`, error);
-            throw error;
+            throw new WorkflowError(`Failed to save workflow ${workflow.id}`, workflow.id, { originalError: error });
         }
     }
 
-    async loadWorkflow(id: string): Promise<Workflow | null> {
-        const stored = await this.loadStoredWorkflow(id);
-        return stored?.workflow || null;
+    async loadWorkflow(id: string): Promise<Result<Workflow, WorkflowError>> {
+        const storedResult = await this.loadStoredWorkflow(id);
+        if (!storedResult.success) {
+            return failure(storedResult.error);
+        }
+        if (!storedResult.data) {
+            return failure(new WorkflowError('Workflow not found', id));
+        }
+        return success(storedResult.data.workflow);
     }
 
-    async loadStoredWorkflow(id: string): Promise<StoredWorkflow | null> {
+    async loadStoredWorkflow(id: string): Promise<Result<StoredWorkflow, WorkflowError>> {
         await this.initialize();
 
-        try {
+        return tryAsync(async () => {
             const filePath = this.getFilePath(id);
 
             if (!existsSync(filePath)) {
-                return null;
+                throw new WorkflowError('Workflow file not found', id);
             }
 
             const data = await readFile(filePath, 'utf-8');
@@ -89,34 +95,28 @@ export class WorkflowStorage {
             stored.metadata.updatedAt = new Date(stored.metadata.updatedAt);
 
             return stored;
-        } catch (error) {
-            console.error(`Failed to load workflow ${id}:`, error);
-            return null;
-        }
+        }, (error) => new WorkflowError(`Failed to load workflow ${id}`, id, { originalError: error }));
     }
 
-    async deleteWorkflow(id: string): Promise<boolean> {
+    async deleteWorkflow(id: string): Promise<Result<boolean, WorkflowError>> {
         await this.initialize();
 
-        try {
+        return tryAsync(async () => {
             const filePath = this.getFilePath(id);
 
             if (!existsSync(filePath)) {
-                return false;
+                throw new WorkflowError('Workflow not found', id);
             }
 
             await unlink(filePath);
             return true;
-        } catch (error) {
-            console.error(`Failed to delete workflow ${id}:`, error);
-            return false;
-        }
+        }, (error) => new WorkflowError(`Failed to delete workflow ${id}`, id, { originalError: error }));
     }
 
-    async listWorkflows(): Promise<WorkflowListItem[]> {
+    async listWorkflows(): Promise<Result<WorkflowListItem[], StorageError>> {
         await this.initialize();
 
-        try {
+        return tryAsync(async () => {
             if (!existsSync(this.storageDir)) {
                 return [];
             }
@@ -129,9 +129,10 @@ export class WorkflowStorage {
             for (const file of workflowFiles) {
                 try {
                     const workflowId = file.replace('.json', '');
-                    const stored = await this.loadStoredWorkflow(workflowId);
+                    const storedResult = await this.loadStoredWorkflow(workflowId);
 
-                    if (stored) {
+                    if (storedResult.success && storedResult.data) {
+                        const stored = storedResult.data;
                         workflows.push({
                             id: stored.workflow.id,
                             name: stored.workflow.name,
@@ -143,7 +144,9 @@ export class WorkflowStorage {
                             tags: stored.metadata.tags
                         });
                     }
+                    // Skip files that can't be loaded rather than failing entire operation
                 } catch (error) {
+                    // Skip individual file errors but log them
                     console.warn(`Failed to load workflow info from ${file}:`, error);
                 }
             }
@@ -152,10 +155,7 @@ export class WorkflowStorage {
             workflows.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 
             return workflows;
-        } catch (error) {
-            console.error('Failed to list workflows:', error);
-            return [];
-        }
+        }, (error) => new StorageError('Failed to list workflows', 'list', { originalError: error }));
     }
 
     async workflowExists(id: string): Promise<boolean> {
@@ -167,7 +167,11 @@ export class WorkflowStorage {
     async getStorageStats(): Promise<StorageStats> {
         await this.initialize();
 
-        const workflows = await this.listWorkflows();
+        const workflowsResult = await this.listWorkflows();
+        if (!workflowsResult.success) {
+            throw workflowsResult.error;
+        }
+        const workflows = workflowsResult.data;
         let totalSize = 0;
         let cacheSize = 0;
 
@@ -178,9 +182,9 @@ export class WorkflowStorage {
                 totalSize += stats.size;
 
                 // Estimate cache size
-                const stored = await this.loadStoredWorkflow(workflow.id);
-                if (stored?.cache) {
-                    cacheSize += JSON.stringify(stored.cache).length;
+                const storedResult = await this.loadStoredWorkflow(workflow.id);
+                if (storedResult.success && storedResult.data?.cache) {
+                    cacheSize += JSON.stringify(storedResult.data.cache).length;
                 }
             } catch (error) {
                 console.warn(`Failed to get stats for ${workflow.id}:`, error);
@@ -202,22 +206,29 @@ export class WorkflowStorage {
         await this.initialize();
 
         try {
-            const workflows = await this.listWorkflows();
+            const workflowsResult = await this.listWorkflows();
+            if (!workflowsResult.success) {
+                throw workflowsResult.error;
+            }
+            const workflows = workflowsResult.data;
 
             for (const workflow of workflows) {
-                await this.deleteWorkflow(workflow.id);
+                const deleteResult = await this.deleteWorkflow(workflow.id);
+                if (!deleteResult.success) {
+                    console.warn(`Failed to delete workflow ${workflow.id}:`, deleteResult.error);
+                }
             }
         } catch (error) {
-            console.error('Failed to clear all workflows:', error);
-            throw error;
+            throw new StorageError('Failed to clear all workflows', 'clearAll', { originalError: error });
         }
     }
 
     // Cache-related methods
     async clearWorkflowCache(workflowId: string): Promise<void> {
-        const stored = await this.loadStoredWorkflow(workflowId);
-        if (!stored) return;
+        const storedResult = await this.loadStoredWorkflow(workflowId);
+        if (!storedResult.success || !storedResult.data) return;
 
+        const stored = storedResult.data;
         if (stored.cache) {
             stored.cache = {};
             await this.saveWorkflow(stored.workflow, { includeCache: true });
@@ -239,10 +250,11 @@ export class WorkflowStorage {
 
     // Utility methods
     async duplicateWorkflow(sourceId: string, newId: string, newName?: string): Promise<void> {
-        const stored = await this.loadStoredWorkflow(sourceId);
-        if (!stored) {
-            throw new Error(`Source workflow ${sourceId} not found`);
+        const storedResult = await this.loadStoredWorkflow(sourceId);
+        if (!storedResult.success || !storedResult.data) {
+            throw new WorkflowError(`Source workflow ${sourceId} not found`, sourceId);
         }
+        const stored = storedResult.data;
 
         const duplicated: StoredWorkflow = {
             ...stored,
@@ -268,7 +280,11 @@ export class WorkflowStorage {
 
     // Search functionality
     async searchWorkflows(query: string): Promise<WorkflowListItem[]> {
-        const all = await this.listWorkflows();
+        const allResult = await this.listWorkflows();
+        if (!allResult.success) {
+            return [];
+        }
+        const all = allResult.data;
         const lowerQuery = query.toLowerCase();
 
         return all.filter(workflow =>
