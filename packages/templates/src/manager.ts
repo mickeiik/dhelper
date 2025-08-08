@@ -6,15 +6,15 @@ import type {
   TemplateMatchResult,
   TemplateMatchOptions 
 } from '@app/types';
-import { FileTemplateStorage } from './storage.js';
+import { SqliteTemplateStorage } from './storage.js';
 import { ToolManager } from '@app/tools';
 
 export class TemplateManager {
-  private storage: FileTemplateStorage;
+  private storage: SqliteTemplateStorage;
   private toolManager: ToolManager;
 
   constructor(customStorageDir?: string, toolManager?: ToolManager) {
-    this.storage = new FileTemplateStorage(customStorageDir);
+    this.storage = new SqliteTemplateStorage(customStorageDir);
     this.toolManager = toolManager || new ToolManager();
   }
 
@@ -25,6 +25,10 @@ export class TemplateManager {
 
   async getTemplate(templateId: string): Promise<Template | null> {
     return this.storage.get(templateId);
+  }
+
+  async getTemplateByName(templateName: string): Promise<Template | null> {
+    return this.storage.getByName(templateName);
   }
 
   async updateTemplate(input: UpdateTemplateInput): Promise<Template | null> {

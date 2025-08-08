@@ -52,9 +52,35 @@ export function initializeWorkflows() {
         //         "y": { "$ref": "{{previous:region-selector.x}}"}
         //     })
         //     .build();
+        // const exampleWorkflow = workflow('auto-example', 'Auto-Discovery Example')
+        //     .step('templateMAtcg', 'template-matcher', {
+        //         templateNames: ['qqqq'],
+        //         showVisualIndicators: true
+
+        //     })
+        //     .build();
+
         const exampleWorkflow = workflow('auto-example', 'Auto-Discovery Example')
-            .step('templateMAtcg', 'template-matcher', {
-                templateIds: ['OKDOF']
+            .step('screen-region-selector', 'screen-region-selector', {
+                "mode": "rectangle",
+                "timeout": 30000
+            })
+            .step('screenshot-tool', 'screenshot', {
+                "top": {
+                    "$ref": "screen-region-selector.top"
+                },
+                "left": {
+                    "$ref": "screen-region-selector.left"
+                },
+                "width": {
+                    "$ref": "screen-region-selector.width"
+                },
+                "height": {
+                    "$ref": "screen-region-selector.height"
+                }
+            })
+            .step('tesseract-ocr-tool', 'tesseract-ocr', {
+                "$ref": "screenshot-tool"
             })
             .build();
 

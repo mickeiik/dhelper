@@ -89,13 +89,13 @@ export class ScreenRegionSelectorTool implements Tool {
     return;
   }
 
-  async execute(input: ScreenRegionSelectorInput): Promise<ScreenRegionSelectorOutput> {    
+  async execute(input: ScreenRegionSelectorInput): Promise<ScreenRegionSelectorOutput> {
     if (!this.overlayService) {
       throw new Error('Overlay service not available for screen region selection');
     }
 
     const timeout = input.timeout || 30000; // 30 second default timeout
-    
+
     // Normalize mode - handle both 'rectangle' and 'region' for backward compatibility
     const normalizedMode = (input.mode === 'region' ? 'rectangle' : input.mode) as 'point' | 'rectangle';
 
@@ -106,7 +106,7 @@ export class ScreenRegionSelectorTool implements Tool {
       // Create overlay for selection
       const overlay = await this.overlayService.createOverlay({
         showInstructions: true,
-        instructionText: normalizedMode === 'point' 
+        instructionText: normalizedMode === 'point'
           ? 'Click to select a point on screen. Press ESC to cancel.'
           : 'Click and drag to select a rectangle area. Press ESC to cancel.',
         timeout: timeout,
@@ -121,7 +121,7 @@ export class ScreenRegionSelectorTool implements Tool {
 
       // Add a small delay to ensure overlay is fully ready
       await new Promise(resolve => setTimeout(resolve, 200));
-      
+
       // Handle selection based on mode
       const result = await this.handleSelection(overlay, normalizedMode, timeout);
 
@@ -154,7 +154,7 @@ export class ScreenRegionSelectorTool implements Tool {
 
     shapes.push({
       id: 'crosshair-vertical',
-      type: 'rectangle', 
+      type: 'rectangle',
       bounds: { x: 100, y: 0, width: 2, height: screen.getPrimaryDisplay().bounds.height },
       style: {
         color: '#00ff00',
@@ -232,7 +232,7 @@ export class ScreenRegionSelectorTool implements Tool {
           if (isSelecting && startPoint) {
             const width = currentMousePos.x - startPoint.x;
             const height = currentMousePos.y - startPoint.y;
-            
+
             shapes.push({
               id: 'selection-rect',
               type: 'rectangle',
@@ -277,7 +277,7 @@ export class ScreenRegionSelectorTool implements Tool {
           console.error('Error updating visuals:', error);
         }
       };
-      
+
       // Handle mouse click
       overlay.onMouseClick((point: Point) => {
         if (mode === 'point') {
@@ -294,7 +294,7 @@ export class ScreenRegionSelectorTool implements Tool {
           } else {
             // Rectangle mode - end selection
             if (!startPoint) return;
-            
+
             const width = Math.abs(point.x - startPoint.x);
             const height = Math.abs(point.y - startPoint.y);
 
@@ -313,12 +313,16 @@ export class ScreenRegionSelectorTool implements Tool {
               height: height
             };
             cleanup();
-            const screenPoint = screen.dipToScreenPoint({x: result.top, y: result.left})
+            const screenRect = screen.dipToScreenRect(null, {
+              ...result,
+              x: result.top,
+              y: result.left
+            })
 
             resolve({
-              ...result,
-              top: screenPoint.x,
-              left: screenPoint.y,
+              ...screenRect,
+              top: screenRect.x,
+              left: screenRect.y
             });
           }
         } else {

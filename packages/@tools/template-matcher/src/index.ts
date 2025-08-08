@@ -25,6 +25,7 @@ export interface TemplateMatcherInput {
 
   // Template selection options
   templateIds?: string[]; // Specific template IDs to match against
+  templateNames?: string[]; // Specific template names to match against
   categories?: string[]; // Match templates in these categories
   tags?: string[]; // Match templates with these tags
 
@@ -71,6 +72,13 @@ export class TemplateMatcherTool implements Tool {
       description: 'Specific template IDs to match against (optional)',
       required: false,
       example: ['template-1', 'template-2']
+    },
+    {
+      name: 'templateNames',
+      type: 'object',
+      description: 'Specific template names to match against (optional)',
+      required: false,
+      example: ['Login Button', 'Close Icon']
     },
     {
       name: 'categories',
@@ -140,10 +148,17 @@ export class TemplateMatcherTool implements Tool {
       }
     },
     {
-      name: 'Match Specific Templates',
+      name: 'Match Specific Templates by ID',
       description: 'Search for specific template IDs on the current screen',
       inputs: {
         templateIds: ['login-button', 'close-icon']
+      }
+    },
+    {
+      name: 'Match Specific Templates by Name',
+      description: 'Search for specific template names on the current screen',
+      inputs: {
+        templateNames: ['Login Button', 'Close Icon']
       }
     },
     {
@@ -196,7 +211,16 @@ export class TemplateMatcherTool implements Tool {
 
       // Get candidate templates
       const templates = await this.getCandidateTemplates(input);
+      console.log(`[Template Matcher] Found ${templates.length} candidate templates`);
+      
       if (templates.length === 0) {
+        if (input.templateIds && Array.isArray(input.templateIds) && input.templateIds.length > 0) {
+          throw new Error(`No templates found for IDs: ${input.templateIds.join(', ')}`);
+        }
+        if (input.templateNames && Array.isArray(input.templateNames) && input.templateNames.length > 0) {
+          throw new Error(`No templates found for names: ${input.templateNames.join(', ')}`);
+        }
+        console.warn('[Template Matcher] No candidate templates found with current filters');
         return [];
       }
 
@@ -284,27 +308,51 @@ export class TemplateMatcherTool implements Tool {
   }
 
   private async getCandidateTemplates(input: TemplateMatcherInput) {
-    if (input.templateIds && input.templateIds.length > 0) {
-      // Get specific templates
+    if (input.templateIds && Array.isArray(input.templateIds) && input.templateIds.length > 0) {
+      // Get specific templates by ID
       const templates = [];
       for (const templateId of input.templateIds) {
+        console.log(`[Template Matcher] Looking up template by ID: ${templateId}`);
         const template = await this.templateManager.getTemplate(templateId);
         if (template) {
           const { imageData, thumbnailData, ...metadata } = template;
           templates.push(metadata);
+          console.log(`[Template Matcher] Found template by ID: ${templateId} (${template.name})`);
+        } else {
+          console.warn(`[Template Matcher] Template not found by ID: ${templateId}`);
         }
       }
+      console.log(`[Template Matcher] Retrieved ${templates.length} templates by ID`);
+      return templates;
+    }
+
+    if (input.templateNames && Array.isArray(input.templateNames) && input.templateNames.length > 0) {
+      // Get specific templates by name
+      const templates = [];
+      for (const templateName of input.templateNames) {
+        console.log(`[Template Matcher] Looking up template by name: ${templateName}`);
+        const template = await this.templateManager.getTemplateByName(templateName);
+        if (template) {
+          const { imageData, thumbnailData, ...metadata } = template;
+          templates.push(metadata);
+          console.log(`[Template Matcher] Found template by name: ${templateName} (ID: ${template.id})`);
+        } else {
+          console.warn(`[Template Matcher] Template not found by name: ${templateName}`);
+        }
+      }
+      console.log(`[Template Matcher] Retrieved ${templates.length} templates by name`);
       return templates;
     }
 
     // Get all templates, apply filters
+    console.log(`[Template Matcher] Getting all templates and applying filters`);
     let templates = await this.templateManager.listTemplates();
 
-    if (input.categories && input.categories.length > 0) {
+    if (input.categories && Array.isArray(input.categories) && input.categories.length > 0) {
       templates = templates.filter((t: TemplateMetadata) => input.categories!.includes(t.category));
     }
 
-    if (input.tags && input.tags.length > 0) {
+    if (input.tags && Array.isArray(input.tags) && input.tags.length > 0) {
       templates = templates.filter((t: TemplateMetadata) =>
         input.tags?.some(tag => t.tags.includes(tag))
       );
@@ -415,19 +463,13 @@ export class TemplateMatcherTool implements Tool {
 
       results.forEach((result, index) => {
         const { location, template, confidence } = result;
-        const screenLocation = {
-          width: location.width,
-          height: location.height,
-          ...screen.screenToDipPoint({
-            x: location.x,
-            y: location.y
-          })
-        }
+        const screenDipRect = screen.screenToDipRect(null, location)
+
         // Create rectangle shape for each match
         shapes.push({
           id: `match-${index}`,
           type: 'rectangle',
-          bounds: screenLocation,
+          bounds: screenDipRect,
           style: {
             ...OVERLAY_STYLES.HIGHLIGHT,
             color: confidence > 0.9 ? '#00ff00' : confidence > 0.8 ? '#ffaa00' : '#ff8800',

@@ -25,6 +25,18 @@ export function initializeTemplates() {
       };
     });
 
+    ipcMain.handle('templates:get-by-name', async (_, templateName: string) => {
+      const template = await templateManager.getTemplateByName(templateName);
+      if (!template) return null;
+      
+      // Convert Buffer to Uint8Array for browser compatibility
+      return {
+        ...template,
+        imageData: template.imageData ? new Uint8Array(template.imageData) : undefined,
+        thumbnailData: template.thumbnailData ? new Uint8Array(template.thumbnailData) : undefined
+      };
+    });
+
     ipcMain.handle('templates:create', async (_, input: CreateTemplateInput) => {
       // Convert Uint8Array from renderer to Buffer for Node.js
       const nodeInput = {

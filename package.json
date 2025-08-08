@@ -15,11 +15,12 @@
     "packages/*"
   ],
   "engines": {
-    "node": ">=23.0.0"
+    "node": ">=22.0.0"
   },
   "scripts": {
     "build": "npm run build -ws --if-present",
     "compile": "npm run build && electron-builder build --config electron-builder.mjs",
+    "compile-nobuild": "electron-builder build --config electron-builder.mjs",
     "test": "npx playwright test ./tests/e2e.spec.ts",
     "start": "node packages/dev-mode.js",
     "typecheck": "npm run typecheck -ws --if-present",
@@ -32,7 +33,9 @@
     "@electron/rebuild": "^4.0.1",
     "@npmcli/map-workspaces": "4.0.2",
     "@playwright/test": "1.54.1",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "24.1.0",
+    "@types/sqlite3": "^3.1.11",
     "create-vite": "7.0.3",
     "electron": "37.2.4",
     "electron-builder": "26.0.12",
@@ -49,6 +52,7 @@
     "node-gyp": "^11.2.0",
     "screenshot-desktop": "1.15.1",
     "sharp": "^0.34.3",
+    "sqlite3": "^5.1.7",
     "tesseract.js": "^5.1.1"
   },
   "opencv4nodejs": {

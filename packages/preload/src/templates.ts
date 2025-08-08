@@ -19,6 +19,10 @@ export async function getTemplate(templateId: string): Promise<Template | null> 
   return ipcRenderer.invoke('templates:get', templateId);
 }
 
+export async function getTemplateByName(templateName: string): Promise<Template | null> {
+  return ipcRenderer.invoke('templates:get-by-name', templateName);
+}
+
 export async function createTemplate(input: CreateTemplateInput): Promise<Template> {
   return ipcRenderer.invoke('templates:create', input);
 }
