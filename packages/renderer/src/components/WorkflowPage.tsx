@@ -480,6 +480,12 @@ function WorkflowDisplay({
               </div>
             )}
 
+            {step.delay && step.delay > 0 && (
+              <div className={styles.cacheInfo}>
+                ⏱️ Delay: {step.delay}ms ({(step.delay / 1000).toFixed(1)}s)
+              </div>
+            )}
+
             <div className={styles.stepInputs}>
               {Object.keys(step.inputs).length > 0 ? (
                 <details>
@@ -895,6 +901,12 @@ function LoadedWorkflowViewer({
               {step.cache?.enabled && (
                 <div className={styles.cacheInfo}>
                   📦 Cached {step.cache.persistent ? '(persistent)' : '(session)'}
+                </div>
+              )}
+
+              {step.delay && step.delay > 0 && (
+                <div className={styles.cacheInfo}>
+                  ⏱️ Delay: {step.delay}ms ({(step.delay / 1000).toFixed(1)}s)
                 </div>
               )}
 

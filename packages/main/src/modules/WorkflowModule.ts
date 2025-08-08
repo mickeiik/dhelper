@@ -53,38 +53,8 @@ export function initializeWorkflows() {
         //     })
         //     .build();
         const exampleWorkflow = workflow('auto-example', 'Auto-Discovery Example')
-            .step('region-selectora', 'screen-region-selector', {
-                "mode": "point",
-                "timeout": 15000,
-                cache: {
-                    enabled: true
-                }
-            })
-            .step('click-testa', 'click', {
-                "x": { "$ref": "{{previous:region-selector.x}}" },
-                "y": { "$ref": "{{previous:region-selector.y}}" }
-            })
-            .step('region-selectorz', 'screen-region-selector', {
-                "mode": "point",
-                "timeout": 15000,
-                "cache": {
-                    "enabled": true
-                }
-            })
-            .step('click-testz', 'click', {
-                "x": { "$ref": "{{previous:region-selector.x}}" },
-                "y": { "$ref": "{{previous:region-selector.y}}" }
-            })
-            .step('region-selectore', 'screen-region-selector', {
-                "mode": "point",
-                "timeout": 15000,
-                cache: {
-                    enabled: true
-                }
-            })
-            .step('click-teste', 'click', {
-                "x": { "$ref": "{{previous:region-selector.x}}" },
-                "y": { "$ref": "{{previous:region-selector.y}}" }
+            .step('templateMAtcg', 'template-matcher', {
+                templateIds: ['OKDOF']
             })
             .build();
 

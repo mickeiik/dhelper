@@ -14,6 +14,7 @@ interface AdvancedStepData {
     id: string;
     toolId: string;
     inputs: Record<string, unknown>;
+    delay: string; // Store as string for form input, convert to number later
     cacheEnabled: boolean;
     cacheKey: string;
     cachePersistent: boolean;
@@ -33,6 +34,7 @@ export function AdvancedStepBuilder({ tools, onAddStep, existingStepIds = [] }: 
         id: '',
         toolId: '',
         inputs: {},
+        delay: '',
         cacheEnabled: false,
         cacheKey: '',
         cachePersistent: true,
@@ -101,6 +103,7 @@ export function AdvancedStepBuilder({ tools, onAddStep, existingStepIds = [] }: 
                 id: formData.id,
                 toolId: formData.toolId,
                 inputs,
+                delay: formData.delay ? parseInt(formData.delay) : undefined,
                 cache: formData.cacheEnabled ? {
                     enabled: true,
                     key: formData.cacheKey || undefined,
@@ -117,6 +120,7 @@ export function AdvancedStepBuilder({ tools, onAddStep, existingStepIds = [] }: 
                     id: '',
                     toolId: '',
                     inputs: {},
+                    delay: '',
                     cacheEnabled: false,
                     cacheKey: '',
                     cachePersistent: true,
@@ -191,6 +195,25 @@ export function AdvancedStepBuilder({ tools, onAddStep, existingStepIds = [] }: 
                                 </option>
                             ))}
                         </select>
+                    </div>
+                </div>
+
+                {/* Execution Settings */}
+                <div className={styles.row}>
+                    <div className={styles.field}>
+                        <label>Delay Before Execution</label>
+                        <input
+                            type="number"
+                            min="0"
+                            step="100"
+                            value={formData.delay}
+                            onChange={(e) => updateFormData({ delay: e.target.value })}
+                            placeholder="Delay in milliseconds (e.g., 2000 for 2 seconds)"
+                            className={styles.input}
+                        />
+                        <small className={styles.fieldDescription}>
+                            Optional delay in milliseconds before this step executes
+                        </small>
                     </div>
                 </div>
 

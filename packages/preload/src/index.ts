@@ -9,8 +9,8 @@ function send(channel: string, message: string) {
 
 export { sha256sum, versions, send };
 
-import { getTools } from './tools.js';
-export { getTools };
+import { getTools, runTool } from './tools.js';
+export { getTools, runTool };
 
 import {
   runWorkflow,

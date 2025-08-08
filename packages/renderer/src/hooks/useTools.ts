@@ -1,12 +1,13 @@
 // packages/renderer/src/hooks/useTools.ts
-import { useState, useEffect } from 'react';
-import { getTools } from '@app/preload';
+import { useState, useEffect, useCallback } from 'react';
+import { getTools, runTool } from '@app/preload';
 import type { ToolMetadata } from '@app/types';
 
 export function useTools() {
   const [tools, setTools] = useState<ToolMetadata[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRunning, setIsRunning] = useState(false);
 
   const loadTools = async () => {
     try {
@@ -22,6 +23,26 @@ export function useTools() {
     }
   };
 
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
+  const runToolAsync = useCallback(async (toolId: string, inputs: any) => {
+    try {
+      setIsRunning(true);
+      setError(null);
+      
+      const result = await runTool(toolId, inputs);
+      return result;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to run tool';
+      setError(message);
+      throw err;
+    } finally {
+      setIsRunning(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadTools();
   }, []);
@@ -30,6 +51,9 @@ export function useTools() {
     tools,
     isLoading,
     error,
-    reloadTools: loadTools
+    isRunning,
+    reloadTools: loadTools,
+    runToolAsync,
+    clearError
   };
 }

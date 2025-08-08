@@ -6,6 +6,7 @@ export interface StepBuilderData {
   id: string;
   toolId: string;
   inputs: WorkflowInputs<unknown>;
+  delay?: number; // Delay in milliseconds before executing this step
   cache?: {
     enabled: boolean;
     key?: string;
@@ -40,6 +41,11 @@ export function useWorkflowBuilder() {
       toolId: stepData.toolId,
       inputs: stepData.inputs
     };
+
+    // Add delay configuration if provided
+    if (stepData.delay && stepData.delay > 0) {
+      step.delay = stepData.delay;
+    }
 
     // Add cache configuration if provided
     if (stepData.cache) {

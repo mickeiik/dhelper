@@ -252,7 +252,7 @@ export class ClickTool implements Tool {
     clicks: number,
     delay: number
   ): Promise<void> {
-    position = screen.dipToScreenPoint(position)
+    // position = screen.dipToScreenPoint(position)
 
     switch (method) {
       case 'fast':

@@ -192,6 +192,7 @@ class OverlayServiceImpl implements OverlayService {
       join(__dirname, '..', '..', 'overlay', 'overlay.html'),  // From source
       join(__dirname, '..', '..', '..', 'overlay', 'overlay.html'), // From dist
       join(process.cwd(), 'packages', 'overlay', 'overlay.html'), // From project root
+      join(__dirname, '..', '..', '..', '..', 'packages' , 'overlay', 'overlay.html'),
     ];
     
     let overlayHtmlPath: string | null = null;
@@ -212,7 +213,7 @@ class OverlayServiceImpl implements OverlayService {
     }    
     
     // Send initialization data to overlay - use did-finish-load instead of dom-ready
-    const initializeOverlay = () => {     
+    const initializeOverlay = () => {
       // Ensure window is focused and activated for interactive overlays
       if (!options.clickThrough) {
         window.focus();

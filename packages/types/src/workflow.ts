@@ -7,6 +7,7 @@ export interface WorkflowStep<T extends ToolId = ToolId> {
   inputs: WorkflowInputs<ToolInput<T>>;
   onError?: 'stop' | 'continue' | 'retry';
   retryCount?: number;
+  delay?: number; // Delay in milliseconds before executing this step
   cache?: {
     enabled: boolean;
     key?: string; // Optional custom cache key

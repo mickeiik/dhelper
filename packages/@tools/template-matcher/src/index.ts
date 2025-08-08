@@ -1,8 +1,23 @@
 import type { Tool, ToolInputField, ToolInitContext, OverlayService, OverlayShape, OverlayText } from '@app/types';
 import { OVERLAY_STYLES } from '@app/types';
 import type { TemplateMatchResult, TemplateMetadata } from '@app/types';
-import cv from '@u4/opencv4nodejs';
 import screenshot from 'screenshot-desktop';
+
+// Configure OpenCV before importing opencv4nodejs
+import { join } from 'node:path';
+
+if (process.env.NODE_ENV !== 'development') {
+  const resourcesPath = process.resourcesPath;
+  const opencvPath = join(resourcesPath, 'opencv');
+
+  process.env.OPENCV4NODEJS_DISABLE_AUTOBUILD = '1';
+  process.env.OPENCV_INCLUDE_DIR = join(opencvPath, 'include');
+  process.env.OPENCV_LIB_DIR = join(opencvPath, 'lib');
+  process.env.OPENCV_BIN_DIR = join(opencvPath, 'bin');
+}
+
+import cv from '@u4/opencv4nodejs';
+import { screen } from 'electron';
 
 export interface TemplateMatcherInput {
   // Screen image to search in (base64 data URL, file path, or buffer) - optional, will capture current screen if not provided
@@ -291,7 +306,7 @@ export class TemplateMatcherTool implements Tool {
 
     if (input.tags && input.tags.length > 0) {
       templates = templates.filter((t: TemplateMetadata) =>
-        input.tags!.some(tag => t.tags.includes(tag))
+        input.tags?.some(tag => t.tags.includes(tag))
       );
     }
 
@@ -400,12 +415,19 @@ export class TemplateMatcherTool implements Tool {
 
       results.forEach((result, index) => {
         const { location, template, confidence } = result;
-
+        const screenLocation = {
+          width: location.width,
+          height: location.height,
+          ...screen.screenToDipPoint({
+            x: location.x,
+            y: location.y
+          })
+        }
         // Create rectangle shape for each match
         shapes.push({
           id: `match-${index}`,
           type: 'rectangle',
-          bounds: location,
+          bounds: screenLocation,
           style: {
             ...OVERLAY_STYLES.HIGHLIGHT,
             color: confidence > 0.9 ? '#00ff00' : confidence > 0.8 ? '#ffaa00' : '#ff8800',

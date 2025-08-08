@@ -1,6 +1,7 @@
 // packages/renderer/src/components/TemplateUpload.tsx
 import React, { useState, useRef } from 'react';
 import { TEMPLATE_CATEGORIES, type CreateTemplateInput } from '@app/types';
+import { useTools } from '../hooks/useTools';
 import styles from './TemplateUpload.module.css';
 
 interface TemplateUploadProps {
@@ -27,6 +28,7 @@ export function TemplateUpload({ categories, tags, onSubmit, onCancel }: Templat
   const [error, setError] = useState<string | null>(null);
   const [customTag, setCustomTag] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { isRunning, runToolAsync } = useTools();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -98,6 +100,43 @@ export function TemplateUpload({ categories, tags, onSubmit, onCancel }: Templat
     if (tag) {
       addTag(tag);
       setCustomTag('');
+    }
+  };
+
+  const handleScreenshotArea = async () => {
+    try {
+      setError(null);
+      
+      // Step 1: Run screen region selector to get coordinates
+      const regionResult = await runToolAsync('screen-region-selector', {
+        mode: 'rectangle',
+        timeout: 30000
+      });
+      
+      // Step 2: Use the coordinates to take a screenshot
+      const screenshotDataUrl = await runToolAsync('screenshot', {
+        top: regionResult.top,
+        left: regionResult.left,
+        width: regionResult.width,
+        height: regionResult.height
+      });
+      
+      // Step 3: Convert data URL to File object
+      const response = await fetch(screenshotDataUrl);
+      const blob = await response.blob();
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const file = new File([blob], `screenshot-${timestamp}.png`, { type: 'image/png' });
+      
+      // Step 4: Process the screenshot as if it was uploaded
+      handleDroppedFile(file);
+      
+    } catch (err) {
+      // Don't set error for user cancellation
+      if (err instanceof Error && err.message.includes('cancelled')) {
+        return;
+      }
+      const message = err instanceof Error ? err.message : 'Failed to capture screenshot';
+      setError(message);
     }
   };
 
@@ -188,6 +227,33 @@ export function TemplateUpload({ categories, tags, onSubmit, onCancel }: Templat
               className={styles.fileInput}
             />
           </div>
+        </div>
+
+        {/* Screenshot Area Button */}
+        <div className={styles.screenshotSection}>
+          <div className={styles.divider}>
+            <span>OR</span>
+          </div>
+          <button 
+            type="button" 
+            className={styles.screenshotButton}
+            onClick={handleScreenshotArea}
+            disabled={isRunning || isSubmitting}
+          >
+            {isRunning ? (
+              <>
+                <span className={styles.spinner}>⏳</span>
+                Selecting Area...
+              </>
+            ) : (
+              <>
+                📷 Screenshot Area
+              </>
+            )}
+          </button>
+          <p className={styles.screenshotHint}>
+            Click to select a rectangular area on your screen to use as template
+          </p>
         </div>
 
         {/* Template Details */}

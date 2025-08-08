@@ -283,7 +283,8 @@ export class ScreenRegionSelectorTool implements Tool {
         if (mode === 'point') {
           // Point mode - immediate selection
           cleanup();
-          resolve({ x: point.x, y: point.y });
+          const screenPoint = screen.dipToScreenPoint(point)
+          resolve({ x: screenPoint.x, y: screenPoint.y });
         } else if (mode === 'rectangle') {
           if (!isSelecting) {
             // Rectangle mode - start selection
@@ -312,7 +313,13 @@ export class ScreenRegionSelectorTool implements Tool {
               height: height
             };
             cleanup();
-            resolve(result);
+            const screenPoint = screen.dipToScreenPoint({x: result.top, y: result.left})
+
+            resolve({
+              ...result,
+              top: screenPoint.x,
+              left: screenPoint.y,
+            });
           }
         } else {
           console.warn(`[Screen Region Selector] Unknown mode: ${mode}`);

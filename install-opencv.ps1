@@ -16,5 +16,7 @@ $env:OPENCV_BIN_DIR = "C:\opencv\build\x64\vc16\bin"
 # Run install with verbose logging to see more details
 npm install @u4/opencv-build --verbose
 npm install @u4/opencv4nodejs --verbose
-npm install --save-dev electron-rebuild
-npx electron-rebuild
+npm install --save-dev @electron/rebuild
+npx @electron/rebuild
+npm i
+npm run compile

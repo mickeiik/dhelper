@@ -129,6 +129,11 @@ export class WorkflowRunner extends WorkflowEventEmitter {
       progress
     });
 
+    // Handle step delay if configured
+    if (step.delay && step.delay > 0) {
+      await new Promise(resolve => setTimeout(resolve, step.delay));
+    }
+
     while (retryCount <= maxRetries) {
       try {
         // Resolve all input references in a single pass
