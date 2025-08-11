@@ -198,12 +198,14 @@ export class TemplateMatcherTool implements Tool<TemplateMatcherInput, TemplateM
   }
 
   async execute(input: TemplateMatcherInput): Promise<TemplateMatcherOutput> {
+    let screenMat: cv.Mat | null = null;
+
     try {
       // Get screen image - either from input or by capturing current screen
       const screenImage = input.screenImage || await this.captureCurrentScreen();
 
       // Load and process the screen image
-      const screenMat = this.loadImage(screenImage);
+      screenMat = this.loadImage(screenImage);
 
       if (!screenMat) {
         throw new ToolExecutionError('Failed to load screen image', 'template-matcher', { screenImage: typeof screenImage });
@@ -230,8 +232,9 @@ export class TemplateMatcherTool implements Tool<TemplateMatcherInput, TemplateM
       const maxResults = input.maxResults || 10;
 
       for (const template of templates) {
+        let templateMat: cv.Mat | null = null;
         try {
-          const templateMat = await this.loadTemplateImage(template.id);
+          templateMat = await this.loadTemplateImage(template.id);
           if (!templateMat) continue;
 
           const matches = await this.matchTemplate(
@@ -245,6 +248,15 @@ export class TemplateMatcherTool implements Tool<TemplateMatcherInput, TemplateM
           results.push(...matches);
         } catch (error) {
           console.warn(`Failed to match template ${template.id}:`, error);
+        } finally {
+          // Cleanup template image Mat - use OpenCV4nodejs release method
+          if (templateMat) {
+            try {
+              templateMat.release();
+            } catch {
+              // Fallback: try accessing release through prototype or manual cleanup
+            }
+          }
         }
       }
       // Sort by confidence and limit results
@@ -265,6 +277,15 @@ export class TemplateMatcherTool implements Tool<TemplateMatcherInput, TemplateM
 
     } catch (error) {
       throw new ToolExecutionError(`Template matching failed: ${error}`, 'template-matcher', { originalError: error, input });
+    } finally {
+      // Cleanup screen image Mat to prevent memory leaks
+      if (screenMat) {
+        try {
+          screenMat.release();
+        } catch {
+          // Fallback: ignore cleanup errors
+        }
+      }
     }
   }
 
@@ -458,58 +479,77 @@ export class TemplateMatcherTool implements Tool<TemplateMatcherInput, TemplateM
 
       // Try scale factors in order of priority
       for (const scale of scalesToTry) {
-        try {
-          let scaledTemplate = templateMat;
-          let scaledWidth = originalWidth;
-          let scaledHeight = originalHeight;
+        let scaledWidth = originalWidth;
+        let scaledHeight = originalHeight;
 
-          // Scale template if scale factor is not 1.0
-          if (Math.abs(scale - 1.0) > 0.01) {
-            const newWidth = Math.round(originalWidth * scale);
-            const newHeight = Math.round(originalHeight * scale);
-            
-            // Skip if scaled template would be too small or too large
-            if (newWidth < 10 || newHeight < 10 || 
-                newWidth > searchMat.sizes[1] || newHeight > searchMat.sizes[0]) {
-              continue;
-            }
-
-            scaledTemplate = templateMat.resize(newHeight, newWidth);
-            scaledWidth = newWidth;
-            scaledHeight = newHeight;
-          }
-
-          // Perform template matching using normalized cross correlation
-          const result = searchMat.matchTemplate(scaledTemplate, cv.TM_CCOEFF_NORMED);
-
-          // Find min/max locations and values
-          const minMaxLoc = result.minMaxLoc();
+          let result: any = null;
+          let scaledTemplate: cv.Mat = templateMat;
           
-          console.log(`[Template Matcher] Scale ${scale}: confidence ${minMaxLoc.maxVal.toFixed(4)} (threshold: ${threshold.toFixed(4)}) for template ${templateMetadata.id}`);
-
-          if (minMaxLoc.maxVal >= threshold) {
-            // Found a good match at this scale - create the match result
-            console.log(`[Template Matcher] ✓ Match found at scale ${scale} with confidence ${minMaxLoc.maxVal.toFixed(4)}`);
-            matches.push({
-              templateId: templateMetadata.id,
-              confidence: minMaxLoc.maxVal,
-              location: {
-                x: minMaxLoc.maxLoc.x + offsetX,
-                y: minMaxLoc.maxLoc.y + offsetY,
-                width: scaledWidth,
-                height: scaledHeight
-              },
-              template: {
-                ...templateMetadata,
-                // Add scale information for debugging/display
-                detectedScale: scale
+          try {
+            // Scale template if scale factor is not 1.0
+            if (Math.abs(scale - 1.0) > 0.01) {
+              const newWidth = Math.round(originalWidth * scale);
+              const newHeight = Math.round(originalHeight * scale);
+              
+              // Skip if scaled template would be too small or too large
+              if (newWidth < 10 || newHeight < 10 || 
+                  newWidth > searchMat.sizes[1] || newHeight > searchMat.sizes[0]) {
+                continue;
               }
-            });
+
+              scaledTemplate = templateMat.resize(newHeight, newWidth);
+              scaledWidth = newWidth;
+              scaledHeight = newHeight;
+            }
+            
+            // Perform template matching using normalized cross correlation
+            result = searchMat.matchTemplate(scaledTemplate, cv.TM_CCOEFF_NORMED);
+
+            // Find min/max locations and values
+            const minMaxLoc = result.minMaxLoc();
+          
+            console.log(`[Template Matcher] Scale ${scale}: confidence ${minMaxLoc.maxVal.toFixed(4)} (threshold: ${threshold.toFixed(4)}) for template ${templateMetadata.id}`);
+
+            if (minMaxLoc.maxVal >= threshold) {
+              // Found a good match at this scale - create the match result
+              console.log(`[Template Matcher] ✓ Match found at scale ${scale} with confidence ${minMaxLoc.maxVal.toFixed(4)}`);
+              matches.push({
+                templateId: templateMetadata.id,
+                confidence: minMaxLoc.maxVal,
+                location: {
+                  x: minMaxLoc.maxLoc.x + offsetX,
+                  y: minMaxLoc.maxLoc.y + offsetY,
+                  width: scaledWidth,
+                  height: scaledHeight
+                },
+                template: {
+                  ...templateMetadata,
+                  // Add scale information for debugging/display
+                  detectedScale: scale
+                }
+              });
+            }
+          } catch (scaleError) {
+            // Log but continue with other scales
+            console.warn(`Template matching failed at scale ${scale}:`, scaleError);
+          } finally {
+            // Cleanup temporary Mat objects
+            if (result) {
+              try {
+                result.release();
+              } catch {
+                // Fallback: ignore cleanup errors
+              }
+            }
+            // Cleanup scaled template if it's different from original
+            if (scaledTemplate !== templateMat) {
+              try {
+                scaledTemplate.release();
+              } catch {
+                // Fallback: ignore cleanup errors
+              }
+            }
           }
-        } catch (scaleError) {
-          // Log but continue with other scales
-          console.warn(`Template matching failed at scale ${scale}:`, scaleError);
-        }
       }
 
       // Sort matches by confidence (highest first) and return top matches

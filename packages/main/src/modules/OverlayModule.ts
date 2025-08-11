@@ -291,3 +291,8 @@ export async function initializeOverlay(): Promise<OverlayService> {
   // The service is initialized and ready to use
   return overlayService;
 }
+
+export async function cleanupOverlays(): Promise<void> {
+  console.log('Cleaning up overlay windows...');
+  await overlayService.closeAllOverlays();
+}

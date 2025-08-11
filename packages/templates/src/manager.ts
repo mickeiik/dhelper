@@ -199,4 +199,12 @@ export class TemplateManager {
     
     return this.createTemplate(createInput);
   }
+
+  /**
+   * Close the template manager and cleanup all resources
+   */
+  async close(): Promise<void> {
+    console.log('Closing template manager...');
+    await this.storage.close();
+  }
 }

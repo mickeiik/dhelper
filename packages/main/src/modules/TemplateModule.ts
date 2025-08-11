@@ -171,3 +171,12 @@ export function initializeTemplates() {
 }
 
 export const getTemplateManager = () => templateManager;
+
+export async function cleanupTemplates(): Promise<void> {
+  console.log('Cleaning up template resources...');
+  try {
+    await templateManager.close();
+  } catch (error) {
+    console.error('Error during template cleanup:', error);
+  }
+}

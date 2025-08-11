@@ -699,4 +699,28 @@ export class SqliteTemplateStorage {
       throw error;
     }
   }
+
+  /**
+   * Close the database connection and cleanup resources
+   */
+  async close(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) {
+        resolve();
+        return;
+      }
+
+      console.log('Closing template database connection...');
+      this.db.close((err) => {
+        if (err) {
+          console.error('Error closing database:', err);
+          reject(new StorageError('Failed to close database', 'close', { originalError: err }));
+        } else {
+          console.log('Template database connection closed');
+          this.db = null;
+          resolve();
+        }
+      });
+    });
+  }
 }
