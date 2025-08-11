@@ -97,7 +97,12 @@ export function resolveSemanticReferences(
   if (typeof inputs === 'object' && inputs !== null && !Array.isArray(inputs)) {
     if ('$ref' in inputs && typeof (inputs as any).$ref === 'string') {
       const ref = (inputs as { $ref: string }).$ref;
-      return referenceResolver.resolve(ref, context);
+      // Only resolve semantic references ({{...}}), let simple step references pass through
+      if (ref.match(/^\{\{(\w+):?(.+)?\}\}$/)) {
+        return referenceResolver.resolve(ref, context);
+      }
+      // Return the $ref object unchanged for simple step references
+      return inputs;
     }
 
     const resolved: Record<string, unknown> = {};

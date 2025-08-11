@@ -33,8 +33,8 @@ export class SqliteTemplateStorage {
     this.dbPath = join(this.storageDir, 'templates.db');
   }
 
-  private createDatabase(): Promise<sqlite3.Database> {
-    return new Promise((resolve, reject) => {
+  private async createDatabase(): Promise<sqlite3.Database> {
+    return new Promise<sqlite3.Database>((resolve, reject) => {
       const db = new sqlite.Database(this.dbPath, (err) => {
         if (err) {
           reject(err);
@@ -45,8 +45,8 @@ export class SqliteTemplateStorage {
     });
   }
 
-  private execAsync(sql: string): Promise<void> {
-    return new Promise((resolve, reject) => {
+  private async execAsync(sql: string): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
       if (!this.db) {
         reject(new StorageError('Database not initialized', 'exec'));
         return;
@@ -58,8 +58,8 @@ export class SqliteTemplateStorage {
     });
   }
 
-  private runAsync(sql: string, params: unknown[] = []): Promise<{ changes: number; lastID: number }> {
-    return new Promise((resolve, reject) => {
+  private async runAsync(sql: string, params: unknown[] = []): Promise<{ changes: number; lastID: number }> {
+    return new Promise<{ changes: number; lastID: number }>((resolve, reject) => {
       if (!this.db) {
         reject(new StorageError('Database not initialized', 'run'));
         return;
@@ -71,8 +71,8 @@ export class SqliteTemplateStorage {
     });
   }
 
-  private getAsync(sql: string, params: unknown[] = []): Promise<Record<string, any> | undefined> {
-    return new Promise((resolve, reject) => {
+  private async getAsync(sql: string, params: unknown[] = []): Promise<Record<string, any> | undefined> {
+    return new Promise<Record<string, any> | undefined>((resolve, reject) => {
       if (!this.db) {
         reject(new StorageError('Database not initialized', 'get'));
         return;
@@ -85,8 +85,8 @@ export class SqliteTemplateStorage {
   }
 
 
-  private allAsync(sql: string, params: unknown[] = []): Promise<Record<string, any>[]> {
-    return new Promise((resolve, reject) => {
+  private async allAsync(sql: string, params: unknown[] = []): Promise<Record<string, any>[]> {
+    return new Promise<Record<string, any>[]>((resolve, reject) => {
       if (!this.db) {
         reject(new StorageError('Database not initialized', 'all'));
         return;
@@ -704,7 +704,7 @@ export class SqliteTemplateStorage {
    * Close the database connection and cleanup resources
    */
   async close(): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       if (!this.db) {
         resolve();
         return;

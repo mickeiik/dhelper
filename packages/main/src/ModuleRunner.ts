@@ -3,25 +3,24 @@ import { ModuleContext } from './ModuleContext.js';
 import type { OverlayService } from '@app/types';
 import { app } from 'electron';
 
-class ModuleRunner implements PromiseLike<void> {
-  #promise: Promise<void>;
+class ModuleRunner {
+  #modules: AppModule[] = [];
   #overlayService?: OverlayService;
 
   constructor() {
-    this.#promise = Promise.resolve();
   }
 
-  then<TResult1 = void, TResult2 = never>(onfulfilled?: ((value: void) => TResult1 | PromiseLike<TResult1>) | null | undefined, onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null | undefined): PromiseLike<TResult1 | TResult2> {
-    return this.#promise.then(onfulfilled, onrejected);
+  async run(): Promise<void> {
+    for (const module of this.#modules) {
+      const result = module.enable(this.#createModuleContext());
+      if (result instanceof Promise) {
+        await result;
+      }
+    }
   }
 
   init(module: AppModule) {
-    const p = module.enable(this.#createModuleContext());
-
-    if (p instanceof Promise) {
-      this.#promise = this.#promise.then(() => p);
-    }
-
+    this.#modules.push(module);
     return this;
   }
 

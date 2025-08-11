@@ -314,15 +314,17 @@ export class ScreenRegionSelectorTool implements Tool<ScreenRegionSelectorInput,
             };
             cleanup();
             const screenRect = screen.dipToScreenRect(null, {
-              ...result,
-              x: result.top,
-              y: result.left
+              x: result.left,
+              y: result.top,
+              width: result.width,
+              height: result.height
             })
 
             resolve({
-              ...screenRect,
-              top: screenRect.x,
-              left: screenRect.y
+              top: screenRect.y,
+              left: screenRect.x,
+              width: screenRect.width,
+              height: screenRect.height
             });
           }
         } else {
