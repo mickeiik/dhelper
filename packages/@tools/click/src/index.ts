@@ -5,9 +5,9 @@ import { screen } from 'electron';
 
 export interface ClickToolInput {
   // Position input (either point OR region)
-  x?: number;          // Direct x coordinate
-  y?: number;          // Direct y coordinate
-  region?: {           // Region to click (center will be calculated)
+  x?: number;
+  y?: number;
+  region?: {
     x: number;
     y: number;
     width: number;
@@ -15,7 +15,6 @@ export interface ClickToolInput {
   };
 
   // Click configuration
-  clickMethod?: 'default' | 'fast' | 'safe' | 'all'; // Different strategies
   button?: 'left' | 'right' | 'middle';
   clicks?: number;     // Single, double, triple click
   delay?: number;      // Delay between multiple clicks (ms)
@@ -31,7 +30,6 @@ export interface ClickToolOutput {
     x: number;
     y: number;
   };
-  method: string;
   error?: string;
 }
 
@@ -47,36 +45,28 @@ export class ClickTool implements Tool {
     {
       name: 'x',
       type: 'number',
-      description: 'X coordinate to click (use either x,y OR region)',
+      description: 'X coordinate to click',
       required: false,
       example: 500
     },
     {
       name: 'y',
       type: 'number',
-      description: 'Y coordinate to click (use either x,y OR region)',
+      description: 'Y coordinate to click',
       required: false,
       example: 300
     },
     {
       name: 'region',
       type: 'object',
-      description: 'Region to click in the center of (alternative to x,y)',
+      description: 'Region to click in the center of',
       required: false,
       example: { x: 100, y: 100, width: 200, height: 100 }
     },
     {
-      name: 'clickMethod',
-      type: 'string',
-      description: 'Click method to use',
-      required: false,
-      defaultValue: 'default',
-      example: 'safe'
-    },
-    {
       name: 'button',
       type: 'string',
-      description: 'Mouse button to click',
+      description: 'Mouse button to click (left, middle or right)',
       required: false,
       defaultValue: 'left',
       example: 'left'
@@ -84,7 +74,7 @@ export class ClickTool implements Tool {
     {
       name: 'clicks',
       type: 'number',
-      description: 'Number of clicks (1=single, 2=double, 3=triple)',
+      description: 'Number of clicks',
       required: false,
       defaultValue: 1,
       example: 1
@@ -129,7 +119,6 @@ export class ClickTool implements Tool {
       description: 'Click in the center of a region',
       inputs: {
         region: { x: 100, y: 100, width: 200, height: 100 },
-        clickMethod: 'safe'
       }
     },
     {
@@ -160,8 +149,7 @@ export class ClickTool implements Tool {
           y: { $ref: '{{previous:template-matcher.location.y}}' },
           width: { $ref: '{{previous:template-matcher.location.width}}' },
           height: { $ref: '{{previous:template-matcher.location.height}}' }
-        },
-        clickMethod: 'safe'
+        }
       }
     },
     {
@@ -192,7 +180,6 @@ export class ClickTool implements Tool {
       }
 
       // Get click configuration
-      const method = input.clickMethod || 'default';
       const button = this.getMouseButton(input.button || 'left');
       const clicks = Math.max(1, Math.min(10, input.clicks || 1)); // Limit clicks 1-10
       const delay = Math.max(10, input.delay || 100); // Minimum 10ms delay
@@ -203,19 +190,17 @@ export class ClickTool implements Tool {
       }
 
       // Perform the click using selected method
-      await this.performClick(position, method, button, clicks, delay);
+      await this.performClick(position, button, clicks, delay);
 
       return {
         success: true,
         clickedAt: position,
-        method: method
       };
 
     } catch (error) {
       return {
         success: false,
         clickedAt: { x: 0, y: 0 },
-        method: input.clickMethod || 'default',
         error: error instanceof Error ? error.message : String(error)
       };
     }
@@ -247,28 +232,11 @@ export class ClickTool implements Tool {
 
   private async performClick(
     position: { x: number; y: number },
-    method: string,
     button: Button,
     clicks: number,
     delay: number
   ): Promise<void> {
-    // position = screen.dipToScreenPoint(position)
-
-    switch (method) {
-      case 'fast':
-        await this.clickFast(position, button, clicks, delay);
-        break;
-      case 'safe':
-        await this.clickSafe(position, button, clicks, delay);
-        break;
-      case 'all':
-        await this.clickWithFallback(position, button, clicks, delay);
-        break;
-      case 'default':
-      default:
-        await this.clickDefault(position, button, clicks, delay);
-        break;
-    }
+    await this.clickDefault(position, button, clicks, delay);
   }
 
   private async clickDefault(
@@ -279,7 +247,7 @@ export class ClickTool implements Tool {
   ): Promise<void> {
     // Move to position and click
     await mouse.setPosition({ x: position.x, y: position.y });
-    await sleep(50); // Small delay after moving
+    await sleep(50);
 
     for (let i = 0; i < clicks; i++) {
       await mouse.pressButton(button);
@@ -288,100 +256,6 @@ export class ClickTool implements Tool {
         await sleep(delay);
       }
     }
-  }
-
-  private async clickFast(
-    position: { x: number; y: number },
-    button: Button,
-    clicks: number,
-    delay: number
-  ): Promise<void> {
-    // Fast click with minimal delays
-    await mouse.setPosition({ x: position.x, y: position.y });
-
-    for (let i = 0; i < clicks; i++) {
-      await mouse.click(button);
-      if (i < clicks - 1) {
-        await sleep(Math.max(10, delay / 2)); // Use half delay, minimum 10ms
-      }
-    }
-  }
-
-  private async clickSafe(
-    position: { x: number; y: number },
-    button: Button,
-    clicks: number,
-    delay: number
-  ): Promise<void> {
-    // Safe click with verification and retries
-    const maxRetries = 3;
-
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      try {
-        // Move to position with verification
-        await mouse.setPosition({ x: position.x, y: position.y });
-        await sleep(100); // Longer delay for safety
-
-        // Verify we're at the right position
-        const currentPos = await mouse.getPosition();
-        if (Math.abs(currentPos.x - position.x) > 5 || Math.abs(currentPos.y - position.y) > 5) {
-          if (attempt < maxRetries - 1) continue; // Retry
-          throw new Error('Failed to move mouse to target position');
-        }
-
-        // Perform clicks with verification
-        for (let i = 0; i < clicks; i++) {
-          await mouse.pressButton(button);
-          await sleep(20); // Small delay between press and release
-          await mouse.releaseButton(button);
-          if (i < clicks - 1) {
-            await sleep(delay);
-          }
-        }
-
-        return; // Success, exit retry loop
-
-      } catch (error) {
-        if (attempt === maxRetries - 1) {
-          throw error; // Last attempt failed
-        }
-        await sleep(200); // Wait before retry
-      }
-    }
-  }
-
-  private async clickWithFallback(
-    position: { x: number; y: number },
-    button: Button,
-    clicks: number,
-    delay: number
-  ): Promise<void> {
-    // Try different methods in sequence until one succeeds
-    const methods = ['default', 'safe', 'fast'];
-    let lastError: Error | null = null;
-
-    for (const method of methods) {
-      try {
-        switch (method) {
-          case 'fast':
-            await this.clickFast(position, button, clicks, delay);
-            break;
-          case 'safe':
-            await this.clickSafe(position, button, clicks, delay);
-            break;
-          default:
-            await this.clickDefault(position, button, clicks, delay);
-            break;
-        }
-        return; // Success
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error(String(error));
-        await sleep(300); // Wait before trying next method
-      }
-    }
-
-    // All methods failed
-    throw new Error(`All click methods failed. Last error: ${lastError?.message}`);
   }
 
   private async showVisualIndicator(
