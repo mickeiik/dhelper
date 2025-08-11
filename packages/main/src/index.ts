@@ -6,8 +6,18 @@ import { getTemplateManager, initializeTemplates, cleanupTemplates } from './mod
 import { initializeOverlay, cleanupOverlays } from './modules/OverlayModule.js';
 import { initializeSecurity } from './modules/security.js';
 import { initializeElectron } from './modules/electron.js';
+import { ConfigLoader } from './config/index.js';
 
 export async function initApp(initConfig: AppInitConfig) {
+  // Load centralized configuration
+  const config = ConfigLoader.loadConfig();
+  console.log('✓ Configuration loaded:', {
+    workflowsPath: config.storage.workflowsPath,
+    templatesPath: config.storage.templatesPath,
+    toolTimeout: config.tools.timeout,
+    theme: config.ui.theme
+  });
+
   // Initialize core electron functionality
   await initializeElectron(initConfig, import.meta.env.DEV);
   

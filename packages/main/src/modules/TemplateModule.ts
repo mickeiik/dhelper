@@ -4,10 +4,12 @@ import { TemplateManager } from '@app/templates';
 import type { CreateTemplateInput, UpdateTemplateInput } from '@app/types';
 import { TemplateError, ErrorLogger } from '@app/types';
 import { getToolManager } from './ToolModule.js';
+import { getConfig } from '../config/index.js';
 
 const logger = new ErrorLogger('TemplateModule');
+const config = getConfig();
 
-const templateManager = new TemplateManager(undefined, getToolManager());
+const templateManager = new TemplateManager(config.storage.templatesPath, getToolManager());
 
 export function initializeTemplates() {
 

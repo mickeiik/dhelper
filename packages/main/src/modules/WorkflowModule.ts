@@ -4,10 +4,12 @@ import { WorkflowStorage } from '@app/storage'
 import { ipcMain } from 'electron'
 import { WorkflowError, StorageError, ErrorLogger } from '@app/types'
 import { getToolManager } from './ToolModule.js';
+import { getConfig } from '../config/index.js';
 
 const logger = new ErrorLogger('WorkflowModule');
+const config = getConfig();
 
-const storage = new WorkflowStorage()
+const storage = new WorkflowStorage(config.storage.workflowsPath)
 const workflowRunner = new WorkflowRunner(getToolManager(), storage)
 
 export function initializeWorkflows() {

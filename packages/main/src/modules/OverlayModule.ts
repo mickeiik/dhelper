@@ -13,6 +13,7 @@ import { BrowserWindow, screen, ipcMain } from 'electron';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
 import { randomUUID } from 'crypto';
+import { getConfig } from '../config/index.js';
 
 class OverlayWindowImpl implements OverlayWindow {
   readonly id: string;
@@ -136,6 +137,7 @@ class OverlayServiceImpl implements OverlayService {
 
   async createOverlay(options: OverlayOptions = {}): Promise<OverlayWindow> {
     const overlayId = randomUUID();
+    const config = getConfig();
     
     // Determine bounds - use provided bounds or full screen
     let bounds: Rectangle;
@@ -152,22 +154,22 @@ class OverlayServiceImpl implements OverlayService {
       };
     }
 
-    // Create overlay window
+    // Create overlay window with configuration defaults
     const window = new BrowserWindow({
       x: bounds.x,
       y: bounds.y,
       width: bounds.width,
       height: bounds.height,
-      transparent: options.transparent !== false, // Default to true
+      transparent: options.transparent ?? config.overlay.transparent,
       frame: false,
-      alwaysOnTop: options.alwaysOnTop !== false, // Default to true
+      alwaysOnTop: options.alwaysOnTop ?? config.overlay.alwaysOnTop,
       skipTaskbar: true,
       resizable: false,
       movable: false,
       minimizable: false,
       maximizable: false,
       closable: true,
-      focusable: !options.clickThrough, // If click-through, don't focus
+      focusable: !(options.clickThrough ?? config.overlay.clickThrough),
       show: false, // Start hidden
       webPreferences: {
         nodeIntegration: true,
@@ -179,21 +181,16 @@ class OverlayServiceImpl implements OverlayService {
     window.setBounds(bounds);
 
     // Set mouse event handling based on clickThrough option
-    if (options.clickThrough) {
+    const clickThrough = options.clickThrough ?? config.overlay.clickThrough;
+    if (clickThrough) {
       window.setIgnoreMouseEvents(true, { forward: true });
     } else {
       // Explicitly enable mouse events for interactive overlays
       window.setIgnoreMouseEvents(false);
     }
 
-    // Load the overlay HTML - try multiple possible paths
-    const __dirname = fileURLToPath(new URL('.', import.meta.url));
-    const possiblePaths = [
-      join(__dirname, '..', '..', 'overlay', 'overlay.html'),  // From source
-      join(__dirname, '..', '..', '..', 'overlay', 'overlay.html'), // From dist
-      join(process.cwd(), 'packages', 'overlay', 'overlay.html'), // From project root
-      join(__dirname, '..', '..', '..', '..', 'packages' , 'overlay', 'overlay.html'),
-    ];
+    // Load the overlay HTML using configured paths
+    const possiblePaths = config.overlay.htmlPaths;
     
     let overlayHtmlPath: string | null = null;
     for (const path of possiblePaths) {
@@ -215,7 +212,7 @@ class OverlayServiceImpl implements OverlayService {
     // Send initialization data to overlay - use did-finish-load instead of dom-ready
     const initializeOverlay = () => {
       // Ensure window is focused and activated for interactive overlays
-      if (!options.clickThrough) {
+      if (!clickThrough) {
         window.focus();
         window.moveTop();
         window.setAlwaysOnTop(true, 'screen-saver'); // Higher priority
@@ -224,9 +221,9 @@ class OverlayServiceImpl implements OverlayService {
       window.webContents.send('overlay-init', {
         id: overlayId,
         options: {
-          showInstructions: options.showInstructions,
+          showInstructions: options.showInstructions ?? config.ui.showInstructions,
           instructionText: options.instructionText,
-          timeout: options.timeout
+          timeout: options.timeout ?? config.ui.overlayTimeout
         }
       });
     };
@@ -251,12 +248,13 @@ class OverlayServiceImpl implements OverlayService {
     }, 500);
 
     // Handle auto-close timeout
-    if (options.timeout && options.timeout > 0) {
+    const timeout = options.timeout ?? config.ui.overlayTimeout;
+    if (timeout && timeout > 0) {
       setTimeout(() => {
         if (!window.isDestroyed()) {
           window.close();
         }
-      }, options.timeout);
+      }, timeout);
     }
 
     // Create wrapper and store
