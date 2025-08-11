@@ -2,7 +2,13 @@
 import type { Tool, ToolMetadata, OverlayService } from '@app/types';
 import { ToolExecutionError, ErrorLogger } from '@app/types';
 
-// Direct imports - no auto-discovery needed
+/**
+ * Tool imports - Add new tools here
+ * 
+ * To add a new tool:
+ * 1. Import your tool class here
+ * 2. Add it to the AVAILABLE_TOOLS array below
+ */
 import { HelloWorldTool } from '@tools/hello-world';
 import { TesseractOcrTool } from '@tools/ocr';
 import { ScreenRegionSelectorTool } from '@tools/screen-region-selector';
@@ -25,6 +31,21 @@ interface ToolRegistration {
     initialized: boolean;
 }
 
+/**
+ * Registry of all available tools
+ * 
+ * Add your imported tool class to this array to make it available in the system.
+ * Tools are automatically instantiated and registered when the ToolManager initializes.
+ */
+const AVAILABLE_TOOLS = [
+    HelloWorldTool,
+    TesseractOcrTool,
+    ScreenRegionSelectorTool,
+    ScreenshotTool,
+    TemplateMatcherTool,
+    ClickTool
+] as const;
+
 export class ToolManager {
     private tools = new Map<string, ToolRegistration>();
     private overlayService?: OverlayService;
@@ -32,21 +53,21 @@ export class ToolManager {
     private logger = new ErrorLogger('ToolManager');
 
     async autoDiscoverTools() {
-        const toolClasses = [
-            HelloWorldTool,
-            TesseractOcrTool,
-            ScreenRegionSelectorTool,
-            ScreenshotTool,
-            TemplateMatcherTool,
-            ClickTool
-        ];
-
-        for (const ToolClass of toolClasses) {
-            const tool = new ToolClass();
-            this.tools.set(tool.id, {
-                tool: tool as AnyTool,
-                initialized: false
-            });
+        // Register all available tools
+        for (const ToolClass of AVAILABLE_TOOLS) {
+            try {
+                const tool = new ToolClass();
+                this.tools.set(tool.id, {
+                    tool: tool as AnyTool,
+                    initialized: false
+                });
+            } catch (error) {
+                this.logger.logError(new ToolExecutionError(
+                    `Failed to instantiate tool ${ToolClass.name}`, 
+                    ToolClass.name, 
+                    { originalError: error }
+                ));
+            }
         }
     }
 

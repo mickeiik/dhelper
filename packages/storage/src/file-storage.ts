@@ -1,143 +1,87 @@
 import type { StoredWorkflow, WorkflowListItem, StorageStats } from './types.js';
 import type { WorkflowStorageInterface } from './storage-interface.js';
-import { writeFile, readFile, mkdir, unlink, readdir, stat } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { FileBasedStorage, type StorageMetadata } from './unified-storage.js';
+import { stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { app } from 'electron';
 
 export class FileWorkflowStorage implements WorkflowStorageInterface {
-    private storageDir: string;
-    private initialized = false;
+    private storage: FileBasedStorage<StoredWorkflow>;
 
     constructor(customDir?: string) {
-        this.storageDir = customDir || join(app.getPath('userData'), 'workflows');
-    }
-
-    private async initialize(): Promise<void> {
-        if (this.initialized) return;
-
-        try {
-            await mkdir(this.storageDir, { recursive: true });
-            this.initialized = true;
-        } catch (error) {
-            console.error('Failed to initialize file storage:', error);
-            throw error;
+        const storageDir = customDir || join(app.getPath('userData'), 'workflows');
+        
+        class WorkflowFileStorage extends FileBasedStorage<StoredWorkflow> {
+            protected extractMetadata(stored: StoredWorkflow | null): Partial<StorageMetadata> {
+                if (!stored) return {};
+                
+                return {
+                    name: stored.workflow.name,
+                    description: stored.workflow.description || stored.metadata.description,
+                    stepCount: stored.workflow.steps.length,
+                    hasCachedData: !!(stored.cache && Object.keys(stored.cache).length > 0),
+                    tags: stored.metadata.tags
+                };
+            }
         }
-    }
-
-    private getFilePath(workflowId: string): string {
-        return join(this.storageDir, `${workflowId}.json`);
-    }
-
-    async save(workflowId: string, storedWorkflow: StoredWorkflow): Promise<void> {
-        await this.initialize();
-
-        try {
-            const filePath = this.getFilePath(workflowId);
-            const data = JSON.stringify(storedWorkflow, null, 2);
-            await writeFile(filePath, data, 'utf-8');
-        } catch (error) {
-            console.error(`Failed to save workflow ${workflowId}:`, error);
-            throw error;
-        }
+        
+        this.storage = new WorkflowFileStorage(storageDir);
     }
 
     async load(workflowId: string): Promise<StoredWorkflow | null> {
-        await this.initialize();
+        const stored = await this.storage.load(workflowId);
+        if (!stored) return null;
 
-        try {
-            const filePath = this.getFilePath(workflowId);
+        stored.metadata.createdAt = new Date(stored.metadata.createdAt);
+        stored.metadata.updatedAt = new Date(stored.metadata.updatedAt);
+        return stored;
+    }
 
-            if (!existsSync(filePath)) {
-                return null;
-            }
-
-            const data = await readFile(filePath, 'utf-8');
-            const stored: StoredWorkflow = JSON.parse(data);
-
-            // Convert date strings back to Date objects
-            stored.metadata.createdAt = new Date(stored.metadata.createdAt);
-            stored.metadata.updatedAt = new Date(stored.metadata.updatedAt);
-
-            return stored;
-        } catch (error) {
-            console.error(`Failed to load workflow ${workflowId}:`, error);
-            return null;
-        }
+    async save(workflowId: string, storedWorkflow: StoredWorkflow): Promise<void> {
+        return this.storage.save(workflowId, storedWorkflow);
     }
 
     async delete(workflowId: string): Promise<boolean> {
-        await this.initialize();
-
-        try {
-            const filePath = this.getFilePath(workflowId);
-
-            if (!existsSync(filePath)) {
-                return false;
-            }
-
-            await unlink(filePath);
-            return true;
-        } catch (error) {
-            console.error(`Failed to delete workflow ${workflowId}:`, error);
-            return false;
-        }
-    }
-
-    async list(): Promise<WorkflowListItem[]> {
-        await this.initialize();
-
-        try {
-            if (!existsSync(this.storageDir)) {
-                return [];
-            }
-
-            const files = await readdir(this.storageDir);
-            const workflowFiles = files.filter(file => file.endsWith('.json'));
-
-            const workflows: WorkflowListItem[] = [];
-
-            for (const file of workflowFiles) {
-                try {
-                    const workflowId = file.replace('.json', '');
-                    const stored = await this.load(workflowId);
-
-                    if (stored) {
-                        workflows.push({
-                            id: stored.workflow.id,
-                            name: stored.workflow.name,
-                            description: stored.workflow.description || stored.metadata.description,
-                            createdAt: stored.metadata.createdAt,
-                            updatedAt: stored.metadata.updatedAt,
-                            stepCount: stored.workflow.steps.length,
-                            hasCachedData: !!(stored.cache && Object.keys(stored.cache).length > 0),
-                            tags: stored.metadata.tags
-                        });
-                    }
-                } catch (error) {
-                    console.warn(`Failed to load workflow info from ${file}:`, error);
-                }
-            }
-
-            // Sort by updatedAt (newest first)
-            workflows.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
-
-            return workflows;
-        } catch (error) {
-            console.error('Failed to list workflows:', error);
-            return [];
-        }
+        return this.storage.delete(workflowId);
     }
 
     async exists(workflowId: string): Promise<boolean> {
-        await this.initialize();
-        const filePath = this.getFilePath(workflowId);
-        return existsSync(filePath);
+        return this.storage.exists(workflowId);
+    }
+
+    async clear(): Promise<void> {
+        return this.storage.clear();
+    }
+
+    async list(): Promise<WorkflowListItem[]> {
+        const baseList = await this.storage.list();
+        
+        const workflows: WorkflowListItem[] = [];
+        
+        for (const item of baseList) {
+            const stored = await this.load(item.id);
+            if (stored) {
+                workflows.push({
+                    id: stored.workflow.id,
+                    name: stored.workflow.name,
+                    description: stored.workflow.description || stored.metadata.description,
+                    createdAt: stored.metadata.createdAt,
+                    updatedAt: stored.metadata.updatedAt,
+                    stepCount: stored.workflow.steps.length,
+                    hasCachedData: !!(stored.cache && Object.keys(stored.cache).length > 0),
+                    tags: stored.metadata.tags
+                });
+            }
+        }
+        
+        return workflows;
+    }
+
+    private getFilePath(id: string): string {
+        return join((this.storage as any).storageDir, `${id}.json`);
     }
 
     async getStats(): Promise<StorageStats> {
-        await this.initialize();
-
         const workflows = await this.list();
         let totalSize = 0;
         let cacheSize = 0;
@@ -148,7 +92,6 @@ export class FileWorkflowStorage implements WorkflowStorageInterface {
                 const stats = await stat(filePath);
                 totalSize += stats.size;
 
-                // Estimate cache size
                 const stored = await this.load(workflow.id);
                 if (stored?.cache) {
                     cacheSize += JSON.stringify(stored.cache).length;
@@ -167,23 +110,6 @@ export class FileWorkflowStorage implements WorkflowStorageInterface {
             oldestWorkflow: dates[0],
             newestWorkflow: dates[dates.length - 1]
         };
-    }
-
-    async clear(): Promise<void> {
-        await this.initialize();
-
-        try {
-            const workflows = await this.list();
-
-            for (const workflow of workflows) {
-                await this.delete(workflow.id);
-            }
-
-            // Cleared all workflows
-        } catch (error) {
-            console.error('Failed to clear all workflows:', error);
-            throw error;
-        }
     }
 
     async export(workflowId: string): Promise<string | null> {
