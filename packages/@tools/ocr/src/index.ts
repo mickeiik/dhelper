@@ -35,11 +35,6 @@ export class TesseractOcrTool implements Tool<Tesseract.ImageLike, string> {
       inputs: { $ref: '{{previous}}' }
     },
     {
-      name: 'From File Path',
-      description: 'Load image from a file path',
-      inputs: '/path/to/your/image.png'
-    },
-    {
       name: 'From Data URL',
       description: 'Process a base64 encoded image',
       inputs: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...'

@@ -44,7 +44,6 @@ export class ScreenRegionSelectorTool implements Tool<ScreenRegionSelectorInput,
       defaultValue: 'rectangle',
       options: [
         { value: 'point', label: 'Point (single click)' },
-        { value: 'rectangle', label: 'Rectangle (drag area)' },
         { value: 'region', label: 'Region (drag area)' }
       ]
     },
@@ -69,7 +68,7 @@ export class ScreenRegionSelectorTool implements Tool<ScreenRegionSelectorInput,
     },
     {
       name: 'Select Single Point',
-      description: 'Select a specific point on screen (e.g., for clicking)',
+      description: 'Select a specific point on screen',
       inputs: {
         mode: 'point',
         timeout: 15000

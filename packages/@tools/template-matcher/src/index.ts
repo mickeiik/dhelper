@@ -175,10 +175,10 @@ export class TemplateMatcherTool implements Tool<TemplateMatcherInput, TemplateM
       description: 'Search for templates only in a specific region of the current screen',
       inputs: {
         searchRegion: {
-          x: { $ref: '{{previous:region-selector.left}}' },
-          y: { $ref: '{{previous:region-selector.top}}' },
-          width: { $ref: '{{previous:region-selector.width}}' },
-          height: { $ref: '{{previous:region-selector.height}}' }
+          x: { $ref: '{{previous:screen-region-selector.left}}' },
+          y: { $ref: '{{previous:screen-region-selector.top}}' },
+          width: { $ref: '{{previous:screen-region-selector.width}}' },
+          height: { $ref: '{{previous:screen-region-selector.height}}' }
         }
       }
     }
@@ -213,8 +213,7 @@ export class TemplateMatcherTool implements Tool<TemplateMatcherInput, TemplateM
 
       // Get candidate templates
       const templates = await this.getCandidateTemplates(input);
-      console.log(`[Template Matcher] Found ${templates.length} candidate templates`);
-      
+
       if (templates.length === 0) {
         if (input.templateIds && Array.isArray(input.templateIds) && input.templateIds.length > 0) {
           throw new ToolExecutionError(`No templates found for IDs: ${input.templateIds.join(', ')}`, 'template-matcher', { templateIds: input.templateIds });
@@ -338,22 +337,15 @@ export class TemplateMatcherTool implements Tool<TemplateMatcherInput, TemplateM
       // Get specific templates by ID
       const templates = [];
       for (const templateId of input.templateIds) {
-        console.log(`[Template Matcher] Looking up template by ID: ${templateId}`);
         const template = await this.templateManager?.getTemplate?.(templateId);
         if (template && typeof template === 'object') {
           const templateObj = template as any;
           const { imageData, thumbnailData, ...metadata } = templateObj;
-          console.log(`[Template Matcher] Template metadata for ${templateId}:`, {
-            sourceResolution: templateObj.sourceResolution,
-            scaleCache: templateObj.scaleCache
-          });
           templates.push(metadata);
-          console.log(`[Template Matcher] Found template by ID: ${templateId} (${templateObj.name})`);
         } else {
           console.warn(`[Template Matcher] Template not found by ID: ${templateId}`);
         }
       }
-      console.log(`[Template Matcher] Retrieved ${templates.length} templates by ID`);
       return templates;
     }
 
@@ -361,23 +353,19 @@ export class TemplateMatcherTool implements Tool<TemplateMatcherInput, TemplateM
       // Get specific templates by name
       const templates = [];
       for (const templateName of input.templateNames) {
-        console.log(`[Template Matcher] Looking up template by name: ${templateName}`);
         const template = await this.templateManager?.getTemplateByName?.(templateName);
         if (template && typeof template === 'object') {
           const templateObj = template as any;
           const { imageData, thumbnailData, ...metadata } = templateObj;
           templates.push(metadata);
-          console.log(`[Template Matcher] Found template by name: ${templateName} (ID: ${templateObj.id})`);
         } else {
           console.warn(`[Template Matcher] Template not found by name: ${templateName}`);
         }
       }
-      console.log(`[Template Matcher] Retrieved ${templates.length} templates by name`);
       return templates;
     }
 
     // Get all templates, apply filters
-    console.log(`[Template Matcher] Getting all templates and applying filters`);
     let templates = (await this.templateManager?.listTemplates?.() || []) as TemplateMetadata[];
 
     if (input.categories && Array.isArray(input.categories) && input.categories.length > 0) {
@@ -439,35 +427,23 @@ export class TemplateMatcherTool implements Tool<TemplateMatcherInput, TemplateM
       const templateSize = templateMat.sizes;
       const originalWidth = templateSize[1];
       const originalHeight = templateSize[0];
-      const screenSize = searchMat.sizes;
-      const screenWidth = screenSize[1];
-      const screenHeight = screenSize[0];
-      
-      console.log(`[Template Matcher] Template '${templateMetadata.name}' (${originalWidth}x${originalHeight}) vs Screen (${screenWidth}x${screenHeight})`);
-      console.log(`[Template Matcher] Screen/Template ratio: ${(screenWidth/originalWidth).toFixed(2)}x${(screenHeight/originalHeight).toFixed(2)}`);
 
       const matches: TemplateMatchResult[] = [];
       const threshold = Math.max(minConfidence, templateMetadata.matchThreshold || 0.8);
       const currentResolution = this.getCurrentResolution();
-      
-      console.log(`[Template Matcher] Using confidence threshold: ${threshold.toFixed(4)} (minConfidence: ${minConfidence}, template threshold: ${templateMetadata.matchThreshold || 0.8})`);
-      console.log(`[Template Matcher] Current resolution: ${currentResolution}, Source resolution: ${templateMetadata.sourceResolution}`);
 
       // Smart scale selection: try cached scale first, then fallback to full search
       let scalesToTry: number[] = [];
-      
+
       if (templateMetadata.scaleCache && templateMetadata.scaleCache[currentResolution]) {
         // We have a cached scale for this resolution - try it first
         const cachedScale = templateMetadata.scaleCache[currentResolution];
-        console.log(`[Template Matcher] Found cached scale ${cachedScale} for resolution ${currentResolution}`);
         scalesToTry = [cachedScale, 1.0]; // Try cached scale first, then original size
       } else if (currentResolution === templateMetadata.sourceResolution) {
         // Same resolution as when template was created - should be 1.0
-        console.log(`[Template Matcher] Same resolution as source, trying scale 1.0`);
         scalesToTry = [1.0];
       } else {
         // No cached scale - need full search
-        console.log(`[Template Matcher] No cached scale found, performing full search`);
         scalesToTry = [
           1.0,          // Original size (try first)
           // Scaling down (template larger than screen)
@@ -482,98 +458,92 @@ export class TemplateMatcherTool implements Tool<TemplateMatcherInput, TemplateM
         let scaledWidth = originalWidth;
         let scaledHeight = originalHeight;
 
-          let result: any = null;
-          let scaledTemplate: cv.Mat = templateMat;
-          
-          try {
-            // Scale template if scale factor is not 1.0
-            if (Math.abs(scale - 1.0) > 0.01) {
-              const newWidth = Math.round(originalWidth * scale);
-              const newHeight = Math.round(originalHeight * scale);
-              
-              // Skip if scaled template would be too small or too large
-              if (newWidth < 10 || newHeight < 10 || 
-                  newWidth > searchMat.sizes[1] || newHeight > searchMat.sizes[0]) {
-                continue;
-              }
+        let result: any = null;
+        let scaledTemplate: cv.Mat = templateMat;
 
-              scaledTemplate = templateMat.resize(newHeight, newWidth);
-              scaledWidth = newWidth;
-              scaledHeight = newHeight;
-            }
-            
-            // Perform template matching using normalized cross correlation
-            result = searchMat.matchTemplate(scaledTemplate, cv.TM_CCOEFF_NORMED);
+        try {
+          // Scale template if scale factor is not 1.0
+          if (Math.abs(scale - 1.0) > 0.01) {
+            const newWidth = Math.round(originalWidth * scale);
+            const newHeight = Math.round(originalHeight * scale);
 
-            // Find min/max locations and values
-            const minMaxLoc = result.minMaxLoc();
-          
-            console.log(`[Template Matcher] Scale ${scale}: confidence ${minMaxLoc.maxVal.toFixed(4)} (threshold: ${threshold.toFixed(4)}) for template ${templateMetadata.id}`);
+            // Skip if scaled template would be too small or too large
+            if (newWidth < 10 || newHeight < 10 ||
+              newWidth > searchMat.sizes[1] || newHeight > searchMat.sizes[0]) {
+              continue;
+            }
 
-            if (minMaxLoc.maxVal >= threshold) {
-              // Found a good match at this scale - create the match result
-              console.log(`[Template Matcher] ✓ Match found at scale ${scale} with confidence ${minMaxLoc.maxVal.toFixed(4)}`);
-              matches.push({
-                templateId: templateMetadata.id,
-                confidence: minMaxLoc.maxVal,
-                location: {
-                  x: minMaxLoc.maxLoc.x + offsetX,
-                  y: minMaxLoc.maxLoc.y + offsetY,
-                  width: scaledWidth,
-                  height: scaledHeight
-                },
-                template: {
-                  ...templateMetadata,
-                  // Add scale information for debugging/display
-                  detectedScale: scale
-                }
-              });
-            }
-          } catch (scaleError) {
-            // Log but continue with other scales
-            console.warn(`Template matching failed at scale ${scale}:`, scaleError);
-          } finally {
-            // Cleanup temporary Mat objects
-            if (result) {
-              try {
-                result.release();
-              } catch {
-                // Fallback: ignore cleanup errors
+            scaledTemplate = templateMat.resize(newHeight, newWidth);
+            scaledWidth = newWidth;
+            scaledHeight = newHeight;
+          }
+
+          // Perform template matching using normalized cross correlation
+          result = searchMat.matchTemplate(scaledTemplate, cv.TM_CCOEFF_NORMED);
+
+          // Find min/max locations and values
+          const minMaxLoc = result.minMaxLoc();
+
+
+          if (minMaxLoc.maxVal >= threshold) {
+            // Found a good match at this scale - create the match result
+            matches.push({
+              templateId: templateMetadata.id,
+              confidence: minMaxLoc.maxVal,
+              location: {
+                x: minMaxLoc.maxLoc.x + offsetX,
+                y: minMaxLoc.maxLoc.y + offsetY,
+                width: scaledWidth,
+                height: scaledHeight
+              },
+              template: {
+                ...templateMetadata,
+                // Add scale information for debugging/display
+                detectedScale: scale
               }
-            }
-            // Cleanup scaled template if it's different from original
-            if (scaledTemplate !== templateMat) {
-              try {
-                scaledTemplate.release();
-              } catch {
-                // Fallback: ignore cleanup errors
-              }
+            });
+          }
+        } catch (scaleError) {
+          // Log but continue with other scales
+        } finally {
+          // Cleanup temporary Mat objects
+          if (result) {
+            try {
+              result.release();
+            } catch {
+              // Fallback: ignore cleanup errors
             }
           }
+          // Cleanup scaled template if it's different from original
+          if (scaledTemplate !== templateMat) {
+            try {
+              scaledTemplate.release();
+            } catch {
+              // Fallback: ignore cleanup errors
+            }
+          }
+        }
       }
 
       // Sort matches by confidence (highest first) and return top matches
       matches.sort((a, b) => b.confidence - a.confidence);
-      
+
       if (matches.length > 0) {
         const bestMatch = matches[0];
         const bestScale = bestMatch.template.detectedScale;
-        console.log(`[Template Matcher] Found ${matches.length} matches for template ${templateMetadata.id}. Best confidence: ${bestMatch.confidence.toFixed(4)} at scale ${bestScale || 1}`);
-        
+
         // Cache the successful scale if it's not already cached
         if (bestScale && (!templateMetadata.scaleCache || templateMetadata.scaleCache[currentResolution] !== bestScale)) {
           try {
             await this.templateManager?.updateScaleCache?.(templateMetadata.id, currentResolution, bestScale);
-            console.log(`[Template Matcher] Cached scale ${bestScale} for template ${templateMetadata.id} at resolution ${currentResolution}`);
           } catch (error) {
             console.warn(`[Template Matcher] Failed to cache scale: ${error}`);
           }
         }
-        
+
         return [bestMatch];
       }
-      
-      console.log(`[Template Matcher] No matches found for template ${templateMetadata.id} above threshold ${threshold.toFixed(4)}`);
+
       return [];
 
     } catch (error) {

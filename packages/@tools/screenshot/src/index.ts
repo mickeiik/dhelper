@@ -75,10 +75,10 @@ export class ScreenshotTool implements Tool {
       name: 'Use Region Selector',
       description: 'Use coordinates from the most recent region selector step',
       inputs: {
-        top: { $ref: '{{previous:region-selector.top}}' },
-        left: { $ref: '{{previous:region-selector.left}}' },
-        width: { $ref: '{{previous:region-selector.width}}' },
-        height: { $ref: '{{previous:region-selector.height}}' }
+        top: { $ref: '{{previous:screen-region-selector.top}}' },
+        left: { $ref: '{{previous:screen-region-selector.left}}' },
+        width: { $ref: '{{previous:screen-region-selector.width}}' },
+        height: { $ref: '{{previous:screen-region-selector.height}}' }
       }
     },
     {
