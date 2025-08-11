@@ -451,11 +451,39 @@ function AdvancedFormField({ field, value, onChange, existingStepIds }: Advanced
                         className={`${styles.select} ${styles.refSelect}`}
                     >
                         <option value="">Select step output...</option>
-                        {existingStepIds.map(stepId => (
-                            <option key={stepId} value={stepId}>
-                                {stepId}
-                            </option>
-                        ))}
+                        {existingStepIds.map(stepId => {
+                            const options: JSX.Element[] = [];
+                            
+                            // Add the step itself
+                            options.push(
+                                <option key={stepId} value={stepId}>
+                                    {stepId} (full output)
+                                </option>
+                            );
+                            
+                            // Add properties for known tools
+                            const getToolProperties = (stepId: string): string[] => {
+                                if (stepId.includes('screen-region-selector')) {
+                                    return ['x', 'y', 'top', 'left', 'width', 'height'];
+                                }
+                                if (stepId.includes('template-matcher')) {
+                                    return ['location.x', 'location.y', 'location.width', 'location.height'];
+                                }
+                                return [];
+                            };
+                            
+                            const properties = getToolProperties(stepId);
+                            for (const prop of properties) {
+                                const refValue = `${stepId}.${prop}`;
+                                options.push(
+                                    <option key={refValue} value={refValue}>
+                                        ↳ {stepId}.{prop}
+                                    </option>
+                                );
+                            }
+                            
+                            return options;
+                        })}
                     </select>
                 ) : (
                     <input

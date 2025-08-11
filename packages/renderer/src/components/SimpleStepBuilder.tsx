@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type JSX } from 'react';
 import type { ToolInputField, ToolMetadata, WorkflowStep } from '@app/types';
 import type { StepBuilderData } from '../hooks/useWorkflowBuilder';
 import { validateSemanticReferences, resolveSemanticReferences } from '@app/preload';
@@ -35,16 +35,16 @@ export function SimpleStepBuilder({ tools, onAddStep, existingStepIds = [], exis
     const generateStepId = (toolId: string): string => {
         const tool = tools.find(t => t.id === toolId);
         if (!tool) return '';
-        
+
         const baseName = tool.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
         let counter = 1;
         let stepId = baseName;
-        
+
         while (existingStepIds.includes(stepId)) {
             stepId = `${baseName}-${counter}`;
             counter++;
         }
-        
+
         return stepId;
     };
 
@@ -66,7 +66,7 @@ export function SimpleStepBuilder({ tools, onAddStep, existingStepIds = [], exis
             // Validate semantic references before applying
             const currentStepIndex = existingSteps.length; // This will be the index of the new step
             const validation = await validateSemanticReferences(exampleInputs, existingSteps, currentStepIndex);
-            
+
             if (!validation.isValid) {
                 setValidationWarnings(validation.errors);
                 setError(`Cannot apply example: ${validation.errors[0]}`);
@@ -80,7 +80,7 @@ export function SimpleStepBuilder({ tools, onAddStep, existingStepIds = [], exis
                     workflowSteps: existingSteps,
                     previousResults: {} // Empty for UI preview
                 };
-                
+
                 const resolvedInputs = await resolveSemanticReferences(exampleInputs, context);
                 setStepData(prev => ({ ...prev, inputs: resolvedInputs as Record<string, unknown> }));
                 setValidationWarnings([]);
@@ -104,7 +104,7 @@ export function SimpleStepBuilder({ tools, onAddStep, existingStepIds = [], exis
 
         try {
             const stepId = generateStepId(stepData.toolId);
-            
+
             const builderData: StepBuilderData = {
                 id: stepId,
                 toolId: stepData.toolId,
@@ -289,10 +289,10 @@ interface SimpleFieldProps {
 function SimpleField({ field, value, onChange, existingStepIds }: SimpleFieldProps) {
     const [useReference, setUseReference] = useState(false);
 
-    const isRef = value !== null && 
-        value !== undefined && 
-        typeof value === 'object' && 
-        value !== null && 
+    const isRef = value !== null &&
+        value !== undefined &&
+        typeof value === 'object' &&
+        value !== null &&
         '$ref' in value;
 
     useEffect(() => {
@@ -352,6 +352,44 @@ interface ReferenceSelectorProps {
 }
 
 function ReferenceSelector({ value, onChange, existingStepIds }: ReferenceSelectorProps) {
+    // Define common properties for known tools
+    const getToolProperties = (stepId: string): string[] => {
+        if (stepId.includes('screen-region-selector')) {
+            return ['x', 'y', 'top', 'left', 'width', 'height'];
+        }
+        if (stepId.includes('template-matcher')) {
+            return ['location.x', 'location.y', 'location.width', 'location.height'];
+        }
+        // Add more tool properties as needed
+        return [];
+    };
+
+    const generateOptions = () => {
+        const options: JSX.Element[] = [];
+
+        for (const stepId of existingStepIds) {
+            // Add the step itself
+            options.push(
+                <option key={stepId} value={stepId}>
+                    {stepId} (full output)
+                </option>
+            );
+
+            // Add properties for this step
+            const properties = getToolProperties(stepId);
+            for (const prop of properties) {
+                const refValue = `${stepId}.${prop}`;
+                options.push(
+                    <option key={refValue} value={refValue}>
+                        ↳ {stepId}.{prop}
+                    </option>
+                );
+            }
+        }
+
+        return options;
+    };
+
     return (
         <select
             value={value}
@@ -359,11 +397,7 @@ function ReferenceSelector({ value, onChange, existingStepIds }: ReferenceSelect
             className={styles.referenceSelect}
         >
             <option value="">Select step output...</option>
-            {existingStepIds.map(stepId => (
-                <option key={stepId} value={stepId}>
-                    {stepId}
-                </option>
-            ))}
+            {generateOptions()}
         </select>
     );
 }
@@ -434,8 +468,8 @@ function SimpleFieldInput({ field, value, onChange }: SimpleFieldInputProps) {
                         const lines = e.target.value.split('\n').filter(line => line.trim() !== '');
                         onChange(lines);
                     }}
-                    placeholder={field.placeholder || field.example ? 
-                        (Array.isArray(field.example) ? field.example.join('\n') : String(field.example)) : 
+                    placeholder={field.placeholder || field.example ?
+                        (Array.isArray(field.example) ? field.example.join('\n') : String(field.example)) :
                         'Enter items, one per line'}
                     className={styles.input}
                     rows={4}
