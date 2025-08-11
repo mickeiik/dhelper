@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type JSX } from 'react';
 import type { ToolInputField, ToolMetadata, WorkflowInputs, WorkflowStep } from '@app/types';
 import type { StepBuilderData } from '../hooks/useWorkflowBuilder';
 import styles from './AdvancedStepBuilder.module.css';
