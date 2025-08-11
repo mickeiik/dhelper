@@ -48,13 +48,13 @@ export interface TemplateMatcherInput {
 
 export type TemplateMatcherOutput = TemplateMatchResult[];
 
-export class TemplateMatcherTool implements Tool {
+export class TemplateMatcherTool implements Tool<TemplateMatcherInput, TemplateMatcherOutput> {
   id = 'template-matcher' as const;
   name = 'Template Matcher Tool';
   description = 'Find template matches on the current screen or provided image using multi-scale OpenCV template matching. Automatically handles different screen resolutions (1080p, 1440p, 4K)';
   category = 'Computer Vision';
 
-  private templateManager: any; // Will be injected during initialization
+  private templateManager: import('@app/types').TemplateManager | undefined; // Will be injected during initialization
   private overlayService?: OverlayService;
 
   inputFields: ToolInputField[] = [
@@ -189,7 +189,7 @@ export class TemplateMatcherTool implements Tool {
 
     // Create a new templateManager instance for this tool
     // The tool should be independent and not rely on the main process
-    this.templateManager = context.templateManager;
+    this.templateManager = context.templateManager!;
 
     // Store overlay service for visual indicators
     this.overlayService = context.overlayService;
@@ -253,7 +253,7 @@ export class TemplateMatcherTool implements Tool {
 
       // Update usage statistics
       for (const result of limitedResults) {
-        await this.templateManager.recordTemplateUsage(result.templateId, true);
+        await this.templateManager?.recordTemplateUsage?.(result.templateId, true);
       }
 
       // Show visual indicators if requested
@@ -277,9 +277,9 @@ export class TemplateMatcherTool implements Tool {
     }
   }
 
-  private loadImage(imageInput: string | Buffer): any | null {
+  private loadImage(imageInput: string | Buffer): cv.Mat | null {
     try {
-      let imageMat: any = null;
+      let imageMat: cv.Mat | null = null;
 
       if (typeof imageInput === 'string') {
         if (imageInput.startsWith('data:')) {
@@ -318,15 +318,16 @@ export class TemplateMatcherTool implements Tool {
       const templates = [];
       for (const templateId of input.templateIds) {
         console.log(`[Template Matcher] Looking up template by ID: ${templateId}`);
-        const template = await this.templateManager.getTemplate(templateId);
-        if (template) {
-          const { imageData, thumbnailData, ...metadata } = template;
+        const template = await this.templateManager?.getTemplate?.(templateId);
+        if (template && typeof template === 'object') {
+          const templateObj = template as any;
+          const { imageData, thumbnailData, ...metadata } = templateObj;
           console.log(`[Template Matcher] Template metadata for ${templateId}:`, {
-            sourceResolution: metadata.sourceResolution,
-            scaleCache: metadata.scaleCache
+            sourceResolution: templateObj.sourceResolution,
+            scaleCache: templateObj.scaleCache
           });
           templates.push(metadata);
-          console.log(`[Template Matcher] Found template by ID: ${templateId} (${template.name})`);
+          console.log(`[Template Matcher] Found template by ID: ${templateId} (${templateObj.name})`);
         } else {
           console.warn(`[Template Matcher] Template not found by ID: ${templateId}`);
         }
@@ -340,11 +341,12 @@ export class TemplateMatcherTool implements Tool {
       const templates = [];
       for (const templateName of input.templateNames) {
         console.log(`[Template Matcher] Looking up template by name: ${templateName}`);
-        const template = await this.templateManager.getTemplateByName(templateName);
-        if (template) {
-          const { imageData, thumbnailData, ...metadata } = template;
+        const template = await this.templateManager?.getTemplateByName?.(templateName);
+        if (template && typeof template === 'object') {
+          const templateObj = template as any;
+          const { imageData, thumbnailData, ...metadata } = templateObj;
           templates.push(metadata);
-          console.log(`[Template Matcher] Found template by name: ${templateName} (ID: ${template.id})`);
+          console.log(`[Template Matcher] Found template by name: ${templateName} (ID: ${templateObj.id})`);
         } else {
           console.warn(`[Template Matcher] Template not found by name: ${templateName}`);
         }
@@ -355,29 +357,33 @@ export class TemplateMatcherTool implements Tool {
 
     // Get all templates, apply filters
     console.log(`[Template Matcher] Getting all templates and applying filters`);
-    let templates = await this.templateManager.listTemplates();
+    let templates = (await this.templateManager?.listTemplates?.() || []) as TemplateMetadata[];
 
     if (input.categories && Array.isArray(input.categories) && input.categories.length > 0) {
-      templates = templates.filter((t: TemplateMetadata) => input.categories!.includes(t.category));
+      templates = templates.filter((t) => input.categories!.includes((t as any).category));
     }
 
     if (input.tags && Array.isArray(input.tags) && input.tags.length > 0) {
-      templates = templates.filter((t: TemplateMetadata) =>
-        input.tags?.some(tag => t.tags.includes(tag))
+      templates = templates.filter((t) =>
+        input.tags?.some(tag => (t as any).tags?.includes(tag))
       );
     }
 
     return templates;
   }
 
-  private async loadTemplateImage(templateId: string): Promise<any | null> {
-    const template = await this.templateManager.getTemplate(templateId);
-    if (!template || !template.imageData) {
+  private async loadTemplateImage(templateId: string): Promise<cv.Mat | null> {
+    const template = await this.templateManager?.getTemplate?.(templateId);
+    if (!template || typeof template !== 'object') {
+      return null;
+    }
+    const templateObj = template as any;
+    if (!templateObj.imageData) {
       return null;
     }
 
     try {
-      return cv.imdecode(template.imageData);
+      return cv.imdecode(templateObj.imageData);
     } catch (error) {
       console.error(`Failed to load template image ${templateId}:`, error);
       return null;
@@ -385,9 +391,9 @@ export class TemplateMatcherTool implements Tool {
   }
 
   private async matchTemplate(
-    screenMat: any,
-    templateMat: any,
-    templateMetadata: any,
+    screenMat: cv.Mat,
+    templateMat: cv.Mat,
+    templateMetadata: TemplateMetadata,
     minConfidence: number,
     searchRegion?: { x: number; y: number; width: number; height: number }
   ): Promise<TemplateMatchResult[]> {
@@ -511,13 +517,13 @@ export class TemplateMatcherTool implements Tool {
       
       if (matches.length > 0) {
         const bestMatch = matches[0];
-        const bestScale = (bestMatch.template as any).detectedScale;
-        console.log(`[Template Matcher] Found ${matches.length} matches for template ${templateMetadata.id}. Best confidence: ${bestMatch.confidence.toFixed(4)} at scale ${bestScale}`);
+        const bestScale = bestMatch.template.detectedScale;
+        console.log(`[Template Matcher] Found ${matches.length} matches for template ${templateMetadata.id}. Best confidence: ${bestMatch.confidence.toFixed(4)} at scale ${bestScale || 1}`);
         
         // Cache the successful scale if it's not already cached
-        if (!templateMetadata.scaleCache || templateMetadata.scaleCache[currentResolution] !== bestScale) {
+        if (bestScale && (!templateMetadata.scaleCache || templateMetadata.scaleCache[currentResolution] !== bestScale)) {
           try {
-            await this.templateManager.updateScaleCache(templateMetadata.id, currentResolution, bestScale);
+            await this.templateManager?.updateScaleCache?.(templateMetadata.id, currentResolution, bestScale);
             console.log(`[Template Matcher] Cached scale ${bestScale} for template ${templateMetadata.id} at resolution ${currentResolution}`);
           } catch (error) {
             console.warn(`[Template Matcher] Failed to cache scale: ${error}`);

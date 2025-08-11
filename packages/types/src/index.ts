@@ -2,13 +2,15 @@
 // Tool-related types
 export type {
   Tool,
+  ToolBase,
   ToolMetadata,
   ToolInitContext,
   ToolRegistry,
   ToolId,
   ToolInput,
   ToolOutput,
-  ToolInputField
+  ToolInputField,
+  TemplateManager
 } from './tool.js';
 
 // Workflow-related types

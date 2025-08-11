@@ -6,7 +6,7 @@ export type TesseractOcrToolInput = Tesseract.ImageLike;
 
 export type TesseractOcrToolOutput = string;
 
-export class TesseractOcrTool implements Tool {
+export class TesseractOcrTool implements Tool<Tesseract.ImageLike, string> {
   id = 'tesseract-ocr' as const;
   name = 'Tesseract OCR Tool';
   description = 'Extract text from images using Tesseract OCR engine';
@@ -69,8 +69,9 @@ export class TesseractOcrTool implements Tool {
 
         return cleanedText;
       }
-    } catch (error: any) {
-      throw new Error(`TesseractOcrTool failed: ${error.message}`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`TesseractOcrTool failed: ${message}`);
     }
     return ''
   }

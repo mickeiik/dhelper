@@ -141,7 +141,7 @@ export class WorkflowRunner extends WorkflowEventEmitter {
         const resolvedInputs = await this.resolveInputs(step.inputs, previousResults, workflow, stepIndex);
 
         // Check cache first if enabled
-        let result: any = null;
+        let result: unknown = null;
         let fromCache = false;
         let cacheKey: string | undefined;
 
@@ -152,9 +152,9 @@ export class WorkflowRunner extends WorkflowEventEmitter {
 
           // Generate cache key
           cacheKey = this.cacheManager.generateCacheKey(
-            step.id,
-            step.toolId,
-            resolvedInputs,
+            String(step.id),
+            String(step.toolId),
+            resolvedInputs as Record<string, unknown>,
             step.cache.key
           );
 
@@ -176,12 +176,12 @@ export class WorkflowRunner extends WorkflowEventEmitter {
 
         // Execute tool if not cached
         if (!fromCache) {
-          result = await this.toolManager.runTool(step.toolId, resolvedInputs);
+          result = await this.toolManager.runTool(String(step.toolId), resolvedInputs as Record<string, unknown>);
 
           // Cache the result if caching is enabled
           if (step.cache?.enabled && cacheKey) {
             try {
-              const tool = await this.getToolInstance(step.toolId);
+              const tool = await this.getToolInstance(String(step.toolId));
               const toolCacheConfig = tool?.cacheConfig;
 
               await this.cacheManager.set(workflowId, cacheKey, result, {
@@ -205,8 +205,8 @@ export class WorkflowRunner extends WorkflowEventEmitter {
         }
 
         const stepResult: StepResult = {
-          stepId: step.id,
-          toolId: step.toolId,
+          stepId: String(step.id),
+          toolId: String(step.toolId),
           success: true,
           result,
           startTime,
@@ -234,8 +234,8 @@ export class WorkflowRunner extends WorkflowEventEmitter {
           await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
         } else {
           const stepResult: StepResult = {
-            stepId: step.id,
-            toolId: step.toolId,
+            stepId: String(step.id),
+            toolId: String(step.toolId),
             success: false,
             error: errorMessage,
             startTime,
@@ -306,7 +306,7 @@ export class WorkflowRunner extends WorkflowEventEmitter {
 
       // Handle $merge - merge multiple inputs
       if ('$merge' in inputs && Array.isArray(inputs.$merge)) {
-        const resolved = await Promise.all(inputs.$merge.map((input: any) => this.resolveInputs(input, previousResults, workflow, stepIndex)));
+        const resolved = await Promise.all(inputs.$merge.map((input: unknown) => this.resolveInputs(input, previousResults, workflow, stepIndex)));
         return Object.assign({}, ...resolved);
       }
 
@@ -318,7 +318,7 @@ export class WorkflowRunner extends WorkflowEventEmitter {
         }
         return resolved;
       } else {
-        const resolved: any = {};
+        const resolved: Record<string, unknown> = {};
         for (const [key, value] of Object.entries(inputs)) {
           resolved[key] = await this.resolveInputs(value, previousResults, workflow, stepIndex);
         }
@@ -330,7 +330,7 @@ export class WorkflowRunner extends WorkflowEventEmitter {
     return inputs;
   }
 
-  private resolveReference(ref: string, previousResults: Record<string, StepResult>): any {
+  private resolveReference(ref: string, previousResults: Record<string, StepResult>): unknown {
     const parts = ref.split('.');
     const stepId = parts[0];
 
@@ -359,7 +359,7 @@ export class WorkflowRunner extends WorkflowEventEmitter {
         throw new WorkflowError(`Cannot access property "${parts[i]}" on non-object value from step "${stepId}"`, undefined, { stepId, property: parts[i], value: current, valueType: typeof current });
       }
 
-      current = current[parts[i]];
+      current = (current as Record<string, unknown>)[parts[i]];
     }
 
     return current;

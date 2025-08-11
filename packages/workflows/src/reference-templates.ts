@@ -7,16 +7,17 @@ import { templateManager } from '@app/templates';
  * Replaces the overly complex multi-class architecture with straightforward string matching
  */
 export function resolveSemanticReferences(
-  inputs: any,
+  inputs: unknown,
   context: { currentStepIndex: number; workflowSteps: WorkflowStep[]; previousResults: Record<string, StepResult> }
-): any {
+): unknown {
   if (!inputs) return inputs;
 
   // Handle objects recursively
-  if (typeof inputs === 'object' && !Array.isArray(inputs)) {
+  if (typeof inputs === 'object' && inputs !== null && !Array.isArray(inputs)) {
     // Handle $ref objects
-    if (inputs.$ref && typeof inputs.$ref === 'string') {
-      const ref = inputs.$ref;
+    if ('$ref' in inputs && typeof (inputs as any).$ref === 'string') {
+      const inputs_with_ref = inputs as { $ref: string };
+      const ref = inputs_with_ref.$ref;
       
       // {{previous}} - get previous step result
       if (ref === '{{previous}}') {
@@ -66,7 +67,7 @@ export function resolveSemanticReferences(
     }
 
     // Recursively process object properties
-    const resolved: any = {};
+    const resolved: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(inputs)) {
       resolved[key] = resolveSemanticReferences(value, context);
     }
@@ -91,7 +92,7 @@ function findPreviousStepByToolType(
 ): WorkflowStep {
   for (let i = context.currentStepIndex - 1; i >= 0; i--) {
     const step = context.workflowSteps[i];
-    if (matchesToolType(step.toolId, toolType)) {
+    if (matchesToolType(String(step.toolId), toolType)) {
       return step;
     }
   }
@@ -112,17 +113,18 @@ function matchesToolType(toolId: string, toolType: string): boolean {
  * Simple validation function for UI - checks basic syntax without complex logic
  */
 export function validateSemanticReferences(
-  inputs: any,
+  inputs: unknown,
   availableSteps: WorkflowStep[],
   currentStepIndex: number
 ): { isValid: boolean; errors: string[] } {
   const errors: string[] = [];
 
-  function validate(value: any, path: string = ''): void {
+  function validate(value: unknown, path: string = ''): void {
     if (!value || typeof value !== 'object') return;
 
-    if (value.$ref && typeof value.$ref === 'string') {
-      const ref = value.$ref;
+    if ('$ref' in value && typeof (value as any).$ref === 'string') {
+      const value_with_ref = value as { $ref: string };
+      const ref = value_with_ref.$ref;
       
       // Check {{previous}} references
       if (ref === '{{previous}}' && currentStepIndex === 0) {
@@ -135,7 +137,7 @@ export function validateSemanticReferences(
         const toolType = toolTypeMatch[1];
         let found = false;
         for (let i = currentStepIndex - 1; i >= 0; i--) {
-          if (matchesToolType(availableSteps[i].toolId, toolType)) {
+          if (matchesToolType(String(availableSteps[i].toolId), toolType)) {
             found = true;
             break;
           }

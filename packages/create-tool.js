@@ -45,14 +45,14 @@ export interface ${pascalCase(toolName)}Input {
 export interface ${pascalCase(toolName)}Output {
   // Define your output interface here
   success: boolean;
-  data: any;
+  data: unknown;
 }
 
 export class ${pascalCase(toolName)}Tool implements Tool {
   id = '${toolName}' as const;
   name = '${toolName.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} Tool';
 
-  async initialize(inputs: any) {
+  async initialize() {
     return;
   }
 

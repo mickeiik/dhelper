@@ -124,7 +124,7 @@ export function initializeTemplates() {
     });
 
     // Template matching and usage
-    ipcMain.handle('templates:match', async (_, screenImage: Buffer, options: any) => {
+    ipcMain.handle('templates:match', async (_, screenImage: Buffer, options: import('@app/types').TemplateMatchOptions) => {
       try {
         return await templateManager.matchTemplates(screenImage, options);
       } catch (error) {

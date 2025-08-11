@@ -58,7 +58,7 @@ export class SqliteTemplateStorage {
     });
   }
 
-  private runAsync(sql: string, params: any[] = []): Promise<any> {
+  private runAsync(sql: string, params: unknown[] = []): Promise<{ changes: number; lastID: number }> {
     return new Promise((resolve, reject) => {
       if (!this.db) {
         reject(new StorageError('Database not initialized', 'run'));
@@ -71,7 +71,7 @@ export class SqliteTemplateStorage {
     });
   }
 
-  private getAsync(sql: string, params: any[] = []): Promise<any> {
+  private getAsync(sql: string, params: unknown[] = []): Promise<Record<string, any> | undefined> {
     return new Promise((resolve, reject) => {
       if (!this.db) {
         reject(new StorageError('Database not initialized', 'get'));
@@ -79,13 +79,13 @@ export class SqliteTemplateStorage {
       }
       this.db.get(sql, params, (err, row) => {
         if (err) reject(err);
-        else resolve(row);
+        else resolve(row as Record<string, any> | undefined);
       });
     });
   }
 
 
-  private allAsync(sql: string, params: any[] = []): Promise<any[]> {
+  private allAsync(sql: string, params: unknown[] = []): Promise<Record<string, any>[]> {
     return new Promise((resolve, reject) => {
       if (!this.db) {
         reject(new StorageError('Database not initialized', 'all'));
@@ -93,7 +93,7 @@ export class SqliteTemplateStorage {
       }
       this.db.all(sql, params, (err, rows) => {
         if (err) reject(err);
-        else resolve(rows || []);
+        else resolve((rows as Record<string, any>[]) || []);
       });
     });
   }
@@ -522,8 +522,8 @@ export class SqliteTemplateStorage {
       
       if (!current) return;
 
-      const currentSuccessRate = current.success_rate || 0;
-      const currentUsageCount = current.usage_count;
+      const currentSuccessRate = current?.success_rate || 0;
+      const currentUsageCount = current?.usage_count || 0;
       
       // Update success rate with weighted average
       const newSuccessRate = success 
@@ -565,7 +565,7 @@ export class SqliteTemplateStorage {
         return;
       }
 
-      const currentScaleCache = current.scale_cache || '{}';
+      const currentScaleCache = current?.scale_cache || '{}';
       console.log(`[Template Storage] Current scale cache: ${currentScaleCache}`);
       
       const scaleCache = JSON.parse(currentScaleCache);
@@ -593,12 +593,14 @@ export class SqliteTemplateStorage {
     try {
       // Get template count and category counts
       const totalResult = await this.getAsync('SELECT COUNT(*) as total FROM templates');
-      const totalTemplates = totalResult.total;
+      const totalTemplates = totalResult?.total || 0;
 
       const categoryResults = await this.allAsync('SELECT category, COUNT(*) as count FROM templates GROUP BY category');
       const categoryCounts: Record<string, number> = {};
       categoryResults.forEach(row => {
-        categoryCounts[row.category] = row.count;
+        if (row.category && typeof row.count === 'number') {
+          categoryCounts[row.category] = row.count;
+        }
       });
 
       // Get date ranges
@@ -645,8 +647,8 @@ export class SqliteTemplateStorage {
         totalTemplates,
         totalSize,
         imageSize,
-        oldestTemplate: dateResult.oldest ? new Date(dateResult.oldest) : undefined,
-        newestTemplate: dateResult.newest ? new Date(dateResult.newest) : undefined,
+        oldestTemplate: dateResult?.oldest ? new Date(dateResult.oldest) : undefined,
+        newestTemplate: dateResult?.newest ? new Date(dateResult.newest) : undefined,
         categoryCounts
       };
     } catch (error) {

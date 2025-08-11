@@ -29,21 +29,21 @@ class OverlayWindowImpl implements OverlayWindow {
 
   private setupEventHandlers() {
     // Handle IPC events from overlay window
-    const handleMouseClick = (event: Electron.IpcMainEvent, data: any) => {
+    const handleMouseClick = (event: Electron.IpcMainEvent, data: { x: number; y: number }) => {
       if (event.sender.id === this.window.webContents.id) {
         const point: Point = { x: data.x, y: data.y };
         this.mouseClickCallbacks.forEach(cb => cb(point));
       }
     };
 
-    const handleMouseMove = (event: Electron.IpcMainEvent, data: any) => {
+    const handleMouseMove = (event: Electron.IpcMainEvent, data: { x: number; y: number }) => {
       if (event.sender.id === this.window.webContents.id) {
         const point: Point = { x: data.x, y: data.y };
         this.mouseMoveCallbacks.forEach(cb => cb(point));
       }
     };
 
-    const handleKeyPress = (event: Electron.IpcMainEvent, data: any) => {
+    const handleKeyPress = (event: Electron.IpcMainEvent, data: { key: string }) => {
       if (event.sender.id === this.window.webContents.id) {
         this.keyPressCallbacks.forEach(cb => cb(data.key));
       }

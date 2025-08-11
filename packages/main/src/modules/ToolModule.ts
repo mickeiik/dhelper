@@ -26,7 +26,7 @@ export async function initializeTools(overlayService?: OverlayService) {
         }
     });
     
-    ipcMain.handle('run-tool', async (_, toolId: string, inputs: any) => {
+    ipcMain.handle('run-tool', async (_, toolId: string, inputs: Record<string, unknown>) => {
         try {
             return await toolManager.runTool(toolId, inputs);
         } catch (error) {

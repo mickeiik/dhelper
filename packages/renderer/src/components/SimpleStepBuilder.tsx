@@ -82,7 +82,7 @@ export function SimpleStepBuilder({ tools, onAddStep, existingStepIds = [], exis
                 };
                 
                 const resolvedInputs = await resolveSemanticReferences(exampleInputs, context);
-                setStepData(prev => ({ ...prev, inputs: { ...resolvedInputs } }));
+                setStepData(prev => ({ ...prev, inputs: resolvedInputs as Record<string, unknown> }));
                 setValidationWarnings([]);
                 setError(null);
             } catch (resolveError) {

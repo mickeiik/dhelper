@@ -5,7 +5,7 @@ export class DHelperError extends Error {
   constructor(
     message: string,
     public readonly code: string,
-    public readonly details?: any
+    public readonly details?: Record<string, unknown>
   ) {
     super(message);
     this.name = this.constructor.name;
@@ -16,7 +16,7 @@ export class DHelperError extends Error {
  * Errors related to tool execution and management
  */
 export class ToolExecutionError extends DHelperError {
-  constructor(message: string, public readonly toolId: string, details?: any) {
+  constructor(message: string, public readonly toolId: string, details?: Record<string, unknown>) {
     super(message, 'TOOL_EXECUTION_ERROR', { toolId, ...details });
   }
 }
@@ -25,7 +25,7 @@ export class ToolExecutionError extends DHelperError {
  * Errors related to workflow operations
  */
 export class WorkflowError extends DHelperError {
-  constructor(message: string, public readonly workflowId?: string, details?: any) {
+  constructor(message: string, public readonly workflowId?: string, details?: Record<string, unknown>) {
     super(message, 'WORKFLOW_ERROR', { workflowId, ...details });
   }
 }
@@ -34,7 +34,7 @@ export class WorkflowError extends DHelperError {
  * Errors related to storage operations (database, file system)
  */
 export class StorageError extends DHelperError {
-  constructor(message: string, public readonly operation?: string, details?: any) {
+  constructor(message: string, public readonly operation?: string, details?: Record<string, unknown>) {
     super(message, 'STORAGE_ERROR', { operation, ...details });
   }
 }
@@ -43,7 +43,7 @@ export class StorageError extends DHelperError {
  * Errors related to template operations
  */
 export class TemplateError extends DHelperError {
-  constructor(message: string, public readonly templateId?: string, details?: any) {
+  constructor(message: string, public readonly templateId?: string, details?: Record<string, unknown>) {
     super(message, 'TEMPLATE_ERROR', { templateId, ...details });
   }
 }

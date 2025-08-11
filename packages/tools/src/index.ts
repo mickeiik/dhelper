@@ -10,15 +10,25 @@ import { ScreenshotTool } from '@tools/screenshot';
 import { TemplateMatcherTool } from '@tools/template-matcher';
 import { ClickTool } from '@tools/click';
 
+interface AnyTool {
+    id: string;
+    name: string;
+    description?: string;
+    category?: string;
+    initialize(context: any): Promise<void>;
+    execute(inputs: any): Promise<any>;
+    [key: string]: any;
+}
+
 interface ToolRegistration {
-    tool: Tool;
+    tool: AnyTool;
     initialized: boolean;
 }
 
 export class ToolManager {
     private tools = new Map<string, ToolRegistration>();
     private overlayService?: OverlayService;
-    private templateManager?: any;
+    private templateManager?: import('@app/types').TemplateManager;
     private logger = new ErrorLogger('ToolManager');
 
     async autoDiscoverTools() {
@@ -34,13 +44,13 @@ export class ToolManager {
         for (const ToolClass of toolClasses) {
             const tool = new ToolClass();
             this.tools.set(tool.id, {
-                tool,
+                tool: tool as AnyTool,
                 initialized: false
             });
         }
     }
 
-    async runTool(id: string, inputs: any) {
+    async runTool(id: string, inputs: Record<string, unknown>) {
         const registration = this.tools.get(id);
         if (!registration) {
             throw new ToolExecutionError(`Tool with id "${id}" not found`, id);
@@ -64,7 +74,7 @@ export class ToolManager {
         this.overlayService = overlayService;
     }
 
-    setTemplateManager(templateManager: any) {
+    setTemplateManager(templateManager: import('@app/types').TemplateManager) {
         this.templateManager = templateManager;
     }
 
@@ -86,11 +96,11 @@ export class ToolManager {
         }
     }
 
-    getTools(): Tool[] {
+    getTools(): AnyTool[] {
         return Array.from(this.tools.values()).map(({ tool }) => tool);
     }
 
-    getToolsMetadata(): ToolMetadata[] {
+    getToolsMetadata(): any[] {
         return Array.from(this.tools.values()).map(({ tool }) => ({
             id: tool.id,
             name: tool.name,

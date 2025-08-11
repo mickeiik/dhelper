@@ -111,15 +111,16 @@ export function TemplateUpload({ categories, tags, onSubmit, onCancel }: Templat
       });
       
       // Step 2: Use the coordinates to take a screenshot
+      const regionData = regionResult as { top: number; left: number; width: number; height: number };
       const screenshotDataUrl = await runToolAsync('screenshot', {
-        top: regionResult.top,
-        left: regionResult.left,
-        width: regionResult.width,
-        height: regionResult.height
+        top: regionData.top,
+        left: regionData.left,
+        width: regionData.width,
+        height: regionData.height
       });
       
       // Step 3: Convert data URL to File object
-      const response = await fetch(screenshotDataUrl);
+      const response = await fetch(screenshotDataUrl as string);
       const blob = await response.blob();
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const file = new File([blob], `screenshot-${timestamp}.png`, { type: 'image/png' });

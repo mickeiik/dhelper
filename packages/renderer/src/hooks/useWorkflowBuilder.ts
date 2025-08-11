@@ -39,7 +39,7 @@ export function useWorkflowBuilder() {
     const step: WorkflowStep = {
       id: stepData.id,
       toolId: stepData.toolId,
-      inputs: stepData.inputs
+      inputs: stepData.inputs as WorkflowInputs
     };
 
     // Add delay configuration if provided

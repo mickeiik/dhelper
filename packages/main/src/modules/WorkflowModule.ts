@@ -119,13 +119,13 @@ export function initializeWorkflows() {
         }
     })
 
-    ipcMain.handle('run-custom-workflow', async (_, customWorkflow) => {
+    ipcMain.handle('run-custom-workflow', async (_, customWorkflow: import('@app/types').Workflow) => {
         try {
             const workflow = {
                 id: customWorkflow.id,
                 name: customWorkflow.name,
                 description: 'Custom workflow built in UI',
-                steps: customWorkflow.steps.map((step: any) => ({
+                steps: customWorkflow.steps.map((step) => ({
                     id: step.id,
                     toolId: step.toolId,
                     inputs: step.inputs,

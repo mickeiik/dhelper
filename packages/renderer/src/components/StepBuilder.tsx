@@ -438,7 +438,7 @@ function FormField({ field, value, onChange }: FormFieldProps) {
                 <FieldInput field={field} value={value} onChange={onChange} />
             )}
 
-            {field.example && !refMode && !isRef && (
+            {field.example != null && !refMode && !isRef && (
                 <div className={styles.fieldExample}>
                     Example: <code>{JSON.stringify(field.example)}</code>
                 </div>

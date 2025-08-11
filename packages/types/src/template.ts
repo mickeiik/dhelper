@@ -44,7 +44,9 @@ export interface TemplateMatchResult {
     width: number;
     height: number;
   };
-  template: Template;
+  template: Template & {
+    detectedScale?: number; // Runtime property added during matching
+  };
 }
 
 export interface TemplateMatchOptions {

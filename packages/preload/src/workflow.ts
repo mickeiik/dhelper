@@ -12,7 +12,7 @@ export async function runExampleWorkflow() {
     return await ipcRenderer.invoke('run-example-workflow')
 }
 
-export async function runCustomWorkflow(workflow: any) {
+export async function runCustomWorkflow(workflow: Workflow) {
     return await ipcRenderer.invoke('run-custom-workflow', workflow)
 }
 
@@ -80,7 +80,7 @@ export async function searchWorkflows(query: string): Promise<WorkflowListItem[]
 
 // Semantic reference validation and resolution
 export async function validateSemanticReferences(
-    inputs: any,
+    inputs: Record<string, unknown>,
     availableSteps: WorkflowStep[],
     currentStepIndex: number
 ): Promise<{ isValid: boolean; errors: string[] }> {
@@ -88,8 +88,8 @@ export async function validateSemanticReferences(
 }
 
 export async function resolveSemanticReferences(
-    inputs: any,
-    context: { currentStepIndex: number; workflowSteps: WorkflowStep[]; previousResults: Record<string, any> }
-): Promise<any> {
+    inputs: Record<string, unknown>,
+    context: { currentStepIndex: number; workflowSteps: WorkflowStep[]; previousResults: Record<string, unknown> }
+): Promise<unknown> {
     return await ipcRenderer.invoke('resolve-semantic-references', inputs, context)
 }

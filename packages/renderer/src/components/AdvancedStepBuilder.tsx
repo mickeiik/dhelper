@@ -470,7 +470,7 @@ function AdvancedFormField({ field, value, onChange, existingStepIds }: Advanced
                 <FieldInput field={field} value={value} onChange={onChange} />
             )}
 
-            {field.example && !refMode && !isRef && (
+            {field.example != null && !refMode && !isRef && (
                 <div className={styles.fieldExample}>
                     Example: <code>{JSON.stringify(field.example)}</code>
                 </div>

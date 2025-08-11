@@ -22,7 +22,7 @@ export interface RectangleSelection {
 
 export type ScreenRegionSelectorOutput = PointSelection | RectangleSelection;
 
-export class ScreenRegionSelectorTool implements Tool {
+export class ScreenRegionSelectorTool implements Tool<ScreenRegionSelectorInput, ScreenRegionSelectorOutput> {
   id = 'screen-region-selector' as const;
   name = 'Screen Region Selector';
   description = 'Interactive tool to select a point or rectangle area on the screen';
@@ -135,7 +135,7 @@ export class ScreenRegionSelectorTool implements Tool {
     }
   }
 
-  private async setupCrosshairs(overlay: any): Promise<void> {
+  private async setupCrosshairs(overlay: import('@app/types').OverlayWindow): Promise<void> {
     // Add crosshair indicators (will follow mouse via overlay service)
     const shapes: OverlayShape[] = [];
     const texts: OverlayText[] = [];

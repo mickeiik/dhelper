@@ -11,7 +11,7 @@ export interface StoredWorkflow {
     };
     // Cache structure for workflow step results
     cache?: Record<string, {
-        value: any;
+        value: unknown;
         timestamp: number;
         ttl?: number;
     }>;

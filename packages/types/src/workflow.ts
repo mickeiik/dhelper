@@ -24,10 +24,10 @@ export interface Workflow {
   clearCache?: boolean; // Flag to clear cache on next run
 }
 
-export type WorkflowInputs<T = any> =
+export type WorkflowInputs<T = Record<string, unknown>> =
   | T                                    // Static inputs of correct type
   | { $ref: string }                    // Reference to previous step
-  | { $merge: WorkflowInputs<any>[] }   // Merge multiple inputs
+  | { $merge: WorkflowInputs<T>[] }     // Merge multiple inputs
   | (T extends object ? {               // Object with mixed input types
     [K in keyof T]: T[K] extends (string | number | boolean | null | undefined)
     ? T[K] | { $ref: string }      // For primitives: just the type OR a reference
@@ -48,11 +48,11 @@ export interface WorkflowResult {
   };
 }
 
-export interface StepResult {
+export interface StepResult<TResult = unknown> {
   stepId: string;
   toolId: string;
   success: boolean;
-  result?: any;
+  result?: TResult;
   error?: string;
   startTime: Date;
   endTime: Date;

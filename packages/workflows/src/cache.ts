@@ -1,5 +1,5 @@
 interface CacheEntry {
-    value: any;
+    value: unknown;
     expiry?: number; // Simplified: direct expiry timestamp
 }
 
@@ -21,7 +21,7 @@ export class WorkflowCacheManager {
         return entry.value;
     }
 
-    async set(workflowId: string, cacheKey: string, value: any, options?: { ttl?: number }): Promise<void> {
+    async set(workflowId: string, cacheKey: string, value: unknown, options?: { ttl?: number }): Promise<void> {
         const key = `${workflowId}:${cacheKey}`;
         const entry: CacheEntry = {
             value,
@@ -44,7 +44,7 @@ export class WorkflowCacheManager {
         this.cache.clear();
     }
 
-    generateCacheKey(stepId: string, toolId: string, inputs: any, customKey?: string): string {
+    generateCacheKey(stepId: string, toolId: string, inputs: Record<string, unknown>, customKey?: string): string {
         if (customKey) return `${stepId}_${customKey}`;
         
         // Simple JSON stringify for key generation

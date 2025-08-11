@@ -3,15 +3,15 @@ import type { Tool, ToolInputField } from '@app/types';
 
 export interface HelloWorldToolInput {
   message?: string;
-  data?: any;
+  data?: unknown;
 }
 
 export interface HelloWorldToolOutput {
   success: boolean;
-  data: any;
+  data: unknown;
 }
 
-export class HelloWorldTool implements Tool {
+export class HelloWorldTool implements Tool<HelloWorldToolInput, HelloWorldToolOutput> {
   id = 'hello-world' as const;
   name = 'Hello World Tool';
   description = 'Simple debugging tool that logs input and returns it';
