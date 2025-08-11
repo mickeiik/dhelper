@@ -1,7 +1,7 @@
 // packages/types/src/tool.ts
 export interface ToolInputField {
   name: string;
-  type: 'string' | 'number' | 'boolean' | 'select' | 'object';
+  type: 'string' | 'number' | 'boolean' | 'select' | 'object' | 'array';
   description: string;
   required?: boolean;
   defaultValue?: any;

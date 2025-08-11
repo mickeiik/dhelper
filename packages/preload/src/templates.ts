@@ -96,9 +96,6 @@ export async function createTemplateFromScreenshot(
   screenshotDataUrl: string,
   options?: {
     matchThreshold?: number;
-    scaleTolerance?: number;
-    rotationTolerance?: number;
-    colorProfile?: 'light' | 'dark' | 'auto';
   }
 ): Promise<Template> {
   const imageData = Buffer.from(screenshotDataUrl.split(',')[1], 'base64');
@@ -109,10 +106,7 @@ export async function createTemplateFromScreenshot(
     category,
     tags,
     imageData,
-    matchThreshold: options?.matchThreshold,
-    scaleTolerance: options?.scaleTolerance,
-    rotationTolerance: options?.rotationTolerance,
-    colorProfile: options?.colorProfile
+    matchThreshold: options?.matchThreshold
   };
 
   return createTemplate(input);

@@ -3,7 +3,7 @@ import { StorageError, TemplateError, success, failure, tryAsync } from '@app/ty
 import { writeFile, readFile, mkdir, unlink, stat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { app } from 'electron';
+import { app, screen } from 'electron';
 import { randomUUID } from 'node:crypto';
 import sharp from 'sharp';
 import sqlite3 from 'sqlite3'
@@ -84,6 +84,7 @@ export class SqliteTemplateStorage {
     });
   }
 
+
   private allAsync(sql: string, params: any[] = []): Promise<any[]> {
     return new Promise((resolve, reject) => {
       if (!this.db) {
@@ -108,7 +109,7 @@ export class SqliteTemplateStorage {
       // Initialize SQLite database
       this.db = await this.createDatabase();
       
-      // Create templates table
+      // Create templates table with full schema
       await this.execAsync(`
         CREATE TABLE IF NOT EXISTS templates (
           id TEXT PRIMARY KEY,
@@ -121,14 +122,13 @@ export class SqliteTemplateStorage {
           last_used INTEGER,
           width INTEGER NOT NULL,
           height INTEGER NOT NULL,
-          color_profile TEXT,
           match_threshold REAL,
-          scale_tolerance REAL,
-          rotation_tolerance REAL,
           usage_count INTEGER DEFAULT 0,
           success_rate REAL DEFAULT 0,
           image_path TEXT NOT NULL,
-          thumbnail_path TEXT NOT NULL
+          thumbnail_path TEXT NOT NULL,
+          source_resolution TEXT DEFAULT '1920x1080',
+          scale_cache TEXT DEFAULT '{}'
         );
         
         CREATE INDEX IF NOT EXISTS idx_templates_name ON templates(name);
@@ -201,6 +201,10 @@ export class SqliteTemplateStorage {
       // Process image to get dimensions and generate thumbnail
       const { width, height, thumbnailData } = await this.processImage(input.imageData, templateId);
 
+      // Get current screen resolution
+      const primaryDisplay = screen.getPrimaryDisplay();
+      const sourceResolution = `${primaryDisplay.bounds.width}x${primaryDisplay.bounds.height}`;
+
       const metadata: TemplateMetadata = {
         id: templateId,
         name: input.name,
@@ -211,10 +215,9 @@ export class SqliteTemplateStorage {
         updatedAt: now,
         width,
         height,
-        colorProfile: input.colorProfile || 'auto',
         matchThreshold: input.matchThreshold || 0.8,
-        scaleTolerance: input.scaleTolerance,
-        rotationTolerance: input.rotationTolerance,
+        sourceResolution,
+        scaleCache: {},
         usageCount: 0,
         imagePath: `images/${templateId}.png`,
         thumbnailPath: `thumbnails/${templateId}_thumb.png`
@@ -224,9 +227,9 @@ export class SqliteTemplateStorage {
       const insertSql = `
         INSERT INTO templates (
           id, name, description, category, tags, created_at, updated_at, last_used,
-          width, height, color_profile, match_threshold, scale_tolerance, rotation_tolerance,
-          usage_count, success_rate, image_path, thumbnail_path
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          width, height, match_threshold, usage_count, success_rate, image_path, thumbnail_path,
+          source_resolution, scale_cache
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       await this.runAsync(insertSql, [
@@ -240,14 +243,13 @@ export class SqliteTemplateStorage {
         null,
         width,
         height,
-        input.colorProfile || 'auto',
         input.matchThreshold || 0.8,
-        input.scaleTolerance || null,
-        input.rotationTolerance || null,
         0,
         0,
         `images/${templateId}.png`,
-        `thumbnails/${templateId}_thumb.png`
+        `thumbnails/${templateId}_thumb.png`,
+        sourceResolution,
+        '{}'
       ]);
 
       const template: Template = {
@@ -288,10 +290,9 @@ export class SqliteTemplateStorage {
         lastUsed: row.last_used ? new Date(row.last_used) : undefined,
         width: row.width,
         height: row.height,
-        colorProfile: row.color_profile,
         matchThreshold: row.match_threshold,
-        scaleTolerance: row.scale_tolerance,
-        rotationTolerance: row.rotation_tolerance,
+        sourceResolution: row.source_resolution || '1920x1080',
+        scaleCache: JSON.parse(row.scale_cache || '{}'),
         usageCount: row.usage_count,
         successRate: row.success_rate,
         imagePath: row.image_path,
@@ -354,9 +355,6 @@ export class SqliteTemplateStorage {
           category = COALESCE(?, category),
           tags = COALESCE(?, tags),
           match_threshold = COALESCE(?, match_threshold),
-          scale_tolerance = COALESCE(?, scale_tolerance),
-          rotation_tolerance = COALESCE(?, rotation_tolerance),
-          color_profile = COALESCE(?, color_profile),
           updated_at = ?
         WHERE id = ?
       `;
@@ -367,9 +365,6 @@ export class SqliteTemplateStorage {
         input.category || null,
         input.tags ? JSON.stringify(input.tags) : null,
         input.matchThreshold || null,
-        input.scaleTolerance || null,
-        input.rotationTolerance || null,
-        input.colorProfile || null,
         new Date().getTime(),
         input.id
       ]);
@@ -432,10 +427,9 @@ export class SqliteTemplateStorage {
         lastUsed: row.last_used ? new Date(row.last_used) : undefined,
         width: row.width,
         height: row.height,
-        colorProfile: row.color_profile,
         matchThreshold: row.match_threshold,
-        scaleTolerance: row.scale_tolerance,
-        rotationTolerance: row.rotation_tolerance,
+        sourceResolution: row.source_resolution || '1920x1080',
+        scaleCache: JSON.parse(row.scale_cache || '{}'),
         usageCount: row.usage_count,
         successRate: row.success_rate,
         imagePath: row.image_path,
@@ -462,10 +456,9 @@ export class SqliteTemplateStorage {
         lastUsed: row.last_used ? new Date(row.last_used) : undefined,
         width: row.width,
         height: row.height,
-        colorProfile: row.color_profile,
         matchThreshold: row.match_threshold,
-        scaleTolerance: row.scale_tolerance,
-        rotationTolerance: row.rotation_tolerance,
+        sourceResolution: row.source_resolution || '1920x1080',
+        scaleCache: JSON.parse(row.scale_cache || '{}'),
         usageCount: row.usage_count,
         successRate: row.success_rate,
         imagePath: row.image_path,
@@ -495,10 +488,9 @@ export class SqliteTemplateStorage {
         lastUsed: row.last_used ? new Date(row.last_used) : undefined,
         width: row.width,
         height: row.height,
-        colorProfile: row.color_profile,
         matchThreshold: row.match_threshold,
-        scaleTolerance: row.scale_tolerance,
-        rotationTolerance: row.rotation_tolerance,
+        sourceResolution: row.source_resolution || '1920x1080',
+        scaleCache: JSON.parse(row.scale_cache || '{}'),
         usageCount: row.usage_count,
         successRate: row.success_rate,
         imagePath: row.image_path,
@@ -555,6 +547,42 @@ export class SqliteTemplateStorage {
       ]);
     } catch (error) {
       throw new TemplateError('Failed to increment usage', templateId, { originalError: error });
+    }
+  }
+
+  async updateScaleCache(templateId: string, resolution: string, scale: number): Promise<void> {
+    await this.initialize();
+    if (!this.db) throw new Error('Database not initialized');
+
+    try {
+      console.log(`[Template Storage] Updating scale cache for template ${templateId}: ${resolution} -> ${scale}`);
+      
+      // Get current scale cache
+      const current = await this.getAsync('SELECT scale_cache FROM templates WHERE id = ?', [templateId]);
+      
+      if (!current) {
+        console.warn(`[Template Storage] Template ${templateId} not found for scale cache update`);
+        return;
+      }
+
+      const currentScaleCache = current.scale_cache || '{}';
+      console.log(`[Template Storage] Current scale cache: ${currentScaleCache}`);
+      
+      const scaleCache = JSON.parse(currentScaleCache);
+      scaleCache[resolution] = scale;
+      const newScaleCacheJson = JSON.stringify(scaleCache);
+      
+      console.log(`[Template Storage] New scale cache: ${newScaleCacheJson}`);
+
+      // Update database
+      const updateSql = 'UPDATE templates SET scale_cache = ? WHERE id = ?';
+      const result = await this.runAsync(updateSql, [newScaleCacheJson, templateId]);
+      
+      console.log(`[Template Storage] Scale cache update result:`, result);
+      console.log(`[Template Storage] ✓ Updated scale cache for ${templateId}: ${resolution} -> ${scale}`);
+    } catch (error) {
+      console.error(`[Template Storage] Failed to update scale cache:`, error);
+      throw new TemplateError('Failed to update scale cache', templateId, { originalError: error });
     }
   }
 

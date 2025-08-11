@@ -2,7 +2,8 @@
  * Error handling utilities for consistent logging and recovery
  */
 
-import { DHelperError, Result, isFailure, isSuccess } from './errors.js';
+import { DHelperError, isFailure } from './errors.js';
+import type { Result } from './errors.js';
 
 /**
  * Log levels for error reporting

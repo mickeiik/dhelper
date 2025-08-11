@@ -110,6 +110,11 @@ export class TemplateManager {
     return this.storage.incrementUsage(templateId, success);
   }
 
+  // Scale cache management
+  async updateScaleCache(templateId: string, resolution: string, scale: number): Promise<void> {
+    return this.storage.updateScaleCache(templateId, resolution, scale);
+  }
+
   // Template reference resolution (for workflow system)
   async resolveTemplateReference(reference: string): Promise<Template | null> {
     // Handle template references like {{template:template-id}} or {{template:category/name}}
@@ -189,10 +194,7 @@ export class TemplateManager {
       category: importData.category,
       tags: importData.tags,
       imageData: Buffer.from(importData.imageData, 'base64'),
-      matchThreshold: importData.matchThreshold,
-      scaleTolerance: importData.scaleTolerance,
-      rotationTolerance: importData.rotationTolerance,
-      colorProfile: importData.colorProfile
+      matchThreshold: importData.matchThreshold
     };
     
     return this.createTemplate(createInput);

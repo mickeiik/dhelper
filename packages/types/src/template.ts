@@ -11,12 +11,13 @@ export interface TemplateMetadata {
   // Visual properties
   width: number;
   height: number;
-  colorProfile?: 'light' | 'dark' | 'auto';
   
   // Matching properties
   matchThreshold: number; // Default confidence threshold (0-1)
-  scaleTolerance?: number; // Allow scale variations (0-1)
-  rotationTolerance?: number; // Allow rotation in degrees
+  
+  // Resolution and scaling
+  sourceResolution: string; // Resolution when template was created (e.g., "1920x1080")
+  scaleCache: Record<string, number>; // Cached scales for different resolutions (e.g., {"2560x1440": 1.33})
   
   // Usage statistics
   usageCount: number;
@@ -67,9 +68,6 @@ export interface CreateTemplateInput {
   tags?: string[];
   imageData: Uint8Array; // PNG/JPEG image data (browser-compatible)
   matchThreshold?: number;
-  scaleTolerance?: number;
-  rotationTolerance?: number;
-  colorProfile?: 'light' | 'dark' | 'auto';
 }
 
 export interface UpdateTemplateInput {
@@ -79,9 +77,6 @@ export interface UpdateTemplateInput {
   category?: string;
   tags?: string[];
   matchThreshold?: number;
-  scaleTolerance?: number;
-  rotationTolerance?: number;
-  colorProfile?: 'light' | 'dark' | 'auto';
 }
 
 // Template categories

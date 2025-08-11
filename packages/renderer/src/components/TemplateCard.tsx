@@ -177,14 +177,7 @@ export function TemplateCard({ template, viewMode, onEdit, onDelete }: TemplateC
           </div>
         </div>
 
-        {/* Color Profile Indicator */}
-        {template.colorProfile && template.colorProfile !== 'auto' && (
-          <div className={styles.colorProfile}>
-            <span className={`${styles.colorBadge} ${styles[template.colorProfile]}`}>
-              {template.colorProfile}
-            </span>
-          </div>
-        )}
+
       </div>
     </div>
   );

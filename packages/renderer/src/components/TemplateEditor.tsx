@@ -18,10 +18,7 @@ export function TemplateEditor({ template, categories, tags, onSubmit, onCancel 
     description: template.description || '',
     category: template.category,
     tags: [...template.tags],
-    matchThreshold: template.matchThreshold,
-    scaleTolerance: template.scaleTolerance || 0,
-    rotationTolerance: template.rotationTolerance || 0,
-    colorProfile: template.colorProfile || 'auto'
+    matchThreshold: template.matchThreshold
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,10 +66,7 @@ export function TemplateEditor({ template, categories, tags, onSubmit, onCancel 
         description: formData.description.trim() || undefined,
         category: formData.category,
         tags: formData.tags,
-        matchThreshold: formData.matchThreshold,
-        scaleTolerance: formData.scaleTolerance || undefined,
-        rotationTolerance: formData.rotationTolerance || undefined,
-        colorProfile: formData.colorProfile as 'light' | 'dark' | 'auto'
+        matchThreshold: formData.matchThreshold
       };
 
       await onSubmit(input);
@@ -239,59 +233,8 @@ export function TemplateEditor({ template, categories, tags, onSubmit, onCancel 
               <small>Higher values require more exact matches</small>
             </div>
 
-            <div className={styles.field}>
-              <label htmlFor="scaleTolerance">
-                Scale Tolerance: {Math.round(formData.scaleTolerance * 100)}%
-              </label>
-              <input
-                id="scaleTolerance"
-                type="range"
-                min="0"
-                max="0.5"
-                step="0.05"
-                value={formData.scaleTolerance}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  scaleTolerance: parseFloat(e.target.value) 
-                }))}
-              />
-              <small>Allow template to match at different sizes</small>
-            </div>
-
-            <div className={styles.field}>
-              <label htmlFor="rotationTolerance">
-                Rotation Tolerance: {formData.rotationTolerance}°
-              </label>
-              <input
-                id="rotationTolerance"
-                type="range"
-                min="0"
-                max="45"
-                step="1"
-                value={formData.rotationTolerance}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  rotationTolerance: parseInt(e.target.value) 
-                }))}
-              />
-              <small>Allow template to match when slightly rotated</small>
-            </div>
-
-            <div className={styles.field}>
-              <label htmlFor="colorProfile">Color Profile</label>
-              <select
-                id="colorProfile"
-                value={formData.colorProfile}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  colorProfile: e.target.value as 'light' | 'dark' | 'auto'
-                }))}
-              >
-                <option value="auto">Auto</option>
-                <option value="light">Light Theme</option>
-                <option value="dark">Dark Theme</option>
-              </select>
-              <small>Optimize matching for specific color themes</small>
+            <div className={styles.info}>
+              <small>Multi-scale matching is automatically enabled for all templates. Templates will be matched at different resolutions (1080p, 1440p, 4K) without additional configuration.</small>
             </div>
           </fieldset>
 

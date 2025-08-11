@@ -27,7 +27,8 @@
     "create-renderer": "cd packages && node ./integrate-renderer/create-renderer.js",
     "integrate-renderer": "npm start --workspace @app/integrate-renderer",
     "init": "npm run create-renderer && npm run integrate-renderer && npm install",
-    "create-tool": "node packages/create-tool.js"
+    "create-tool": "node packages/create-tool.js",
+    "db:reset": "node scripts/reset-database.js"
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.1",

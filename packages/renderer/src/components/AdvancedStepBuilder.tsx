@@ -558,6 +558,22 @@ function FieldInput({ field, value, onChange }: { field: ToolInputField; value: 
                 />
             );
 
+        case 'array':
+            return (
+                <textarea
+                    value={Array.isArray(value) ? value.join('\n') : String(value || '')}
+                    onChange={(e) => {
+                        const lines = e.target.value.split('\n').filter(line => line.trim() !== '');
+                        onChange(lines);
+                    }}
+                    placeholder={field.placeholder || field.example ? 
+                        (Array.isArray(field.example) ? field.example.join('\n') : String(field.example)) : 
+                        'Enter items, one per line'}
+                    className={styles.textarea}
+                    rows={4}
+                />
+            );
+
         default:
             return (
                 <input

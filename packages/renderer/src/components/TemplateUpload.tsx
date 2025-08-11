@@ -17,10 +17,7 @@ export function TemplateUpload({ categories, tags, onSubmit, onCancel }: Templat
     description: '',
     category: categories[0] || 'Custom',
     tags: [] as string[],
-    matchThreshold: 0.8,
-    scaleTolerance: 0.1,
-    rotationTolerance: 5,
-    colorProfile: 'auto' as 'light' | 'dark' | 'auto'
+    matchThreshold: 0.8
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -167,10 +164,7 @@ export function TemplateUpload({ categories, tags, onSubmit, onCancel }: Templat
         category: formData.category,
         tags: formData.tags,
         imageData,
-        matchThreshold: formData.matchThreshold,
-        scaleTolerance: formData.scaleTolerance || undefined,
-        rotationTolerance: formData.rotationTolerance || undefined,
-        colorProfile: formData.colorProfile
+        matchThreshold: formData.matchThreshold
       };
 
       await onSubmit(input);
@@ -370,56 +364,8 @@ export function TemplateUpload({ categories, tags, onSubmit, onCancel }: Templat
               />
             </div>
 
-            <div className={styles.field}>
-              <label htmlFor="scaleTolerance">
-                Scale Tolerance: {Math.round((formData.scaleTolerance || 0) * 100)}%
-              </label>
-              <input
-                id="scaleTolerance"
-                type="range"
-                min="0"
-                max="0.5"
-                step="0.05"
-                value={formData.scaleTolerance || 0}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  scaleTolerance: parseFloat(e.target.value) 
-                }))}
-              />
-            </div>
-
-            <div className={styles.field}>
-              <label htmlFor="rotationTolerance">
-                Rotation Tolerance: {formData.rotationTolerance || 0}°
-              </label>
-              <input
-                id="rotationTolerance"
-                type="range"
-                min="0"
-                max="45"
-                step="1"
-                value={formData.rotationTolerance || 0}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  rotationTolerance: parseInt(e.target.value) 
-                }))}
-              />
-            </div>
-
-            <div className={styles.field}>
-              <label htmlFor="colorProfile">Color Profile</label>
-              <select
-                id="colorProfile"
-                value={formData.colorProfile}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  colorProfile: e.target.value as 'light' | 'dark' | 'auto'
-                }))}
-              >
-                <option value="auto">Auto</option>
-                <option value="light">Light Theme</option>
-                <option value="dark">Dark Theme</option>
-              </select>
+            <div className={styles.info}>
+              <small>Multi-scale matching is automatically enabled. Templates will work across different screen resolutions without additional configuration.</small>
             </div>
           </details>
         </div>
