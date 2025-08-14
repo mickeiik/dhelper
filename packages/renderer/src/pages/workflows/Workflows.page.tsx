@@ -1,18 +1,5 @@
-import { useTranslation } from 'react-i18next'
-
-const WorkflowPage = () => {
-    const { t } = useTranslation()
-
+export default function WorkflowPage() {
     return (
-        <div>
-            <h1>
-                {t('workflows.title')}
-            </h1>
-            <p>
-                {t('workflows.title')} content will be implemented here.
-            </p>
-        </div>
+        <p>There goes the workflow page</p>
     )
 }
-
-export default WorkflowPage;
