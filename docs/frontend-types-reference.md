@@ -638,7 +638,6 @@ interface AppConfig {
     retryDelay: number;
   };
   ui: {
-    theme: 'light' | 'dark' | 'auto';
     animations: boolean;
     developerMode: boolean;
   };

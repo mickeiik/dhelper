@@ -1,0 +1,47 @@
+{
+  "app": {
+    "title": "Assistant de Développement",
+    "description": "Votre assistant de flux de travail de développement"
+  },
+  "navigation": {
+    "workflows": "Flux de Travail",
+    "templates": "Modèles",
+    "settings": "Paramètres"
+  },
+  "workflows": {
+    "title": "Flux de Travail",
+    "create": "Créer un Flux de Travail",
+    "edit": "Modifier le Flux de Travail",
+    "delete": "Supprimer le Flux de Travail",
+    "run": "Exécuter",
+    "stop": "Arrêter",
+    "status": {
+      "idle": "Inactif",
+      "running": "En cours",
+      "completed": "Terminé",
+      "failed": "Échoué"
+    }
+  },
+  "common": {
+    "save": "Sauvegarder",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "close": "Fermer",
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès"
+  },
+  "theme": {
+    "toggle": "Basculer le thème",
+    "light": "Mode clair",
+    "dark": "Mode sombre"
+  },
+  "language": {
+    "select": "Sélectionner la langue",
+    "english": "Anglais",
+    "spanish": "Espagnol",
+    "french": "Français",
+    "german": "Allemand"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "app": {
+    "title": "Dev Helper",
+    "description": "Your development workflow assistant"
+  },
+  "navigation": {
+    "workflows": "Workflows",
+    "templates": "Templates",
+    "settings": "Settings"
+  },
+  "workflows": {
+    "title": "Workflows",
+    "create": "Create Workflow",
+    "edit": "Edit Workflow",
+    "delete": "Delete Workflow",
+    "run": "Run",
+    "stop": "Stop",
+    "status": {
+      "idle": "Idle",
+      "running": "Running",
+      "completed": "Completed",
+      "failed": "Failed"
+    }
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success"
+  },
+  "theme": {
+    "toggle": "Toggle theme",
+    "light": "Light mode",
+    "dark": "Dark mode"
+  },
+  "language": {
+    "select": "Select language",
+    "english": "English",
+    "spanish": "Spanish", 
+    "french": "French",
+    "german": "German"
+  }
+}

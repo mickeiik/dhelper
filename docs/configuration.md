@@ -36,7 +36,6 @@ DHelper looks for configuration files in these locations (in order):
     "autoRegister": true
   },
   "ui": {
-    "theme": "dark",
     "showInstructions": false,
     "overlayTimeout": 10000
   }
@@ -56,7 +55,6 @@ You can also configure DHelper using environment variables:
 - `DHELPER_TOOL_DISCOVERY_PATHS` - Semicolon-separated list of tool discovery paths
 
 ### UI Configuration
-- `DHELPER_THEME` - UI theme (`light` or `dark`)
 - `DHELPER_SHOW_INSTRUCTIONS` - Show overlay instructions (`true` or `false`)
 - `DHELPER_OVERLAY_TIMEOUT` - Overlay auto-close timeout in milliseconds
 
@@ -80,7 +78,6 @@ export interface AppConfig {
     autoRegister: boolean;          // Auto-register discovered tools
   };
   ui: {
-    theme: 'light' | 'dark';        // UI theme
     showInstructions: boolean;      // Show overlay instructions
     overlayTimeout: number;         // Overlay auto-close timeout (ms)
   };
@@ -135,7 +132,6 @@ import { updateConfig } from './config';
 // Update specific configuration values
 const newConfig = updateConfig({
   ui: {
-    theme: 'dark',
     overlayTimeout: 5000
   }
 });

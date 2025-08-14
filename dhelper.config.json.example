@@ -12,7 +12,6 @@
     "autoRegister": true
   },
   "ui": {
-    "theme": "dark",
     "showInstructions": false,
     "overlayTimeout": 10000
   },

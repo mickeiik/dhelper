@@ -1,9 +1,17 @@
-import './Workflows.page.module.css';
+import { useTranslation } from 'react-i18next'
 
 const WorkflowPage = () => {
+    const { t } = useTranslation()
 
     return (
-        <p>Workflow Page</p>
+        <div>
+            <h1>
+                {t('workflows.title')}
+            </h1>
+            <p>
+                {t('workflows.title')} content will be implemented here.
+            </p>
+        </div>
     )
 }
 

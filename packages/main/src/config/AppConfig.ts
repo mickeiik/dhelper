@@ -17,7 +17,6 @@ export interface AppConfig {
     autoRegister: boolean;
   };
   ui: {
-    theme: 'light' | 'dark';
     showInstructions: boolean;
     overlayTimeout: number;
   };
@@ -57,7 +56,6 @@ function getDefaultConfig(): AppConfig {
       autoRegister: true,
     },
     ui: {
-      theme: 'dark',
       showInstructions: true,
       overlayTimeout: 15000,
     },

@@ -15,7 +15,6 @@ export async function initApp(initConfig: AppInitConfig) {
     workflowsPath: config.storage.workflowsPath,
     templatesPath: config.storage.templatesPath,
     toolTimeout: config.tools.timeout,
-    theme: config.ui.theme
   });
 
   // Initialize core electron functionality

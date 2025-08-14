@@ -68,14 +68,8 @@ export class ConfigLoader {
     }
     
     // UI configuration
-    if (process.env.DHELPER_THEME || process.env.DHELPER_SHOW_INSTRUCTIONS || process.env.DHELPER_OVERLAY_TIMEOUT) {
+    if (process.env.DHELPER_SHOW_INSTRUCTIONS || process.env.DHELPER_OVERLAY_TIMEOUT) {
       config.ui = {};
-      if (process.env.DHELPER_THEME) {
-        const theme = process.env.DHELPER_THEME as 'light' | 'dark';
-        if (['light', 'dark'].includes(theme)) {
-          config.ui.theme = theme;
-        }
-      }
       if (process.env.DHELPER_SHOW_INSTRUCTIONS) {
         config.ui.showInstructions = process.env.DHELPER_SHOW_INSTRUCTIONS === 'true';
       }
