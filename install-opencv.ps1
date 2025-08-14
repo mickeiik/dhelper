@@ -19,4 +19,4 @@ npm install @u4/opencv4nodejs --verbose
 npm install --save-dev @electron/rebuild
 npx @electron/rebuild
 npm i
-npm run compile
+# npm run compile
