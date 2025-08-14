@@ -1,8 +1,7 @@
 import './App.css'
-import { WorkflowPage } from './components/WorkflowPage'
-import { TemplateManager } from './components/TemplateManager'
-import { ErrorBoundary } from './components/ErrorBoundary'
 import { useState } from 'react'
+import { ErrorBoundary } from './components/ErrorBoundary'
+import WorkflowPage from './pages/workflows/Workflows.page'
 
 function App() {
   const [activeTab, setActiveTab] = useState<'workflows' | 'templates'>('workflows')
@@ -17,17 +16,10 @@ function App() {
           >
             🚀 Workflows
           </button>
-          <button 
-            className={`tab ${activeTab === 'templates' ? 'active' : ''}`}
-            onClick={() => setActiveTab('templates')}
-          >
-            🖼️ Templates
-          </button>
         </nav>
         
         <main className="tab-content">
           {activeTab === 'workflows' && <WorkflowPage />}
-          {activeTab === 'templates' && <TemplateManager />}
         </main>
       </div>
     </ErrorBoundary>

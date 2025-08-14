@@ -13,7 +13,8 @@
     "@app/preload": "*",
     "@app/types": "*",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "@xyflow/react": "^12.8.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",
