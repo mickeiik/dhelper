@@ -5,8 +5,6 @@ import {
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -16,7 +14,6 @@ import {
 } from "@/components/ui/sidebar"
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import WorkflowPage from './pages/workflows/Workflows.page'
-// import { useTranslation } from 'react-i18next'
 
 function AppContent() {
   const location = useLocation()
@@ -58,7 +55,7 @@ function AppContent() {
               </Breadcrumb>
             </div>
           </header>
-          <main className="flex p-4 pt-0">
+          <main className="flex p-4 pt-0 w-full h-full">
             <Routes>
               <Route path="/" element={<WorkflowPage />} />
               <Route path="/workflow" element={<WorkflowPage />} />
