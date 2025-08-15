@@ -5,6 +5,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { Link } from "react-router-dom"
 
 export function NavMain({
   items,
@@ -14,10 +15,6 @@ export function NavMain({
     url: string
     icon?: LucideIcon
     isActive?: boolean
-    items?: {
-      title: string
-      url: string
-    }[]
   }[]
 }) {
   return (
@@ -25,10 +22,12 @@ export function NavMain({
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip={item.title}>
-              {item.icon && <item.icon />}
-              <span>{item.title}</span>
-            </SidebarMenuButton>
+            <Link to={item.url}>
+              <SidebarMenuButton tooltip={item.title}>
+                {item.icon && <item.icon />}
+                <span>{item.title}</span>
+              </SidebarMenuButton>
+            </Link>
           </SidebarMenuItem>
         ))}
       </SidebarMenu>

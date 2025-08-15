@@ -34,13 +34,13 @@ const data = {
   navMain: [
     {
       title: "Workflow",
-      url: "#",
+      url: "/workflow",
       icon: Workflow,
       isActive: true,
     },
     {
       title: "Template",
-      url: "#",
+      url: "/template",
       icon: File,
       isActive: true,
     }
