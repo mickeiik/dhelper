@@ -132,4 +132,38 @@
 ::-webkit-scrollbar-thumb {
     @apply rounded-full bg-border border-[1px] border-transparent border-solid bg-clip-padding;
 }
+
+/* React Flow theme integration */
+.react-flow__controls {
+  @apply bg-background border-border shadow-lg rounded-md;
+}
+
+.react-flow__controls-button {
+  @apply bg-background hover:bg-accent text-foreground border-border;
+  fill: hsl(var(--foreground));
+}
+
+.react-flow__controls-button:hover {
+  @apply bg-accent text-accent-foreground;
+  fill: hsl(var(--accent-foreground));
+}
+
+.react-flow__minimap {
+  @apply bg-background border-border rounded-md shadow-lg;
+}
+
+.react-flow__minimap-mask {
+  @apply fill-accent/20;
+}
+
+.react-flow__minimap-node {
+  @apply fill-primary/60;
+}
  
+.text-primary-inverse {
+  color: oklch(0.696 0.17 162.48); /* dark mode primary in light mode */
+}
+
+.dark .text-primary-inverse {
+  color: oklch(0.723 0.219 149.579); /* light mode primary in dark mode */
+}

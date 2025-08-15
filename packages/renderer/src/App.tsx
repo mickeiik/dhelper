@@ -29,10 +29,10 @@ function AppContent() {
   }
 
   return (
-    <div>
-      <SidebarProvider>
+    <div className='overflow-hidden h-dvh flex flex-col'>
+      <SidebarProvider className="flex-1 min-h-0">
         <AppSidebar />
-        <SidebarInset>
+        <SidebarInset className="flex flex-col flex-1 min-h-0">
           <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
             <div className="flex items-center gap-2 px-4">
               <SidebarTrigger className="-ml-1" />
@@ -55,7 +55,7 @@ function AppContent() {
               </Breadcrumb>
             </div>
           </header>
-          <main className="flex p-4 pt-0 w-full h-full">
+          <main className="flex-1 flex flex-col p-4 pt-0 min-h-0">
             <Routes>
               <Route path="/" element={<WorkflowPage />} />
               <Route path="/workflow" element={<WorkflowPage />} />

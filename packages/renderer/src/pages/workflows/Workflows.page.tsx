@@ -1,48 +1,61 @@
 import { useState, useCallback } from 'react';
-import { ReactFlow, applyNodeChanges, applyEdgeChanges, addEdge, OnNodesChange, OnEdgesChange, OnConnect, Edge, Node, Background } from '@xyflow/react';
+import { ReactFlow, applyNodeChanges, applyEdgeChanges, addEdge, OnNodesChange, OnEdgesChange, OnConnect, Edge, Node, Background, Controls, MiniMap } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { ToolNode } from '@/components/workflow/tool-node';
+import type { ComponentType } from 'react';
+import { ToolPalette } from '@/components/workflow/tool-palette';
 
-const nodeTypes = {
+const nodeTypes: Record<string, ComponentType<any>> = {
     toolNode: ToolNode,
 };
 
-const initialNodes: Node[] = [
-    { id: '1', data: { test: 'hello' }, position: { x: 5, y: 5 }, type: 'toolNode' },
-    { id: '2', data: { label: 'Node 2' }, position: { x: 5, y: 100 } },
-];
-const initialEdges = [{ id: 'n1-n2', source: 'n1', target: 'n2' }];
-
 export default function WorkflowPage() {
-    const [nodes, setNodes] = useState<Node[]>(initialNodes);
-    const [edges, setEdges] = useState<Edge[]>(initialEdges);
+    const [nodes, setNodes] = useState<Node[]>([]);
+    const [edges, setEdges] = useState<Edge[]>([]);
 
     const onNodesChange: OnNodesChange = useCallback(
         (changes) => setNodes((nodesSnapshot) => applyNodeChanges(changes, nodesSnapshot)),
         [setNodes],
     );
+    
     const onEdgesChange: OnEdgesChange = useCallback(
         (changes) => setEdges((edgesSnapshot) => applyEdgeChanges(changes, edgesSnapshot)),
         [setEdges],
     );
+    
     const onConnect: OnConnect = useCallback(
         (params) => setEdges((edgesSnapshot) => addEdge(params, edgesSnapshot)),
         [setEdges],
     );
 
+    const onNodeAdd = useCallback((node: Node) => {
+        setNodes((nds) => [...nds, node]);
+    }, []);
+
     return (
-        <div className='w-full h-full'>
-            <ReactFlow
-                nodeTypes={nodeTypes}
-                nodes={nodes}
-                edges={edges}
-                onNodesChange={onNodesChange}
-                onEdgesChange={onEdgesChange}
-                onConnect={onConnect}
-                fitView
-            >
-                <Background />
-            </ReactFlow>
+        <div className='flex h-full'>
+            {/* Tool Palette Sidebar */}
+            <ToolPalette onNodeAdd={onNodeAdd} />
+            
+            {/* Workflow Canvas */}
+            <div className="flex-1 h-full">
+                <ReactFlow
+                    nodeTypes={nodeTypes}
+                    nodes={nodes}
+                    edges={edges}
+                    onNodesChange={onNodesChange}
+                    onEdgesChange={onEdgesChange}
+                    onConnect={onConnect}
+                    fitView
+                    proOptions={{ hideAttribution: true }}
+                >
+                    <Background />
+                    <Controls className='text-primary-inverse' />
+                    <MiniMap 
+                        nodeColor='oklch(0.696 0.17 162.48)'
+                    />
+                </ReactFlow>
+            </div>
         </div>
     );
 }
