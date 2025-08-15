@@ -26,7 +26,7 @@ export function LanguageSwitcher() {
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
                 <DropdownMenuLabel>{t('language.select')}</DropdownMenuLabel>
-                <DropdownMenuSeparator/>
+                <DropdownMenuSeparator />
                 <DropdownMenuRadioGroup value={i18n.language} onValueChange={i18n.changeLanguage}>
                     <DropdownMenuRadioItem value="en">{t('language.english')}</DropdownMenuRadioItem>
                     <DropdownMenuRadioItem value="fr">{t('language.french')}</DropdownMenuRadioItem>
