@@ -1,7 +1,6 @@
 import type { Tool, ToolInputField, ToolInitContext, OverlayService, OverlayShape } from '@app/types';
 import { OVERLAY_STYLES } from '@app/types';
 import { mouse, Button, sleep } from '@nut-tree-fork/nut-js';
-import { screen } from 'electron';
 
 export interface ClickToolInput {
   // Position input (either point OR region)
