@@ -330,9 +330,78 @@ export class WorkflowRunner extends WorkflowEventEmitter {
     return inputs;
   }
 
+  /**
+   * Parse a reference path that supports both dot notation and array index notation
+   * Examples:
+   * - "step.property" → ["step", "property"]
+   * - "step.array[0]" → ["step", "array", 0]
+   * - "step.array[0].property" → ["step", "array", 0, "property"]
+   * - "step.object.nested[1].value" → ["step", "object", "nested", 1, "value"]
+   */
+  private parsePath(ref: string): (string | number)[] {
+    const parts: (string | number)[] = [];
+    let current = '';
+    let i = 0;
+
+    while (i < ref.length) {
+      const char = ref[i];
+
+      if (char === '.') {
+        // End of current part
+        if (current) {
+          parts.push(current);
+          current = '';
+        }
+      } else if (char === '[') {
+        // Start of array index
+        if (current) {
+          parts.push(current);
+          current = '';
+        }
+
+        // Find the closing bracket
+        const closeIndex = ref.indexOf(']', i);
+        if (closeIndex === -1) {
+          throw new WorkflowError(`Invalid reference syntax: missing closing bracket in "${ref}"`, undefined, { ref });
+        }
+
+        // Extract and validate the index
+        const indexStr = ref.slice(i + 1, closeIndex);
+        if (!indexStr) {
+          throw new WorkflowError(`Invalid reference syntax: empty array index in "${ref}"`, undefined, { ref });
+        }
+
+        // Check if it's a valid number
+        const index = parseInt(indexStr, 10);
+        if (isNaN(index) || index < 0 || !Number.isInteger(index)) {
+          throw new WorkflowError(`Invalid reference syntax: array index must be a non-negative integer, got "${indexStr}" in "${ref}"`, undefined, { ref, invalidIndex: indexStr });
+        }
+
+        parts.push(index);
+        i = closeIndex; // Skip to after the closing bracket
+      } else {
+        // Regular character
+        current += char;
+      }
+
+      i++;
+    }
+
+    // Add any remaining current part
+    if (current) {
+      parts.push(current);
+    }
+
+    if (parts.length === 0) {
+      throw new WorkflowError(`Invalid reference syntax: empty reference "${ref}"`, undefined, { ref });
+    }
+
+    return parts;
+  }
+
   private resolveReference(ref: string, previousResults: Record<string, StepResult>): unknown {
-    const parts = ref.split('.');
-    const stepId = parts[0];
+    const parts = this.parsePath(ref);
+    const stepId = parts[0] as string;
 
     const stepResult = previousResults[stepId];
     if (!stepResult) {
@@ -351,15 +420,31 @@ export class WorkflowRunner extends WorkflowEventEmitter {
     // Navigate the path to get nested data
     let current = stepResult.result;
     for (let i = 1; i < parts.length; i++) {
+      const part = parts[i];
+      
       if (current === null || current === undefined) {
-        throw new WorkflowError(`Cannot access property "${parts[i]}" on null/undefined value from step "${stepId}"`, undefined, { stepId, property: parts[i], value: current });
+        throw new WorkflowError(`Cannot access ${typeof part === 'number' ? `index [${part}]` : `property "${part}"`} on null/undefined value from step "${stepId}"`, undefined, { stepId, property: part, value: current });
       }
 
-      if (typeof current !== 'object') {
-        throw new WorkflowError(`Cannot access property "${parts[i]}" on non-object value from step "${stepId}"`, undefined, { stepId, property: parts[i], value: current, valueType: typeof current });
-      }
+      if (typeof part === 'number') {
+        // Array index access
+        if (!Array.isArray(current)) {
+          throw new WorkflowError(`Cannot access array index [${part}] on non-array value from step "${stepId}"`, undefined, { stepId, index: part, value: current, valueType: typeof current });
+        }
 
-      current = (current as Record<string, unknown>)[parts[i]];
+        if (part >= current.length) {
+          throw new WorkflowError(`Array index [${part}] out of bounds for array of length ${current.length} from step "${stepId}"`, undefined, { stepId, index: part, arrayLength: current.length });
+        }
+
+        current = current[part];
+      } else {
+        // Object property access
+        if (typeof current !== 'object') {
+          throw new WorkflowError(`Cannot access property "${part}" on non-object value from step "${stepId}"`, undefined, { stepId, property: part, value: current, valueType: typeof current });
+        }
+
+        current = (current as Record<string, unknown>)[part];
+      }
     }
 
     return current;
