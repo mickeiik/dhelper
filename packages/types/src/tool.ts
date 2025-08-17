@@ -10,6 +10,13 @@ export interface ToolInputField<T = unknown> {
   placeholder?: string;
 }
 
+export interface ToolOutputField<T = unknown> {
+  name: string;
+  type: 'string' | 'number' | 'boolean' | 'object' | 'array';
+  description: string;
+  example?: T;
+}
+
 export type ToolInputFieldValue = string | number | boolean | object | unknown[] | Record<string, unknown>;
 
 export interface ToolMetadata<TInput = Record<string, unknown>> {
@@ -18,6 +25,7 @@ export interface ToolMetadata<TInput = Record<string, unknown>> {
   description?: string;
   category?: string;
   inputFields?: ToolInputField[];
+  outputFields?: ToolOutputField[];
   examples?: Array<{
     name: string;
     description: string;

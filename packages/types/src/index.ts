@@ -10,6 +10,7 @@ export type {
   ToolInput,
   ToolOutput,
   ToolInputField,
+  ToolOutputField,
   TemplateManager
 } from './tool.js';
 

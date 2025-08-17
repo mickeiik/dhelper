@@ -1,5 +1,5 @@
 // packages/@tools/screen-region-selector/src/index.ts
-import type { Tool, ToolInputField, ToolInitContext, OverlayService, OverlayShape, OverlayText, OverlayWindow, Point } from '@app/types';
+import type { Tool, ToolInputField, ToolOutputField, ToolInitContext, OverlayService, OverlayShape, OverlayText, OverlayWindow, Point } from '@app/types';
 import { OVERLAY_STYLES } from '@app/types';
 import { screen } from 'electron';
 
@@ -54,6 +54,15 @@ export class ScreenRegionSelectorTool implements Tool<ScreenRegionSelectorInput,
       required: false,
       defaultValue: 30000,
       placeholder: '30000'
+    }
+  ];
+
+  outputFields: ToolOutputField[] = [
+    {
+      name: 'result',
+      type: 'object',
+      description: 'Selected point {x, y} for point mode OR selected rectangle {top, left, width, height} for rectangle mode',
+      example: { top: 100, left: 100, width: 800, height: 600 }
     }
   ];
 

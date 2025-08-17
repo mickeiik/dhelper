@@ -12,7 +12,7 @@ interface ToolPaletteProps {
 }
 
 export function  ToolPalette({ onNodeAdd }: ToolPaletteProps) {
-  const { tools, loading, error } = useTools();
+  const { tools } = useTools();
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredTools = tools.filter(tool =>
@@ -100,13 +100,18 @@ export function  ToolPalette({ onNodeAdd }: ToolPaletteProps) {
                     </span>
                   )}
 
-                  {tool.inputFields && tool.inputFields.length > 0 && (
-                    <div className="mt-2">
+                  <div className="mt-2 flex gap-4">
+                    {tool.inputFields && tool.inputFields.length > 0 && (
                       <p className="text-xs font-medium text-muted-foreground">
                         {tool.inputFields.length} input{tool.inputFields.length !== 1 ? 's' : ''}
                       </p>
-                    </div>
-                  )}
+                    )}
+                    {tool.outputFields && tool.outputFields.length > 0 && (
+                      <p className="text-xs font-medium text-muted-foreground">
+                        {tool.outputFields.length} output{tool.outputFields.length !== 1 ? 's' : ''}
+                      </p>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))

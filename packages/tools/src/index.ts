@@ -128,6 +128,7 @@ export class ToolManager {
             description: tool.description,
             category: tool.category,
             inputFields: tool.inputFields,
+            outputFields: tool.outputFields,
             examples: tool.examples
         }));
     }

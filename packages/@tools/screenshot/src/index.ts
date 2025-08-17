@@ -1,5 +1,5 @@
 // packages/@tools/screenshot/src/index.ts
-import type { Tool, ToolInputField } from '@app/types';
+import type { Tool, ToolInputField, ToolOutputField } from '@app/types';
 import { ToolExecutionError } from '@app/types';
 import { nativeImage } from 'electron';
 import screenshot from 'screenshot-desktop';
@@ -47,6 +47,15 @@ export class ScreenshotTool implements Tool {
       description: 'Height of the area to capture',
       required: true,
       example: 600
+    }
+  ];
+
+  outputFields: ToolOutputField[] = [
+    {
+      name: 'result',
+      type: 'string',
+      description: 'Base64 encoded image data URL of the captured screenshot',
+      example: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...'
     }
   ];
 

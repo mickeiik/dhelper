@@ -1,4 +1,4 @@
-import type { Tool, ToolInputField, ToolInitContext, OverlayService, OverlayShape, OverlayText } from '@app/types';
+import type { Tool, ToolInputField, ToolOutputField, ToolInitContext, OverlayService, OverlayShape, OverlayText } from '@app/types';
 import { OVERLAY_STYLES, ToolExecutionError } from '@app/types';
 import type { TemplateMatchResult, TemplateMetadata } from '@app/types';
 import screenshot from 'screenshot-desktop';
@@ -125,6 +125,94 @@ export class TemplateMatcherTool implements Tool<TemplateMatcherInput, TemplateM
       required: false,
       defaultValue: 5000,
       example: 3000
+    }
+  ];
+
+  outputFields: ToolOutputField[] = [
+    {
+      name: 'result',
+      type: 'array',
+      description: 'Array of template match results - each element contains templateId, confidence, location, and template metadata',
+      example: [
+        {
+          templateId: 'login-button',
+          confidence: 0.95,
+          location: { x: 100, y: 200, width: 120, height: 40 },
+          template: { id: 'login-button', name: 'Login Button', category: 'Buttons' }
+        }
+      ]
+    },
+    {
+      name: 'result[].templateId',
+      type: 'string',
+      description: 'ID of the matched template',
+      example: 'login-button'
+    },
+    {
+      name: 'result[].confidence',
+      type: 'number',
+      description: 'Match confidence score (0-1, where 1 is perfect match)',
+      example: 0.95
+    },
+    {
+      name: 'result[].location',
+      type: 'object',
+      description: 'Location and dimensions of the match on screen',
+      example: { x: 100, y: 200, width: 120, height: 40 }
+    },
+    {
+      name: 'result[].location.x',
+      type: 'number',
+      description: 'X coordinate of top-left corner of the match',
+      example: 100
+    },
+    {
+      name: 'result[].location.y',
+      type: 'number',
+      description: 'Y coordinate of top-left corner of the match',
+      example: 200
+    },
+    {
+      name: 'result[].location.width',
+      type: 'number',
+      description: 'Width of the matched region',
+      example: 120
+    },
+    {
+      name: 'result[].location.height',
+      type: 'number',
+      description: 'Height of the matched region',
+      example: 40
+    },
+    {
+      name: 'result[].template',
+      type: 'object',
+      description: 'Template metadata including name, category, and other properties',
+      example: { id: 'login-button', name: 'Login Button', category: 'Buttons' }
+    },
+    {
+      name: 'result[].template.id',
+      type: 'string',
+      description: 'Template ID',
+      example: 'login-button'
+    },
+    {
+      name: 'result[].template.name',
+      type: 'string',
+      description: 'Human-readable template name',
+      example: 'Login Button'
+    },
+    {
+      name: 'result[].template.category',
+      type: 'string',
+      description: 'Template category',
+      example: 'Buttons'
+    },
+    {
+      name: 'result[].template.detectedScale',
+      type: 'number',
+      description: 'Scale factor used for successful match (optional runtime property)',
+      example: 1.33
     }
   ];
 

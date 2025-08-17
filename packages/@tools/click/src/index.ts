@@ -1,4 +1,4 @@
-import type { Tool, ToolInputField, ToolInitContext, OverlayService, OverlayShape } from '@app/types';
+import type { Tool, ToolInputField, ToolOutputField, ToolInitContext, OverlayService, OverlayShape } from '@app/types';
 import { OVERLAY_STYLES } from '@app/types';
 import { mouse, Button, sleep } from '@nut-tree-fork/nut-js';
 
@@ -100,6 +100,27 @@ export class ClickTool implements Tool {
       required: false,
       defaultValue: 2000,
       example: 2000
+    }
+  ];
+
+  outputFields: ToolOutputField[] = [
+    {
+      name: 'success',
+      type: 'boolean',
+      description: 'Whether the click operation was successful',
+      example: true
+    },
+    {
+      name: 'clickedAt',
+      type: 'object',
+      description: 'The coordinates where the click was performed',
+      example: { x: 500, y: 300 }
+    },
+    {
+      name: 'error',
+      type: 'string',
+      description: 'Error message if the operation failed',
+      example: 'No valid position provided'
     }
   ];
 

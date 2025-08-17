@@ -1,6 +1,5 @@
 import { memo } from "react";
 import { Handle, Position } from "@xyflow/react";
-import type { NodeProps } from "@xyflow/react";
 import { Button } from "@/components/ui/button";
 import {
   BaseNode,
@@ -24,7 +23,7 @@ export const ToolNode = memo(({ data, selected }: any) => {
   const displayName = toolMetadata?.name || label || toolId || 'Unknown Tool';
   const description = toolMetadata?.description || 'No description available';
   const inputFields = toolMetadata?.inputFields || [];
-    console.log(inputFields)
+  const outputFields = toolMetadata?.outputFields || [];
   return (
     <BaseNode className="w-80">
       {/* Input Handle */}
@@ -52,7 +51,7 @@ export const ToolNode = memo(({ data, selected }: any) => {
         {inputFields.length > 0 && (
           <div className="space-y-1">
             <p className="text-xs font-medium">Inputs:</p>
-            {inputFields.map((field: any, index: number) => (
+            {inputFields.slice(0, 3).map((field: any, index: number) => (
               <div key={index} className="text-xs">
                 <span className="font-mono text-blue-600">{field.name}</span>
                 {field.required && <span className="text-red-500 ml-1">*</span>}
@@ -61,6 +60,21 @@ export const ToolNode = memo(({ data, selected }: any) => {
             ))}
             {inputFields.length > 3 && (
               <p className="text-xs text-muted-foreground">+{inputFields.length - 3} more...</p>
+            )}
+          </div>
+        )}
+        
+        {outputFields.length > 0 && (
+          <div className="space-y-1 mt-2">
+            <p className="text-xs font-medium">Outputs:</p>
+            {outputFields.slice(0, 3).map((field: any, index: number) => (
+              <div key={index} className="text-xs">
+                <span className="font-mono text-green-600">{field.name}</span>
+                <span className="text-muted-foreground ml-1">({field.type})</span>
+              </div>
+            ))}
+            {outputFields.length > 3 && (
+              <p className="text-xs text-muted-foreground">+{outputFields.length - 3} more...</p>
             )}
           </div>
         )}

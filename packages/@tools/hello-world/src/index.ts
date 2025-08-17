@@ -1,5 +1,5 @@
 // packages/@tools/hello-world/src/index.ts
-import type { Tool, ToolInputField } from '@app/types';
+import type { Tool, ToolInputField, ToolOutputField } from '@app/types';
 
 export interface HelloWorldToolInput {
   message?: string;
@@ -32,6 +32,21 @@ export class HelloWorldTool implements Tool<HelloWorldToolInput, HelloWorldToolO
       description: 'Any data to process and return',
       required: false,
       example: { key: 'value', number: 42 }
+    }
+  ];
+
+  outputFields: ToolOutputField[] = [
+    {
+      name: 'success',
+      type: 'boolean',
+      description: 'Whether the operation was successful',
+      example: true
+    },
+    {
+      name: 'data',
+      type: 'object',
+      description: 'The processed data returned by the tool',
+      example: { message: 'Hello World!', data: null }
     }
   ];
 

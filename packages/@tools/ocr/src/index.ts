@@ -1,5 +1,5 @@
 // packages/@tools/ocr/src/index.ts
-import type { Tool, ToolInputField } from '@app/types';
+import type { Tool, ToolInputField, ToolOutputField } from '@app/types';
 import Tesseract from 'tesseract.js';
 
 export type TesseractOcrToolInput = Tesseract.ImageLike;
@@ -18,8 +18,17 @@ export class TesseractOcrTool implements Tool<Tesseract.ImageLike, string> {
       type: 'string',
       description: 'Image data (base64 data URL, file path, or buffer)',
       required: true,
-      placeholder: 'data:image/png;base64,... or /path/to/image.png',
+      placeholder: 'data:image/png;base64,..',
       example: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...'
+    }
+  ];
+
+  outputFields: ToolOutputField[] = [
+    {
+      name: 'result',
+      type: 'string',
+      description: 'Extracted and cleaned text from the image using OCR',
+      example: 'This is the extracted text from the image'
     }
   ];
 
