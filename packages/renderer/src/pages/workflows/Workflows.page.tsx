@@ -22,13 +22,85 @@ function WorkflowPage() {
     );
 
     const onEdgesChange: OnEdgesChange = useCallback(
-        (changes) => setEdges((edgesSnapshot) => applyEdgeChanges(changes, edgesSnapshot)),
-        [setEdges],
+        (changes) => {
+            let currentEdges: Edge[];
+            setEdges((edgesSnapshot) => {
+                currentEdges = applyEdgeChanges(changes, edgesSnapshot);
+                return currentEdges;
+            });
+            
+            // Handle edge removal to clean up connected sources
+            const removedEdges = changes.filter(change => change.type === 'remove');
+            if (removedEdges.length > 0) {
+                setNodes((nodesSnapshot) => {
+                    return nodesSnapshot.map(node => {
+                        const nodeData = node.data as ToolNodeData;
+                        if (nodeData.connectedSources) {
+                            let updatedSources = { ...nodeData.connectedSources };
+                            let hasChanges = false;
+                            
+                            removedEdges.forEach((change: any) => {
+                                if (updatedSources[change.id]) {
+                                    delete updatedSources[change.id];
+                                    hasChanges = true;
+                                }
+                            });
+                            
+                            if (hasChanges) {
+                                return {
+                                    ...node,
+                                    data: {
+                                        ...nodeData,
+                                        connectedSources: Object.keys(updatedSources).length > 0 ? updatedSources : undefined
+                                    }
+                                };
+                            }
+                        }
+                        return node;
+                    });
+                });
+            }
+        },
+        [setEdges, setNodes],
     );
 
     const onConnect: OnConnect = useCallback(
-        (params) => setEdges((edgesSnapshot) => addEdge(params, edgesSnapshot)),
-        [setEdges],
+        (params) => {
+            // Add the edge
+            setEdges((edgesSnapshot) => addEdge(params, edgesSnapshot));
+            
+            // Update target node with source tool information
+            if (params.source && params.target) {
+                setNodes((nodesSnapshot) => {
+                    const sourceNode = nodesSnapshot.find(n => n.id === params.source);
+                    const sourceToolData = sourceNode?.data as ToolNodeData;
+                    
+                    if (sourceToolData?.toolMetadata && sourceToolData?.toolId) {
+                        return nodesSnapshot.map(node => {
+                            if (node.id === params.target) {
+                                const currentData = node.data as ToolNodeData;
+                                return {
+                                    ...node,
+                                    data: {
+                                        ...currentData,
+                                        connectedSources: {
+                                            ...currentData.connectedSources,
+                                            [params.source!]: {
+                                                toolId: sourceToolData.toolId,
+                                                outputFields: sourceToolData.toolMetadata?.outputFields || []
+                                            }
+                                        }
+                                    }
+                                };
+                            }
+                            return node;
+                        });
+                    }
+                    return nodesSnapshot;
+                });
+            }
+        },
+        [setEdges, setNodes],
     );
 
     const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {

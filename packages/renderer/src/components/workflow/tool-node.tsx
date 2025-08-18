@@ -16,14 +16,20 @@ export interface ToolNodeData extends Record<string, unknown> {
   toolMetadata?: ToolMetadata;
   inputs?: Record<string, unknown>;
   label?: string;
+  connectedSources?: Record<string, {
+    toolId: string;
+    outputFields: any[];
+  }>;
 }
 
 export const ToolNode = memo(({ data, selected }: any) => {
-  const { toolMetadata, toolId, inputs, label } = (data as ToolNodeData) || {};
+  const { toolMetadata, toolId, inputs, label, connectedSources } = (data as ToolNodeData) || {};
   const displayName = toolMetadata?.name || label || toolId || 'Unknown Tool';
   const description = toolMetadata?.description || 'No description available';
   const inputFields = toolMetadata?.inputFields || [];
   const outputFields = toolMetadata?.outputFields || [];
+  const hasConnectedSources = connectedSources && Object.keys(connectedSources).length > 0;
+  
   return (
     <BaseNode className="w-80">
       {/* Input Handle */}
@@ -76,6 +82,29 @@ export const ToolNode = memo(({ data, selected }: any) => {
             {outputFields.length > 3 && (
               <p className="text-xs text-muted-foreground">+{outputFields.length - 3} more...</p>
             )}
+          </div>
+        )}
+        
+        {hasConnectedSources && (
+          <div className="mt-2 pt-2 border-t">
+            <p className="text-xs font-medium mb-1">Connected Sources:</p>
+            <div className="max-h-20 overflow-y-auto">
+              {Object.entries(connectedSources || {}).map(([sourceNodeId, sourceInfo]) => (
+                <div key={sourceNodeId} className="text-xs mb-1">
+                  <span className="font-mono text-purple-600">{sourceInfo.toolId}</span>
+                  <div className="ml-2 text-muted-foreground">
+                    {sourceInfo.outputFields.slice(0, 2).map((field: any, index: number) => (
+                      <span key={index} className="mr-2">
+                        {field.name} ({field.type})
+                      </span>
+                    ))}
+                    {sourceInfo.outputFields.length > 2 && (
+                      <span>+{sourceInfo.outputFields.length - 2} more</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
         
