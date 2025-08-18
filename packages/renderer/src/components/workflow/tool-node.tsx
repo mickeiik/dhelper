@@ -1,6 +1,13 @@
-import { memo } from "react";
-import { Handle, Position } from "@xyflow/react";
+import { memo, useState } from "react";
+import { Handle, Position, useReactFlow } from "@xyflow/react";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   BaseNode,
   BaseNodeContent,
@@ -10,6 +17,7 @@ import {
 } from "@/components/base-node";
 import { Rocket, Settings } from "lucide-react";
 import type { ToolMetadata } from "@app/types";
+import { generateInputOptionsFromSources, type InputOption } from "./input-mapping-utils";
 
 export interface ToolNodeData extends Record<string, unknown> {
   toolId?: string;
@@ -20,15 +28,42 @@ export interface ToolNodeData extends Record<string, unknown> {
     toolId: string;
     outputFields: any[];
   }>;
+  inputMappings?: Record<string, string>; // inputFieldName -> sourceReference
 }
 
-export const ToolNode = memo(({ data, selected }: any) => {
-  const { toolMetadata, toolId, inputs, label, connectedSources } = (data as ToolNodeData) || {};
+export const ToolNode = memo(({ data, selected, id }: any) => {
+  const { toolMetadata, toolId, inputs, label, connectedSources, inputMappings } = (data as ToolNodeData) || {};
   const displayName = toolMetadata?.name || label || toolId || 'Unknown Tool';
   const description = toolMetadata?.description || 'No description available';
   const inputFields = toolMetadata?.inputFields || [];
   const outputFields = toolMetadata?.outputFields || [];
   const hasConnectedSources = connectedSources && Object.keys(connectedSources).length > 0;
+  
+  // Generate available input options from connected sources
+  const availableOptions = hasConnectedSources ? generateInputOptionsFromSources(connectedSources) : [];
+  
+  const { setNodes } = useReactFlow();
+  
+  const handleInputMappingChange = (inputFieldName: string, sourceReference: string) => {
+    setNodes((nodes) => 
+      nodes.map((node) => {
+        if (node.id === id) {
+          const currentData = node.data as ToolNodeData;
+          return {
+            ...node,
+            data: {
+              ...currentData,
+              inputMappings: {
+                ...currentData.inputMappings,
+                [inputFieldName]: sourceReference
+              }
+            }
+          };
+        }
+        return node;
+      })
+    );
+  };
   
   return (
     <BaseNode className="w-80">
@@ -55,17 +90,59 @@ export const ToolNode = memo(({ data, selected }: any) => {
         </p>
         
         {inputFields.length > 0 && (
-          <div className="space-y-1">
+          <div className="space-y-2">
             <p className="text-xs font-medium">Inputs:</p>
-            {inputFields.slice(0, 3).map((field: any, index: number) => (
-              <div key={index} className="text-xs">
-                <span className="font-mono text-blue-600">{field.name}</span>
-                {field.required && <span className="text-red-500 ml-1">*</span>}
-                <span className="text-muted-foreground ml-1">({field.type})</span>
+            {hasConnectedSources ? (
+              // Show dropdowns when sources are connected
+              <div className="space-y-2">
+                {inputFields.slice(0, 3).map((field: any, index: number) => (
+                  <div key={index} className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-mono text-blue-600">{field.name}</span>
+                      {field.required && <span className="text-red-500 text-xs">*</span>}
+                    </div>
+                    <Select
+                      value={inputMappings?.[field.name] || ""}
+                      onValueChange={(value) => handleInputMappingChange(field.name, value)}
+                    >
+                      <SelectTrigger className="h-7 text-xs">
+                        <SelectValue placeholder={`Select source for ${field.name}`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableOptions.map((option: InputOption, optionIndex: number) => (
+                          <SelectItem 
+                            key={optionIndex} 
+                            value={option.value}
+                            className="text-xs"
+                          >
+                            <div className="flex flex-col">
+                              <span>{option.label}</span>
+                              <span className="text-muted-foreground">({option.type})</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ))}
+                {inputFields.length > 3 && (
+                  <p className="text-xs text-muted-foreground">+{inputFields.length - 3} more...</p>
+                )}
               </div>
-            ))}
-            {inputFields.length > 3 && (
-              <p className="text-xs text-muted-foreground">+{inputFields.length - 3} more...</p>
+            ) : (
+              // Show static list when no sources are connected
+              <div>
+                {inputFields.slice(0, 3).map((field: any, index: number) => (
+                  <div key={index} className="text-xs">
+                    <span className="font-mono text-blue-600">{field.name}</span>
+                    {field.required && <span className="text-red-500 ml-1">*</span>}
+                    <span className="text-muted-foreground ml-1">({field.type})</span>
+                  </div>
+                ))}
+                {inputFields.length > 3 && (
+                  <p className="text-xs text-muted-foreground">+{inputFields.length - 3} more...</p>
+                )}
+              </div>
             )}
           </div>
         )}
