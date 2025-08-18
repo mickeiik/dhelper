@@ -1,18 +1,14 @@
 import { useState } from 'react';
-import { Node } from '@xyflow/react';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Plus, Wrench } from 'lucide-react';
-import { useTools } from '@/hooks/useElectronAPI';
-import type { ToolNodeData } from './tool-node';
+import { Search, Wrench } from 'lucide-react';
+import { ToolMetadata } from '@app/types';
 
 interface ToolPaletteProps {
-  onNodeAdd: (node: Node) => void;
+  tools: ToolMetadata<Record<string, unknown>>[];
 }
 
-export function  ToolPalette({ onNodeAdd }: ToolPaletteProps) {
-  const { tools } = useTools();
+export function ToolPalette({ tools }: ToolPaletteProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredTools = tools.filter(tool =>
@@ -21,25 +17,9 @@ export function  ToolPalette({ onNodeAdd }: ToolPaletteProps) {
     tool.category?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleAddTool = (toolId: string) => {
-    const tool = tools.find(t => t.id === toolId);
-    if (!tool) return;
-
-    const newNode: Node = {
-      id: `${toolId}-${Date.now()}`,
-      type: 'toolNode',
-      position: {
-        x: Math.random() * 400 + 100,
-        y: Math.random() * 400 + 100,
-      },
-      data: {
-        toolId: tool.id,
-        toolMetadata: tool,
-        inputs: {},
-      } as ToolNodeData,
-    };
-
-    onNodeAdd(newNode);
+  const onDragStart = (event: React.DragEvent<HTMLDivElement>, toolId: string) => {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('application/reactflow', JSON.stringify({ toolId }));
   }
 
   return (
@@ -69,21 +49,13 @@ export function  ToolPalette({ onNodeAdd }: ToolPaletteProps) {
             </p>
           ) : (
             filteredTools.map((tool, index) => (
-              <Card key={`${tool.id}-${index}`} className="hover:shadow-md transition-shadow mb-3">
+              <Card onDragStart={(e) => onDragStart(e, tool.id)} draggable key={`${tool.id}-${index}`} className="hover:shadow-md transition-shadow mb-3">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Wrench className="size-4" />
                       <span className="truncate">{tool.name}</span>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleAddTool(tool.id)}
-                      className="h-6 w-6 p-0"
-                    >
-                      <Plus className="size-3" />
-                    </Button>
                   </CardTitle>
                 </CardHeader>
 
