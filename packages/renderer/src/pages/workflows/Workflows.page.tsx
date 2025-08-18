@@ -31,10 +31,6 @@ function WorkflowPage() {
         [setEdges],
     );
 
-    const onNodeAdd = useCallback((node: Node) => {
-        setNodes((nds) => [...nds, node]);
-    }, []);
-
     const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
         event.preventDefault();
         event.dataTransfer.dropEffect = 'move';
@@ -89,7 +85,6 @@ function WorkflowPage() {
                     onConnect={onConnect}
                     onDrop={onDrop}
                     onDragOver={onDragOver}
-                    // onDragStart={onDragStart}
                     fitView
                     proOptions={{ hideAttribution: true }}
                 >
