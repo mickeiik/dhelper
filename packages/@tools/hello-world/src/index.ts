@@ -45,7 +45,7 @@ export class HelloWorldTool implements Tool<HelloWorldToolInput, HelloWorldToolO
     {
       name: 'data',
       type: 'object',
-      description: 'The processed data returned by the tool',
+      description: 'The input data that was passed to the tool (echoed back)',
       example: { message: 'Hello World!', data: null }
     }
   ];

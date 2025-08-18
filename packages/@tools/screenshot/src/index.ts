@@ -52,7 +52,7 @@ export class ScreenshotTool implements Tool {
 
   outputFields: ToolOutputField[] = [
     {
-      name: 'result',
+      name: 'image',
       type: 'string',
       description: 'Base64 encoded image data URL of the captured screenshot',
       example: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...'

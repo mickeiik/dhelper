@@ -59,10 +59,40 @@ export class ScreenRegionSelectorTool implements Tool<ScreenRegionSelectorInput,
 
   outputFields: ToolOutputField[] = [
     {
-      name: 'result',
-      type: 'object',
-      description: 'Selected point {x, y} for point mode OR selected rectangle {top, left, width, height} for rectangle mode',
-      example: { top: 100, left: 100, width: 800, height: 600 }
+      name: 'x',
+      type: 'number', 
+      description: 'X coordinate (present in point mode)',
+      example: 500
+    },
+    {
+      name: 'y',
+      type: 'number',
+      description: 'Y coordinate (present in point mode)', 
+      example: 300
+    },
+    {
+      name: 'top',
+      type: 'number',
+      description: 'Top Y coordinate (present in rectangle mode)',
+      example: 100
+    },
+    {
+      name: 'left', 
+      type: 'number',
+      description: 'Left X coordinate (present in rectangle mode)',
+      example: 100
+    },
+    {
+      name: 'width',
+      type: 'number', 
+      description: 'Width of selected area (present in rectangle mode)',
+      example: 800
+    },
+    {
+      name: 'height',
+      type: 'number',
+      description: 'Height of selected area (present in rectangle mode)', 
+      example: 600
     }
   ];
 

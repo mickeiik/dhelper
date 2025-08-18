@@ -25,7 +25,7 @@ export class TesseractOcrTool implements Tool<Tesseract.ImageLike, string> {
 
   outputFields: ToolOutputField[] = [
     {
-      name: 'result',
+      name: 'text',
       type: 'string',
       description: 'Extracted and cleaned text from the image using OCR',
       example: 'This is the extracted text from the image'

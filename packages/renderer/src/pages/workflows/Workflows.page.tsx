@@ -5,6 +5,8 @@ import { ToolNode, ToolNodeData } from '@/components/workflow/tool-node';
 import type { ComponentType } from 'react';
 import { ToolPalette } from '@/components/workflow/tool-palette';
 import { useTools } from '@/hooks/useElectronAPI';
+import type { Workflow, WorkflowStep } from '@app/types';
+import { runCustomWorkflow } from '@app/preload';
 
 const nodeTypes: Record<string, ComponentType<any>> = {
     toolNode: ToolNode,
@@ -141,8 +143,94 @@ function WorkflowPage() {
         }
     }, [screenToFlowPosition, tools])
 
+    const getWorkflowFromNodes = (nodes: Node[], edges: Edge[]): Workflow => {
+        // Only include nodes that are connected (have at least one edge)
+        const connectedNodeIds = new Set<string>();
+        edges.forEach(edge => {
+            if (edge.source) connectedNodeIds.add(edge.source);
+            if (edge.target) connectedNodeIds.add(edge.target);
+        });
+        
+        const connectedNodes = nodes.filter(node => connectedNodeIds.has(node.id));
+        
+        // Sort nodes by dependency order: nodes with no dependencies first
+        const sortedNodes = [...connectedNodes].sort((a, b) => {
+            const aHasInputs = (a.data as ToolNodeData).inputMappings && Object.keys((a.data as ToolNodeData).inputMappings || {}).length > 0;
+            const bHasInputs = (b.data as ToolNodeData).inputMappings && Object.keys((b.data as ToolNodeData).inputMappings || {}).length > 0;
+            
+            // Nodes without inputs come first
+            if (!aHasInputs && bHasInputs) return -1;
+            if (aHasInputs && !bHasInputs) return 1;
+            return 0;
+        });
+        
+        const steps: WorkflowStep[] = sortedNodes.map(node => {
+            const nodeData = node.data as ToolNodeData;
+            const inputFields = nodeData.toolMetadata?.inputFields || [];
+            
+            // Convert inputs: manual inputs as values, mappings as $ref
+            const inputs: any = {};
+            
+            // Add manual inputs
+            if (nodeData.inputs) {
+                Object.entries(nodeData.inputs).forEach(([fieldName, value]) => {
+                    if (value !== undefined && value !== null && value !== '') {
+                        inputs[fieldName] = value;
+                    }
+                });
+            }
+            
+            // Add input mappings as $ref (overrides manual inputs for same field)
+            if (nodeData.inputMappings) {
+                Object.entries(nodeData.inputMappings).forEach(([fieldName, sourceRef]) => {
+                    if (sourceRef) {
+                        let finalRef = sourceRef;
+                        
+                        // Apply array indexing if this reference uses [] placeholder and we have an array index
+                        if (sourceRef.includes('[]') && nodeData.arrayIndexes) {
+                            // Extract sourceNodeId from the reference (before . or [])
+                            const sourceNodeId = sourceRef.split(/[.\[]/, 1)[0];
+                            const selectedIndex = nodeData.arrayIndexes[sourceNodeId];
+                            
+                            if (selectedIndex !== undefined) {
+                                // Replace [] with the selected index
+                                finalRef = sourceRef.replace('[]', `[${selectedIndex}]`);
+                            }
+                        }
+                        
+                        inputs[fieldName] = { $ref: finalRef };
+                    }
+                });
+            }
+            
+            // For tools with a single input field, pass the value directly instead of an object
+            const finalInputs = inputFields.length === 1 && Object.keys(inputs).length === 1
+                ? inputs[inputFields[0].name]  // Extract the single field value
+                : inputs;  // Use the object as-is for multiple fields
+            
+            return {
+                id: node.id,
+                toolId: nodeData.toolId as any,
+                inputs: finalInputs
+            };
+        });
+        
+        return {
+            id: `workflow-${Date.now()}`,
+            name: 'Generated Workflow',
+            steps
+        };
+    };
+
+    const test = async() => {
+        //For testing, do not remove.
+        console.log('Workflow:', getWorkflowFromNodes(nodes, edges));
+        console.log(await runCustomWorkflow(getWorkflowFromNodes(nodes, edges)))
+    }
+
     return (
         <div className='flex h-full'>
+            <button onClick={test}>Test</button> {/* Do Not Remove */}
             {/* Tool Palette Sidebar */}
             <ToolPalette tools={tools} />
 
