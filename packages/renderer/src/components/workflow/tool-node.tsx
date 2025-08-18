@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useEffect, useState } from "react";
 import { Handle, Position, useReactFlow } from "@xyflow/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,8 +17,9 @@ import {
   BaseNodeHeaderTitle,
 } from "@/components/base-node";
 import { Rocket, Settings, Edit3, Link } from "lucide-react";
-import type { ToolMetadata } from "@app/types";
+import type { ToolMetadata, TemplateMetadata } from "@app/types";
 import { generateInputOptionsFromSources, type InputOption } from "./input-mapping-utils";
+import { listTemplates, getTemplateCategories, getAllTemplateTags } from '@app/preload';
 
 export interface ToolNodeData extends Record<string, unknown> {
   toolId?: string;
@@ -42,10 +43,40 @@ export const ToolNode = memo(({ data, selected, id }: any) => {
   const outputFields = toolMetadata?.outputFields || [];
   const hasConnectedSources = connectedSources && Object.keys(connectedSources).length > 0;
   
+  // Template data for template-matcher tool
+  const [templates, setTemplates] = useState<TemplateMetadata[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+  
   // Generate available input options from connected sources
   const availableOptions = hasConnectedSources ? generateInputOptionsFromSources(connectedSources) : [];
   
   const { setNodes } = useReactFlow();
+  
+  // Load template data when component mounts and toolId is template-matcher
+  useEffect(() => {
+    if (toolId === 'template-matcher') {
+      const loadTemplateData = async () => {
+        setLoadingTemplates(true);
+        try {
+          const [templatesData, categoriesData, tagsData] = await Promise.all([
+            listTemplates(),
+            getTemplateCategories(),
+            getAllTemplateTags()
+          ]);
+          setTemplates(templatesData);
+          setCategories(categoriesData);
+          setTags(tagsData);
+        } catch (error) {
+          console.error('Failed to load template data:', error);
+        } finally {
+          setLoadingTemplates(false);
+        }
+      };
+      loadTemplateData();
+    }
+  }, [toolId]);
   
   const handleInputMappingChange = (inputFieldName: string, sourceReference: string) => {
     setNodes((nodes) => 
@@ -87,6 +118,39 @@ export const ToolNode = memo(({ data, selected, id }: any) => {
         return node;
       })
     );
+  };
+  
+  const handleArrayInputChange = (inputFieldName: string, values: string[]) => {
+    setNodes((nodes) => 
+      nodes.map((node) => {
+        if (node.id === id) {
+          const currentData = node.data as ToolNodeData;
+          return {
+            ...node,
+            data: {
+              ...currentData,
+              inputs: {
+                ...currentData.inputs,
+                [inputFieldName]: values
+              }
+            }
+          };
+        }
+        return node;
+      })
+    );
+  };
+  
+  const addToArrayInput = (inputFieldName: string, value: string) => {
+    const currentArray = (inputs?.[inputFieldName] as string[]) || [];
+    if (!currentArray.includes(value)) {
+      handleArrayInputChange(inputFieldName, [...currentArray, value]);
+    }
+  };
+  
+  const removeFromArrayInput = (inputFieldName: string, value: string) => {
+    const currentArray = (inputs?.[inputFieldName] as string[]) || [];
+    handleArrayInputChange(inputFieldName, currentArray.filter(v => v !== value));
   };
   
   const handleArrayIndexChange = (sourceNodeId: string, newIndex: number) => {
@@ -189,13 +253,82 @@ export const ToolNode = memo(({ data, selected, id }: any) => {
                     </div>
                     
                     {isManualMode || !hasAvailableOptions ? (
-                      // Manual input mode
-                      <Input
-                        className="h-7 text-xs"
-                        placeholder={field.placeholder || `Enter ${field.name}...`}
-                        value={(inputs?.[field.name] as string) || ""}
-                        onChange={(e) => handleManualInputChange(field.name, e.target.value)}
-                      />
+                      // Manual input mode - check if this is a template field
+                      toolId === 'template-matcher' && ['templateIds', 'templateNames', 'categories', 'tags'].includes(field.name) ? (
+                        <div className="space-y-1">
+                          {/* Template selection dropdown */}
+                          <Select onValueChange={(value) => addToArrayInput(field.name, value)}>
+                            <SelectTrigger className="h-7 text-xs">
+                              <SelectValue placeholder={`Add ${field.name.replace(/([A-Z])/g, ' $1').toLowerCase()}`} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {loadingTemplates ? (
+                                <SelectItem value="loading" disabled className="text-xs">Loading...</SelectItem>
+                              ) : (
+                                (() => {
+                                  if (field.name === 'templateIds') {
+                                    return templates.map(template => (
+                                      <SelectItem key={template.id} value={template.id} className="text-xs">
+                                        <div className="flex flex-col">
+                                          <span>{template.name}</span>
+                                          <span className="text-muted-foreground">({template.id})</span>
+                                        </div>
+                                      </SelectItem>
+                                    ));
+                                  } else if (field.name === 'templateNames') {
+                                    return templates.map(template => (
+                                      <SelectItem key={template.name} value={template.name} className="text-xs">
+                                        <div className="flex flex-col">
+                                          <span>{template.name}</span>
+                                          <span className="text-muted-foreground">({template.category})</span>
+                                        </div>
+                                      </SelectItem>
+                                    ));
+                                  } else if (field.name === 'categories') {
+                                    return categories.map(category => (
+                                      <SelectItem key={category} value={category} className="text-xs">
+                                        {category}
+                                      </SelectItem>
+                                    ));
+                                  } else if (field.name === 'tags') {
+                                    return tags.map(tag => (
+                                      <SelectItem key={tag} value={tag} className="text-xs">
+                                        {tag}
+                                      </SelectItem>
+                                    ));
+                                  }
+                                  return [];
+                                })()
+                              )}
+                            </SelectContent>
+                          </Select>
+                          
+                          {/* Show selected values */}
+                          {inputs?.[field.name] && Array.isArray(inputs[field.name]) && (inputs[field.name] as string[]).length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {(inputs[field.name] as string[]).map((value, idx) => (
+                                <div key={idx} className="flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                                  <span>{value}</span>
+                                  <button 
+                                    onClick={() => removeFromArrayInput(field.name, value)}
+                                    className="hover:bg-blue-200 rounded px-1"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        // Regular manual input
+                        <Input
+                          className="h-7 text-xs"
+                          placeholder={field.placeholder || `Enter ${field.name}...`}
+                          value={(inputs?.[field.name] as string) || ""}
+                          onChange={(e) => handleManualInputChange(field.name, e.target.value)}
+                        />
+                      )
                     ) : (
                       // Dropdown mode for connected sources
                       <Select
