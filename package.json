@@ -54,7 +54,8 @@
     "screenshot-desktop": "1.15.1",
     "sharp": "^0.34.3",
     "sqlite3": "^5.1.7",
-    "tesseract.js": "^5.1.1"
+    "tesseract.js": "^5.1.1",
+    "zod": "^4.0.17"
   },
   "opencv4nodejs": {
     "disableAutoBuild": "1",

@@ -1,128 +1,25 @@
-import type { Tool, ToolInputField, ToolOutputField, ToolInitContext, OverlayService, OverlayShape } from '@app/types';
+import type { ToolInputField, ToolOutputField, ToolInitContext, OverlayService, OverlayShape } from '@app/types';
 import { OVERLAY_STYLES } from '@app/types';
+import { ClickInputSchema, ClickOutputSchema, ToolResult, PointSchema } from '@app/schemas';
 import { mouse, Button, sleep } from '@nut-tree-fork/nut-js';
+import { Tool } from '@app/tools';
+import { z } from 'zod';
 
-export interface ClickToolInput {
-  // Position input (either point OR region)
-  x?: number;
-  y?: number;
-  region?: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  };
+// Type aliases for convenience
+type ClickToolInput = z.infer<typeof ClickInputSchema>;
+type ClickToolOutput = z.infer<typeof ClickOutputSchema>;
+type ClickResult = ToolResult<typeof ClickOutputSchema>;
 
-  // Click configuration
-  button?: 'left' | 'right' | 'middle';
-  clicks?: number;     // Single, double, triple click
-  delay?: number;      // Delay between multiple clicks (ms)
-
-  // Visual feedback
-  showVisualIndicator?: boolean;
-  indicatorTimeout?: number;
-}
-
-export interface ClickToolOutput {
-  success: boolean;
-  clickedAt: {
-    x: number;
-    y: number;
-  };
-  error?: string;
-}
-
-export class ClickTool implements Tool {
+export class ClickTool extends Tool<typeof ClickInputSchema, typeof ClickOutputSchema> {
   id = 'click' as const;
   name = 'Click Tool';
   description = 'Click at screen positions with multiple click methods and input types';
   category = 'Input';
 
+  inputSchema = ClickInputSchema;
+  outputSchema = ClickOutputSchema;
+
   private overlayService?: OverlayService;
-
-  inputFields: ToolInputField[] = [
-    {
-      name: 'x',
-      type: 'number',
-      description: 'X coordinate to click',
-      required: false,
-      example: 500
-    },
-    {
-      name: 'y',
-      type: 'number',
-      description: 'Y coordinate to click',
-      required: false,
-      example: 300
-    },
-    {
-      name: 'region',
-      type: 'object',
-      description: 'Region to click in the center of',
-      required: false,
-      example: { x: 100, y: 100, width: 200, height: 100 }
-    },
-    {
-      name: 'button',
-      type: 'string',
-      description: 'Mouse button to click (left, middle or right)',
-      required: false,
-      defaultValue: 'left',
-      example: 'left'
-    },
-    {
-      name: 'clicks',
-      type: 'number',
-      description: 'Number of clicks',
-      required: false,
-      defaultValue: 1,
-      example: 1
-    },
-    {
-      name: 'delay',
-      type: 'number',
-      description: 'Delay between clicks in milliseconds',
-      required: false,
-      defaultValue: 100,
-      example: 100
-    },
-    {
-      name: 'showVisualIndicator',
-      type: 'boolean',
-      description: 'Show visual indicator at click location',
-      required: false,
-      defaultValue: true
-    },
-    {
-      name: 'indicatorTimeout',
-      type: 'number',
-      description: 'How long to show visual indicator (ms)',
-      required: false,
-      defaultValue: 2000,
-      example: 2000
-    }
-  ];
-
-  outputFields: ToolOutputField[] = [
-    {
-      name: 'success',
-      type: 'boolean',
-      description: 'Whether the click operation was successful',
-      example: true
-    },
-    {
-      name: 'clickedAt',
-      type: 'object',
-      description: 'The coordinates where the click was performed',
-      example: { x: 500, y: 300 }
-    },
-    {
-      name: 'error',
-      type: 'string',
-      description: 'Error message if the operation failed',
-      example: 'No valid position provided'
-    }
-  ];
 
   examples = [
     {
@@ -191,54 +88,50 @@ export class ClickTool implements Tool {
     return;
   }
 
-  async execute(input: ClickToolInput): Promise<ClickToolOutput> {
+  async executeValidated(input: ClickToolInput): Promise<ClickResult> {
     try {
       // Determine click position
       const position = this.calculateClickPosition(input);
-      if (!position) {
-        throw new Error('No valid position provided. Use either x,y coordinates or region.');
-      }
 
       // Get click configuration
-      const button = this.getMouseButton(input.button || 'left');
-      const clicks = Math.max(1, Math.min(10, input.clicks || 1)); // Limit clicks 1-10
-      const delay = Math.max(10, input.delay || 100); // Minimum 10ms delay
+      const button = this.getMouseButton(input.button);
 
       // Show visual indicator before clicking
       if (input.showVisualIndicator !== false) {
-        await this.showVisualIndicator(position, input.indicatorTimeout || 2000);
+        await this.showVisualIndicator(position, input.indicatorTimeout);
       }
 
       // Perform the click using selected method
-      await this.performClick(position, button, clicks, delay);
+      await this.clickDefault(position, button, input.clicks, input.delay);
 
       return {
         success: true,
-        clickedAt: position,
+        data: position // Return the clicked position {x, y}
       };
 
     } catch (error) {
       return {
         success: false,
-        clickedAt: { x: 0, y: 0 },
-        error: error instanceof Error ? error.message : String(error)
+        error: {
+          message: error instanceof Error ? error.message : String(error),
+          code: 'TOOL_EXECUTION_ERROR' as const,
+          details: { originalError: error }
+        }
       };
     }
   }
 
-  private calculateClickPosition(input: ClickToolInput): { x: number; y: number } | null {
-    if (input.x !== undefined && input.y !== undefined) {
-      return { x: input.x, y: input.y };
-    }
+  private calculateClickPosition(input: ClickToolInput): ClickToolOutput {
+    const isRectangle = 'width' in input;
 
-    if (input.region) {
+    if (isRectangle) {
       return {
-        x: input.region.x + Math.floor(input.region.width / 2),
-        y: input.region.y + Math.floor(input.region.height / 2)
+        x: input.left + Math.floor(input.width / 2),
+        y: input.top + Math.floor(input.height / 2)
       };
     }
 
-    return null;
+    return { x: input.x, y: input.y };
   }
 
   private getMouseButton(button: string): Button {
@@ -250,23 +143,14 @@ export class ClickTool implements Tool {
     }
   }
 
-  private async performClick(
-    position: { x: number; y: number },
-    button: Button,
-    clicks: number,
-    delay: number
-  ): Promise<void> {
-    await this.clickDefault(position, button, clicks, delay);
-  }
-
   private async clickDefault(
-    position: { x: number; y: number },
+    position: z.infer<typeof PointSchema>,
     button: Button,
     clicks: number,
     delay: number
   ): Promise<void> {
     // Move to position and click
-    await mouse.setPosition({ x: position.x, y: position.y });
+    await mouse.setPosition(position);
     await sleep(50);
 
     for (let i = 0; i < clicks; i++) {
@@ -279,7 +163,7 @@ export class ClickTool implements Tool {
   }
 
   private async showVisualIndicator(
-    position: { x: number; y: number },
+    position: z.infer<typeof PointSchema>,
     timeout: number
   ): Promise<void> {
     if (!this.overlayService) {

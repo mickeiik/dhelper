@@ -1,32 +1,24 @@
 // packages/@tools/screen-region-selector/src/index.ts
-import type { Tool, ToolInputField, ToolOutputField, ToolInitContext, OverlayService, OverlayShape, OverlayText, OverlayWindow, Point } from '@app/types';
+import { ScreenRegionSelectorInputSchema, ScreenRegionSelectorOutputUnionSchema, ToolResult } from '@app/schemas';
+import { Tool } from '@app/tools';
+import { z } from 'zod';
+import type { ToolInputField, ToolOutputField, ToolInitContext, OverlayService, OverlayShape, OverlayText, OverlayWindow, Point } from '@app/types';
 import { OVERLAY_STYLES } from '@app/types';
 import { screen } from 'electron';
 
-export interface ScreenRegionSelectorInput {
-  mode: 'point' | 'rectangle' | 'region'; // 'region' is alias for 'rectangle'
-  timeout?: number; // Optional timeout in milliseconds (default: 30000)
-}
+// Type aliases for convenience
+type ScreenRegionSelectorInput = z.infer<typeof ScreenRegionSelectorInputSchema>;
+type ScreenRegionSelectorOutput = z.infer<typeof ScreenRegionSelectorOutputUnionSchema>;
+type ScreenRegionSelectorResult = ToolResult<typeof ScreenRegionSelectorOutputUnionSchema>;
 
-export interface PointSelection {
-  x: number;
-  y: number;
-}
-
-export interface RectangleSelection {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-}
-
-export type ScreenRegionSelectorOutput = PointSelection | RectangleSelection;
-
-export class ScreenRegionSelectorTool implements Tool<ScreenRegionSelectorInput, ScreenRegionSelectorOutput> {
+export class ScreenRegionSelectorTool extends Tool<typeof ScreenRegionSelectorInputSchema, typeof ScreenRegionSelectorOutputUnionSchema> {
   id = 'screen-region-selector' as const;
   name = 'Screen Region Selector';
   description = 'Interactive tool to select a point or rectangle area on the screen';
   category = 'Input';
+
+  inputSchema = ScreenRegionSelectorInputSchema;
+  outputSchema = ScreenRegionSelectorOutputUnionSchema;
 
   private overlayService?: OverlayService;
   private selectionPromise?: {
@@ -34,67 +26,6 @@ export class ScreenRegionSelectorTool implements Tool<ScreenRegionSelectorInput,
     reject: (error: Error) => void;
     cleanup?: () => void;
   };
-
-  inputFields: ToolInputField[] = [
-    {
-      name: 'mode',
-      type: 'select',
-      description: 'Selection mode - point for single click, rectangle for area selection',
-      required: true,
-      defaultValue: 'rectangle',
-      options: [
-        { value: 'point', label: 'Point (single click)' },
-        { value: 'region', label: 'Region (drag area)' }
-      ]
-    },
-    {
-      name: 'timeout',
-      type: 'number',
-      description: 'Maximum time to wait for user selection (milliseconds)',
-      required: false,
-      defaultValue: 30000,
-      placeholder: '30000'
-    }
-  ];
-
-  outputFields: ToolOutputField[] = [
-    {
-      name: 'x',
-      type: 'number', 
-      description: 'X coordinate (present in point mode)',
-      example: 500
-    },
-    {
-      name: 'y',
-      type: 'number',
-      description: 'Y coordinate (present in point mode)', 
-      example: 300
-    },
-    {
-      name: 'top',
-      type: 'number',
-      description: 'Top Y coordinate (present in rectangle mode)',
-      example: 100
-    },
-    {
-      name: 'left', 
-      type: 'number',
-      description: 'Left X coordinate (present in rectangle mode)',
-      example: 100
-    },
-    {
-      name: 'width',
-      type: 'number', 
-      description: 'Width of selected area (present in rectangle mode)',
-      example: 800
-    },
-    {
-      name: 'height',
-      type: 'number',
-      description: 'Height of selected area (present in rectangle mode)', 
-      example: 600
-    }
-  ];
 
   examples = [
     {
@@ -127,50 +58,43 @@ export class ScreenRegionSelectorTool implements Tool<ScreenRegionSelectorInput,
     return;
   }
 
-  async execute(input: ScreenRegionSelectorInput): Promise<ScreenRegionSelectorOutput> {
+  async executeValidated(input: ScreenRegionSelectorInput): Promise<ScreenRegionSelectorResult> {
     if (!this.overlayService) {
       throw new Error('Overlay service not available for screen region selection');
     }
 
-    const timeout = input.timeout || 30000; // 30 second default timeout
-
     // Normalize mode - handle both 'rectangle' and 'region' for backward compatibility
     const normalizedMode = (input.mode === 'region' ? 'rectangle' : input.mode) as 'point' | 'rectangle';
 
-    try {
-      const primaryDisplay = screen.getPrimaryDisplay();
-      const totalBounds = primaryDisplay.bounds;
+    // Create overlay for selection
+    const overlay = await this.overlayService.createOverlay({
+      showInstructions: true,
+      instructionText: normalizedMode === 'point'
+        ? 'Click to select a point on screen. Press ESC to cancel.'
+        : 'Click and drag to select a rectangle area. Press ESC to cancel.',
+      timeout: input.timeout,
+      clickThrough: false // Allow interaction
+    });
 
-      // Create overlay for selection
-      const overlay = await this.overlayService.createOverlay({
-        showInstructions: true,
-        instructionText: normalizedMode === 'point'
-          ? 'Click to select a point on screen. Press ESC to cancel.'
-          : 'Click and drag to select a rectangle area. Press ESC to cancel.',
-        timeout: timeout,
-        clickThrough: false // Allow interaction
-      });
+    // Setup crosshairs for visual feedback
+    await this.setupCrosshairs(overlay);
 
-      // Setup crosshairs for visual feedback
-      await this.setupCrosshairs(overlay);
+    // Show the overlay
+    await overlay.show();
 
-      // Show the overlay
-      await overlay.show();
+    // Add a small delay to ensure overlay is fully ready
+    await new Promise(resolve => setTimeout(resolve, 200));
 
-      // Add a small delay to ensure overlay is fully ready
-      await new Promise(resolve => setTimeout(resolve, 200));
+    // Handle selection based on mode
+    const result = await this.handleSelection(overlay, normalizedMode, input.timeout);
 
-      // Handle selection based on mode
-      const result = await this.handleSelection(overlay, normalizedMode, timeout);
+    // Hide overlay
+    await overlay.hide();
 
-      // Hide overlay
-      await overlay.hide();
-
-      return result;
-
-    } catch (error) {
-      throw new Error(`Screen region selection failed: ${error instanceof Error ? error.message : String(error)}`);
-    }
+    return {
+      success: true,
+      data: result
+    };
   }
 
   private async setupCrosshairs(overlay: import('@app/types').OverlayWindow): Promise<void> {

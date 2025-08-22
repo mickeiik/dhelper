@@ -15,7 +15,8 @@
     "@app/storage": "*",
     "@app/tools": "*",
     "@app/types": "*",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.1.7",
+    "zod": "^4.0.17"
   },
   "devDependencies": {
     "@app/electron-versions": "*",

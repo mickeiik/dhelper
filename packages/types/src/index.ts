@@ -1,11 +1,8 @@
 // packages/types/src/index.ts
 // Tool-related types
 export type {
-  Tool,
-  ToolBase,
   ToolMetadata,
   ToolInitContext,
-  ToolRegistry,
   ToolId,
   ToolInput,
   ToolOutput,

@@ -1,5 +1,5 @@
 {
-  "name": "@app/workflows",
+  "name": "@app/schemas",
   "type": "module",
   "scripts": {
     "build": "vite build",
@@ -11,16 +11,12 @@
       "default": "./dist/index.js"
     }
   },
-  "dependencies": {
-    "@app/storage": "*",
-    "@app/templates": "*",
-    "@app/tools": "*",
-    "@app/types": "*",
-    "zod": "^4.0.17"
-  },
   "devDependencies": {
     "@app/electron-versions": "*",
     "typescript": "5.8.3",
     "vite": "7.0.6"
+  },
+  "dependencies": {
+    "zod": "^4.0.17"
   }
 }

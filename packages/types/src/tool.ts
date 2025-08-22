@@ -49,30 +49,8 @@ export interface ToolInitContext {
   templateManager?: TemplateManager;
 }
 
-export interface Tool<TInput = Record<string, unknown>, TOutput = unknown> extends ToolMetadata<TInput> {
-  initialize(context: ToolInitContext): Promise<void>;
-  execute(inputs: TInput): Promise<TOutput>;
-  cacheConfig?: {
-    enabled: boolean;
-    ttl?: number; // Optional expiration in milliseconds
-    persistent?: boolean; // Survive app restart
-    keyGenerator?: (inputs: TInput) => string; // Custom cache key generation
-  };
-}
+// Note: Tool class is now implemented in @app/tools/base.ts
+// Old Tool interface removed - use the new Zod-based Tool class instead
 
-// Base interface for compatibility with existing tools
-export interface ToolBase extends Tool<Record<string, unknown>, unknown> {}
-
-export interface ToolRegistry {
-  // This will be augmented by individual tools
-  [key: string]: {
-    input: Record<string, unknown>;
-    output: unknown;
-  };
-}
-
-export type ToolId = keyof ToolRegistry;
-
-export type ToolInput<T extends ToolId> = ToolRegistry[T] extends { input: infer I } ? I : Record<string, unknown>;
-
-export type ToolOutput<T extends ToolId> = ToolRegistry[T] extends { output: infer O } ? O : unknown;
+// Re-export tool registry types from the tools package
+export type { ToolId, ToolInput, ToolOutput } from '@app/tools';

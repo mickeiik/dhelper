@@ -1,36 +1,23 @@
 // packages/@tools/ocr/src/index.ts
-import type { Tool, ToolInputField, ToolOutputField } from '@app/types';
+import { OcrInputSchema, OcrOutputSchema, ToolResult } from '@app/schemas';
+import { Tool } from '@app/tools';
+import { z } from 'zod';
+import type { ToolInputField, ToolOutputField } from '@app/types';
 import Tesseract from 'tesseract.js';
 
-export type TesseractOcrToolInput = Tesseract.ImageLike;
+// Type aliases for convenience
+type OcrInput = z.infer<typeof OcrInputSchema>;
+type OcrOutput = z.infer<typeof OcrOutputSchema>;
+type OcrResult = ToolResult<typeof OcrOutputSchema>;
 
-export type TesseractOcrToolOutput = string;
-
-export class TesseractOcrTool implements Tool<Tesseract.ImageLike, string> {
+export class TesseractOcrTool extends Tool<typeof OcrInputSchema, typeof OcrOutputSchema> {
   id = 'tesseract-ocr' as const;
   name = 'Tesseract OCR Tool';
   description = 'Extract text from images using Tesseract OCR engine';
   category = 'Text Processing';
 
-  inputFields: ToolInputField[] = [
-    {
-      name: 'image',
-      type: 'string',
-      description: 'Image data (base64 data URL, file path, or buffer)',
-      required: true,
-      placeholder: 'data:image/png;base64,..',
-      example: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...'
-    }
-  ];
-
-  outputFields: ToolOutputField[] = [
-    {
-      name: 'text',
-      type: 'string',
-      description: 'Extracted and cleaned text from the image using OCR',
-      example: 'This is the extracted text from the image'
-    }
-  ];
+  inputSchema = OcrInputSchema;
+  outputSchema = OcrOutputSchema;
 
   examples = [
     {
@@ -62,22 +49,32 @@ export class TesseractOcrTool implements Tool<Tesseract.ImageLike, string> {
     });
   }
 
-  async execute(input: TesseractOcrToolInput): Promise<TesseractOcrToolOutput> {
-    try {
-      const recognizeResult = await this.worker?.recognize(input);
+  async executeValidated(input: OcrInput): Promise<OcrResult> {
+    const startTime = Date.now();
+    
+    const recognizeResult = await this.worker?.recognize(input);
 
-      if (recognizeResult) {
-        const { data: { text } } = recognizeResult;
-
-        const cleanedText = text.trim().replace(/\n+/g, ' ').replace(/\s+/g, ' ');
-
-        return cleanedText;
-      }
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
-      throw new Error(`TesseractOcrTool failed: ${message}`);
+    if (!recognizeResult) {
+      throw new Error('Failed to process image with OCR');
     }
-    return ''
+
+    const { data: { text, confidence } } = recognizeResult;
+    const cleanedText = text.trim().replace(/\n+/g, ' ').replace(/\s+/g, ' ');
+    const processingTime = Date.now() - startTime;
+
+    const result: OcrOutput = {
+      text: cleanedText,
+      confidence,
+      metadata: {
+        processingTime,
+        timestamp: Date.now()
+      }
+    };
+
+    return {
+      success: true,
+      data: result
+    };
   }
 }
 

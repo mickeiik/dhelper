@@ -1,6 +1,11 @@
 // packages/tools/src/index.ts
-import type { Tool, ToolMetadata, OverlayService } from '@app/types';
+export * from './base.js';
+
+import type { OverlayService } from '@app/types';
 import { ToolExecutionError, ErrorLogger } from '@app/types';
+import { ToolMetadataSchema, ToolResult } from '@app/schemas';
+import { z } from 'zod';
+import { Tool } from './base.js';
 
 /**
  * Tool imports - Add new tools here
@@ -16,19 +21,11 @@ import { ScreenshotTool } from '@tools/screenshot';
 import { TemplateMatcherTool } from '@tools/template-matcher';
 import { ClickTool } from '@tools/click';
 
-interface AnyTool {
-    id: string;
-    name: string;
-    description?: string;
-    category?: string;
-    initialize(context: any): Promise<void>;
-    execute(inputs: any): Promise<any>;
-    [key: string]: any;
-}
-
 interface ToolRegistration {
-    tool: AnyTool;
+    tool?: Tool<z.ZodType, z.ZodType>;
+    loader?: () => Promise<Tool<z.ZodType, z.ZodType>>;
     initialized: boolean;
+    loading: boolean;
 }
 
 /**
@@ -46,44 +43,174 @@ const AVAILABLE_TOOLS = [
     ClickTool
 ] as const;
 
+// Auto-generated types from AVAILABLE_TOOLS
+type ToolInstances = InstanceType<typeof AVAILABLE_TOOLS[number]>;
+
+// Extract tool ID from tool instance
+type ExtractToolId<T> = T extends { id: infer U } ? U : never;
+
+// Extract input type from tool instance
+type ExtractInputType<T> = T extends { inputSchema: infer S extends z.ZodType } 
+    ? z.infer<S> 
+    : never;
+
+// Extract output type from tool instance  
+type ExtractOutputType<T> = T extends { outputSchema: infer S extends z.ZodType } 
+    ? z.infer<S> 
+    : never;
+
+// Auto-generated tool registry types
+export type ToolId = ExtractToolId<ToolInstances>;
+
+export type ToolInput<T extends ToolId> = ExtractInputType<
+    Extract<ToolInstances, { id: T }>
+>;
+
+export type ToolOutput<T extends ToolId> = ExtractOutputType<
+    Extract<ToolInstances, { id: T }>
+>;
+
 export class ToolManager {
     private tools = new Map<string, ToolRegistration>();
     private overlayService?: OverlayService;
     private templateManager?: import('@app/types').TemplateManager;
     private logger = new ErrorLogger('ToolManager');
+    private loadingPromises = new Map<string, Promise<Tool<z.ZodType, z.ZodType>>>();
 
     async autoDiscoverTools() {
         // Register all available tools
         for (const ToolClass of AVAILABLE_TOOLS) {
             try {
                 const tool = new ToolClass();
+                
+                // Validate tool structure at registration time
+                const metadata = {
+                    id: tool.id,
+                    name: tool.name,
+                    description: tool.description,
+                    category: tool.category,
+                    inputSchema: tool.inputSchema,
+                    outputSchema: tool.outputSchema,
+                    resultSchema: tool.resultSchema,
+                    examples: tool.examples
+                };
+                
+                ToolMetadataSchema.parse(metadata);
+                
                 this.tools.set(tool.id, {
-                    tool: tool as AnyTool,
-                    initialized: false
+                    tool,
+                    initialized: false,
+                    loading: false
                 });
             } catch (error) {
+                const errorMessage = error instanceof z.ZodError 
+                    ? `Tool ${ToolClass.name} failed validation: ${error.message}`
+                    : `Failed to instantiate tool ${ToolClass.name}`;
+                    
                 this.logger.logError(new ToolExecutionError(
-                    `Failed to instantiate tool ${ToolClass.name}`, 
-                    ToolClass.name, 
+                    errorMessage,
+                    ToolClass.name,
                     { originalError: error }
                 ));
             }
         }
     }
 
-    async runTool(id: string, inputs: Record<string, unknown>) {
+    /**
+     * Register a tool with async loading
+     * Useful for tools with heavy dependencies that should be loaded on-demand
+     */
+    registerAsyncTool(id: string, loader: () => Promise<Tool<z.ZodType, z.ZodType>>) {
+        this.tools.set(id, {
+            loader,
+            initialized: false,
+            loading: false
+        });
+    }
+
+    /**
+     * Load a tool if it's not already loaded
+     */
+    private async ensureToolLoaded(id: string): Promise<Tool<z.ZodType, z.ZodType>> {
         const registration = this.tools.get(id);
         if (!registration) {
             throw new ToolExecutionError(`Tool with id "${id}" not found`, id);
         }
 
+        // If tool is already loaded, return it
+        if (registration.tool) {
+            return registration.tool;
+        }
+
+        // If tool is currently loading, wait for it
+        if (registration.loading && this.loadingPromises.has(id)) {
+            return this.loadingPromises.get(id)!;
+        }
+
+        // If tool has a loader, load it
+        if (registration.loader) {
+            registration.loading = true;
+            
+            const loadingPromise = (async () => {
+                try {
+                    const tool = await registration.loader!();
+                    
+                    // Validate the loaded tool
+                    const metadata = {
+                        id: tool.id,
+                        name: tool.name,
+                        description: tool.description,
+                        category: tool.category,
+                        inputSchema: tool.inputSchema,
+                        outputSchema: tool.outputSchema,
+                        resultSchema: tool.resultSchema,
+                        examples: tool.examples
+                    };
+                    
+                    ToolMetadataSchema.parse(metadata);
+                    
+                    registration.tool = tool;
+                    registration.loading = false;
+                    this.loadingPromises.delete(id);
+                    
+                    return tool;
+                } catch (error) {
+                    registration.loading = false;
+                    this.loadingPromises.delete(id);
+                    
+                    const errorMessage = error instanceof z.ZodError 
+                        ? `Tool ${id} failed validation after loading: ${error.message}`
+                        : `Failed to load tool ${id}`;
+                        
+                    const toolError = new ToolExecutionError(errorMessage, id, { originalError: error });
+                    this.logger.logError(toolError);
+                    throw toolError;
+                }
+            })();
+            
+            this.loadingPromises.set(id, loadingPromise);
+            return loadingPromise;
+        }
+
+        throw new ToolExecutionError(`Tool "${id}" has no instance or loader`, id);
+    }
+
+    async runTool<T extends ToolId>(
+        id: T, 
+        inputs: ToolInput<T>
+    ): Promise<ToolResult<z.ZodType>> {
         try {
+            // Ensure tool is loaded (handles both sync and async tools)
+            const tool = await this.ensureToolLoaded(id);
+            
             // Initialize tool if needed
-            if (!registration.initialized) {
+            const registration = this.tools.get(id)!;
+            if (!registration.initialized && tool.initialize) {
                 await this.initializeTool(id);
             }
 
-            return await registration.tool.execute(inputs);
+            // Tool.execute already handles Zod validation and error wrapping
+            return await tool.execute(inputs);
         } catch (error) {
             const toolError = error instanceof ToolExecutionError ? error : new ToolExecutionError(`Tool "${id}" execution failed`, id, { originalError: error, inputs });
             this.logger.logError(toolError);
@@ -103,12 +230,16 @@ export class ToolManager {
         const registration = this.tools.get(id);
         if (!registration || registration.initialized) return;
 
+        // Ensure tool is loaded before initializing
+        const tool = await this.ensureToolLoaded(id);
+        if (!tool.initialize) return;
+
         try {
             const initContext = {
                 overlayService: this.overlayService,
                 templateManager: this.templateManager
             };
-            await registration.tool.initialize(initContext);
+            await tool.initialize(initContext);
             registration.initialized = true;
         } catch (error) {
             const toolError = new ToolExecutionError(`Failed to initialize tool "${id}"`, id, { originalError: error });
@@ -117,25 +248,53 @@ export class ToolManager {
         }
     }
 
-    getTools(): AnyTool[] {
-        return Array.from(this.tools.values()).map(({ tool }) => tool);
+    async getTools(): Promise<Tool<z.ZodType, z.ZodType>[]> {
+        const tools: Tool<z.ZodType, z.ZodType>[] = [];
+        
+        for (const [id] of this.tools.entries()) {
+            try {
+                const tool = await this.ensureToolLoaded(id);
+                tools.push(tool);
+            } catch (error) {
+                this.logger.logError(new ToolExecutionError(
+                    `Failed to load tool ${id}`,
+                    id,
+                    { originalError: error }
+                ));
+            }
+        }
+        
+        return tools;
     }
 
-    getToolsMetadata(): any[] {
-        return Array.from(this.tools.values()).map(({ tool }) => ({
-            id: tool.id,
-            name: tool.name,
-            description: tool.description,
-            category: tool.category,
-            inputFields: tool.inputFields,
-            outputFields: tool.outputFields,
-            examples: tool.examples
-        }));
+    async getToolsMetadata(): Promise<z.infer<typeof ToolMetadataSchema>[]> {
+        const metadata: z.infer<typeof ToolMetadataSchema>[] = [];
+        
+        for (const [id] of this.tools.entries()) {
+            try {
+                const tool = await this.ensureToolLoaded(id);
+                metadata.push(ToolMetadataSchema.parse({
+                    id: tool.id,
+                    name: tool.name,
+                    description: tool.description,
+                    category: tool.category,
+                    inputSchema: tool.inputSchema,
+                    outputSchema: tool.outputSchema,
+                    resultSchema: tool.resultSchema,
+                    examples: tool.examples
+                }));
+            } catch (error) {
+                this.logger.logError(new ToolExecutionError(
+                    `Failed to load metadata for tool ${id}`,
+                    id,
+                    { originalError: error }
+                ));
+            }
+        }
+        
+        return metadata;
     }
 }
 
-// Export registry types
-export type { ToolRegistry, ToolId, ToolInput, ToolOutput } from './registry.js';
-
 // Re-export shared types for convenience
-export type { Tool, ToolMetadata } from '@app/types';
+export type { ToolMetadata } from '@app/types';

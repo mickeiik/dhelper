@@ -1,54 +1,21 @@
 // packages/@tools/hello-world/src/index.ts
-import type { Tool, ToolInputField, ToolOutputField } from '@app/types';
+import { HelloWorldInputSchema, HelloWorldOutputSchema, ToolResult } from '@app/schemas';
+import { Tool } from '@app/tools';
+import { z } from 'zod';
 
-export interface HelloWorldToolInput {
-  message?: string;
-  data?: unknown;
-}
+// Type aliases for convenience
+type HelloWorldInput = z.infer<typeof HelloWorldInputSchema>;
+type HelloWorldOutput = z.infer<typeof HelloWorldOutputSchema>;
+type HelloWorldResult = ToolResult<typeof HelloWorldOutputSchema>;
 
-export interface HelloWorldToolOutput {
-  success: boolean;
-  data: unknown;
-}
-
-export class HelloWorldTool implements Tool<HelloWorldToolInput, HelloWorldToolOutput> {
+export class HelloWorldTool extends Tool<typeof HelloWorldInputSchema, typeof HelloWorldOutputSchema> {
   id = 'hello-world' as const;
   name = 'Hello World Tool';
   description = 'Simple debugging tool that logs input and returns it';
   category = 'Debug';
 
-  inputFields: ToolInputField[] = [
-    {
-      name: 'message',
-      type: 'string',
-      description: 'A message to include in the output',
-      required: false,
-      defaultValue: 'Hello World!',
-      placeholder: 'Enter your message...'
-    },
-    {
-      name: 'data',
-      type: 'object',
-      description: 'Any data to process and return',
-      required: false,
-      example: { key: 'value', number: 42 }
-    }
-  ];
-
-  outputFields: ToolOutputField[] = [
-    {
-      name: 'success',
-      type: 'boolean',
-      description: 'Whether the operation was successful',
-      example: true
-    },
-    {
-      name: 'data',
-      type: 'object',
-      description: 'The input data that was passed to the tool (echoed back)',
-      example: { message: 'Hello World!', data: null }
-    }
-  ];
+  inputSchema = HelloWorldInputSchema;
+  outputSchema = HelloWorldOutputSchema;
 
   examples = [
     {
@@ -93,8 +60,17 @@ export class HelloWorldTool implements Tool<HelloWorldToolInput, HelloWorldToolO
     return;
   }
 
-  async execute(input: HelloWorldToolInput): Promise<HelloWorldToolOutput> {
-    return { success: true, data: input };
+  async executeValidated(input: HelloWorldInput): Promise<HelloWorldResult> {
+    const result: HelloWorldOutput = {
+      message: input.message,
+      data: input.data,
+      timestamp: Date.now()
+    };
+
+    return {
+      success: true,
+      data: result
+    };
   }
 }
 

@@ -11,6 +11,11 @@
       "default": "./dist/index.js"
     }
   },
+  "dependencies": {
+    "@app/schemas": "*",
+    "@app/tools": "*",
+    "zod": "3.24.1"
+  },
   "devDependencies": {
     "@app/electron-versions": "*",
     "typescript": "5.8.3",

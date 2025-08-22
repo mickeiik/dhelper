@@ -12,7 +12,8 @@
     }
   },
   "dependencies": {
-    "@app/types": "*"
+    "@app/types": "*",
+    "zod": "^4.0.17"
   },
   "devDependencies": {
     "@app/electron-versions": "*",

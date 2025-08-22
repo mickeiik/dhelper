@@ -1,63 +1,24 @@
 // packages/@tools/screenshot/src/index.ts
-import type { Tool, ToolInputField, ToolOutputField } from '@app/types';
-import { ToolExecutionError } from '@app/types';
+import { ScreenshotInputSchema, ScreenshotOutputSchema, ToolResult } from '@app/schemas';
+import { Tool } from '@app/tools';
+import { z } from 'zod';
+import type { ToolInputField, ToolOutputField } from '@app/types';
 import { nativeImage } from 'electron';
 import screenshot from 'screenshot-desktop';
 
-export type ScreenshotToolInput = {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-}
+// Type aliases for convenience
+type ScreenshotInput = z.infer<typeof ScreenshotInputSchema>;
+type ScreenshotOutput = z.infer<typeof ScreenshotOutputSchema>;
+type ScreenshotResult = ToolResult<typeof ScreenshotOutputSchema>;
 
-export type ScreenshotToolOutput = string;
-
-export class ScreenshotTool implements Tool {
+export class ScreenshotTool extends Tool<typeof ScreenshotInputSchema, typeof ScreenshotOutputSchema> {
   id = 'screenshot' as const;
   name = 'Screenshot Tool';
   description = 'Capture a screenshot of a specific screen region';
   category = 'Image';
 
-  inputFields: ToolInputField[] = [
-    {
-      name: 'top',
-      type: 'number',
-      description: 'Y coordinate of the top-left corner',
-      required: true,
-      example: 100
-    },
-    {
-      name: 'left',
-      type: 'number',
-      description: 'X coordinate of the top-left corner',
-      required: true,
-      example: 100
-    },
-    {
-      name: 'width',
-      type: 'number',
-      description: 'Width of the area to capture',
-      required: true,
-      example: 800
-    },
-    {
-      name: 'height',
-      type: 'number',
-      description: 'Height of the area to capture',
-      required: true,
-      example: 600
-    }
-  ];
-
-  outputFields: ToolOutputField[] = [
-    {
-      name: 'image',
-      type: 'string',
-      description: 'Base64 encoded image data URL of the captured screenshot',
-      example: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...'
-    }
-  ];
+  inputSchema = ScreenshotInputSchema;
+  outputSchema = ScreenshotOutputSchema;
 
   examples = [
     {
@@ -104,37 +65,43 @@ export class ScreenshotTool implements Tool {
 
   async initialize() { }
 
-  async execute(input: ScreenshotToolInput): Promise<ScreenshotToolOutput> {
-    try {
-      // Capture full screen at native resolution
-      const imgBuffer = await screenshot({ format: 'png' });
+  async executeValidated(input: ScreenshotInput): Promise<ScreenshotResult> {
+    // Capture full screen at native resolution
+    const imgBuffer = await screenshot({ format: 'png' });
 
-      // Convert buffer to nativeImage for cropping
-      const fullImage = nativeImage.createFromBuffer(imgBuffer);
+    // Convert buffer to nativeImage for cropping
+    const fullImage = nativeImage.createFromBuffer(imgBuffer);
 
-      // Crop the image
-      const croppedImage = fullImage.crop({
-        x: input.left,
-        y: input.top,
-        width: input.width,
-        height: input.height,
-      });
+    // Crop the image
+    const croppedImage = fullImage.crop({
+      x: input.left,
+      y: input.top,
+      width: input.width,
+      height: input.height,
+    });
 
-      // Save debug file
-      // const __filename = fileURLToPath(import.meta.url);
-      // const __dirname = path.dirname(__filename);
-      // const outputPath = path.join(__dirname, 'screenshot.png');
-      // fs.writeFileSync(outputPath, croppedImage.toPNG());
-      // console.log(`Screenshot saved to: ${outputPath}`);
+    const dataURL = croppedImage.toDataURL();
+    const imageSize = croppedImage.getSize();
 
-      return croppedImage.toDataURL();
+    const result: ScreenshotOutput = {
+      image: dataURL,
+      metadata: {
+        width: imageSize.width,
+        height: imageSize.height,
+        region: {
+          top: input.top,
+          left: input.left,
+          width: input.width,
+          height: input.height
+        },
+        timestamp: Date.now()
+      }
+    };
 
-    } catch (error) {
-      throw new ToolExecutionError(`Failed to capture screenshot: ${error}`, 'screenshot', { 
-        originalError: error, 
-        region: { left: input.left, top: input.top, width: input.width, height: input.height }
-      });
-    }
+    return {
+      success: true,
+      data: result
+    };
   }
 }
 
