@@ -3,8 +3,10 @@ import { WorkflowRunner, ref, workflow, validateSemanticReferences, resolveSeman
 import { WorkflowStorage } from '@app/storage'
 import { ipcMain } from 'electron'
 import { WorkflowError, StorageError, ErrorLogger } from '@app/types'
+import { WorkflowSchema, WorkflowStepSchema } from '@app/schemas'
 import { getToolManager } from './ToolModule.js';
 import { getConfig } from '../config/index.js';
+import { z } from 'zod';
 
 const logger = new ErrorLogger('WorkflowModule');
 const config = getConfig();
@@ -16,19 +18,22 @@ export function initializeWorkflows() {
 
     // Workflow execution handlers
     ipcMain.handle('run-workflow', async (_, workflowId) => {
+        let validatedId: string;
         try {
-            const workflowResult = await storage.loadWorkflow(workflowId);
+            // Validate workflowId
+            validatedId = z.string().min(1).parse(workflowId);
+            const workflowResult = await storage.loadWorkflow(validatedId);
 
             if (workflowResult.success) {
                 return await workflowRunner.run(workflowResult.data);
             } else {
                 // Handle workflow not found case
-                const error = new WorkflowError(`Workflow not found: ${workflowId}`, workflowId, { originalError: workflowResult.error });
+                const error = new WorkflowError(`Workflow not found: ${validatedId}`, validatedId, { originalError: workflowResult.error });
                 logger.logError(error);
                 throw error;
             }
         } catch (error) {
-            const workflowError = error instanceof WorkflowError ? error : new WorkflowError('Failed to run workflow', workflowId, { originalError: error });
+            const workflowError = error instanceof WorkflowError ? error : new WorkflowError('Failed to run workflow', validatedId || String(workflowId), { originalError: error });
             logger.logError(workflowError);
             throw workflowError;
         }
@@ -95,11 +100,11 @@ export function initializeWorkflows() {
                     "timeout": 30000
                 })
                 .step('screenshot-tool', 'screenshot', {
-                    "top": {
-                        "$ref": "screen-region-selector.top"
+                    "x": {
+                        "$ref": "screen-region-selector.x"
                     },
-                    "left": {
-                        "$ref": "screen-region-selector.left"
+                    "y": {
+                        "$ref": "screen-region-selector.y"
                     },
                     "width": {
                         "$ref": "screen-region-selector.width"
@@ -122,24 +127,28 @@ export function initializeWorkflows() {
     })
 
     ipcMain.handle('run-custom-workflow', async (_, customWorkflow: import('@app/types').Workflow) => {
+        let validatedWorkflow: z.infer<typeof WorkflowSchema>;
         try {
+            // Validate custom workflow with Zod
+            validatedWorkflow = WorkflowSchema.parse(customWorkflow);
+            
             const workflow = {
-                id: customWorkflow.id,
-                name: customWorkflow.name,
+                id: validatedWorkflow.id,
+                name: validatedWorkflow.name,
                 description: 'Custom workflow built in UI',
-                steps: customWorkflow.steps.map((step) => ({
+                steps: validatedWorkflow.steps.map((step) => ({
                     id: step.id,
-                    toolId: step.toolId,
+                    toolId: step.toolId as any, // Type assertion for now
                     inputs: step.inputs,
                     onError: 'stop' as const,
                     retryCount: 0,
                     cache: step.cache
                 })),
-                clearCache: customWorkflow.clearCache
+                clearCache: validatedWorkflow.clearCache
             };
-            return await workflowRunner.run(workflow);
+            return await workflowRunner.run(workflow as any); // Type assertion for now
         } catch (error) {
-            const workflowError = error instanceof WorkflowError ? error : new WorkflowError('Failed to run custom workflow', customWorkflow.id, { originalError: error });
+            const workflowError = error instanceof WorkflowError ? error : new WorkflowError('Failed to run custom workflow', validatedWorkflow?.id || customWorkflow?.id || 'unknown', { originalError: error });
             logger.logError(workflowError);
             throw workflowError;
         }
@@ -148,16 +157,19 @@ export function initializeWorkflows() {
     // Storage handlers
     ipcMain.handle('save-workflow', async (_, workflow, options) => {
         try {
-            return await storage.saveWorkflow(workflow, options);
+            // Validate workflow with Zod
+            const validatedWorkflow = WorkflowSchema.parse(workflow);
+            return await storage.saveWorkflow(validatedWorkflow, options);
         } catch (error) {
-            const storageError = error instanceof StorageError ? error : new StorageError('Failed to save workflow', 'save', { originalError: error, workflowId: workflow.id });
+            const storageError = error instanceof StorageError ? error : new StorageError('Failed to save workflow', 'save', { originalError: error, workflowId: workflow?.id || 'unknown' });
             logger.logError(storageError);
             throw storageError;
         }
     });
     ipcMain.handle('load-workflow', async (_, workflowId) => {
         try {
-            return await storage.loadWorkflow(workflowId);
+            const validatedId = z.string().min(1).parse(workflowId);
+            return await storage.loadWorkflow(validatedId);
         } catch (error) {
             const storageError = error instanceof StorageError ? error : new StorageError('Failed to load workflow', 'load', { originalError: error, workflowId });
             logger.logError(storageError);
@@ -166,7 +178,8 @@ export function initializeWorkflows() {
     });
     ipcMain.handle('delete-workflow', async (_, workflowId) => {
         try {
-            return await storage.deleteWorkflow(workflowId);
+            const validatedId = z.string().min(1).parse(workflowId);
+            return await storage.deleteWorkflow(validatedId);
         } catch (error) {
             const storageError = error instanceof StorageError ? error : new StorageError('Failed to delete workflow', 'delete', { originalError: error, workflowId });
             logger.logError(storageError);
@@ -184,7 +197,8 @@ export function initializeWorkflows() {
     });
     ipcMain.handle('workflow-exists', async (_, workflowId) => {
         try {
-            return await storage.workflowExists(workflowId);
+            const validatedId = z.string().min(1).parse(workflowId);
+            return await storage.workflowExists(validatedId);
         } catch (error) {
             const storageError = error instanceof StorageError ? error : new StorageError('Failed to check workflow exists', 'exists', { originalError: error, workflowId });
             logger.logError(storageError);

@@ -269,22 +269,22 @@ export class ScreenRegionSelectorTool extends Tool<typeof ScreenRegionSelectorIn
             }
 
             const result = {
-              top: Math.min(startPoint.y, point.y),
-              left: Math.min(startPoint.x, point.x),
+              x: Math.min(startPoint.x, point.x),
+              y: Math.min(startPoint.y, point.y),
               width: width,
               height: height
             };
             cleanup();
             const screenRect = screen.dipToScreenRect(null, {
-              x: result.left,
-              y: result.top,
+              x: result.x,
+              y: result.y,
               width: result.width,
               height: result.height
             })
 
             resolve({
-              top: screenRect.y,
-              left: screenRect.x,
+              x: screenRect.x,
+              y: screenRect.y,
               width: screenRect.width,
               height: screenRect.height
             });

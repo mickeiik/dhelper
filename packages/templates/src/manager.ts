@@ -8,8 +8,16 @@ import type {
   Result
 } from '@app/types';
 import { isSuccess } from '@app/types';
+import { 
+  TemplateSchema, 
+  CreateTemplateInputSchema, 
+  UpdateTemplateInputSchema,
+  TemplateMatchOptionsSchema,
+  TemplateMatchResultSchema
+} from '@app/schemas';
 import { SqliteTemplateStorage } from './storage.js';
 import { ToolManager } from '@app/tools';
+import { z } from 'zod';
 
 export class TemplateManager {
   private storage: SqliteTemplateStorage;
@@ -22,26 +30,31 @@ export class TemplateManager {
 
   // Template CRUD operations
   async createTemplate(input: CreateTemplateInput): Promise<Template> {
-    return this.storage.create(input);
+    const validatedInput = CreateTemplateInputSchema.parse(input);
+    return this.storage.create(validatedInput);
   }
 
   async getTemplate(templateId: string): Promise<Template | null> {
-    const result = await this.storage.get(templateId);
+    const validatedId = z.string().min(1).parse(templateId);
+    const result = await this.storage.get(validatedId);
     return isSuccess(result) ? result.data : null;
   }
 
   async getTemplateByName(templateName: string): Promise<Template | null> {
-    const result = await this.storage.getByName(templateName);
+    const validatedName = z.string().min(1).parse(templateName);
+    const result = await this.storage.getByName(validatedName);
     return isSuccess(result) ? result.data : null;
   }
 
   async updateTemplate(input: UpdateTemplateInput): Promise<Template | null> {
-    const result = await this.storage.update(input);
+    const validatedInput = UpdateTemplateInputSchema.parse(input);
+    const result = await this.storage.update(validatedInput);
     return isSuccess(result) ? result.data : null;
   }
 
   async deleteTemplate(templateId: string): Promise<boolean> {
-    const result = await this.storage.delete(templateId);
+    const validatedId = z.string().min(1).parse(templateId);
+    const result = await this.storage.delete(validatedId);
     return isSuccess(result) ? result.data : false;
   }
 
@@ -52,18 +65,21 @@ export class TemplateManager {
   }
 
   async getTemplatesByCategory(category: string): Promise<TemplateMetadata[]> {
-    const result = await this.storage.listByCategory(category);
+    const validatedCategory = z.string().min(1).parse(category);
+    const result = await this.storage.listByCategory(validatedCategory);
     return isSuccess(result) ? result.data : [];
   }
 
   async getTemplatesByTags(tags: string[]): Promise<TemplateMetadata[]> {
-    const result = await this.storage.listByTags(tags);
+    const validatedTags = z.array(z.string().min(1)).parse(tags);
+    const result = await this.storage.listByTags(validatedTags);
     return isSuccess(result) ? result.data : [];
   }
 
   async searchTemplates(query: string): Promise<TemplateMetadata[]> {
+    const validatedQuery = z.string().min(1).parse(query);
     const allTemplates = await this.listTemplates();
-    const searchTerm = query.toLowerCase();
+    const searchTerm = validatedQuery.toLowerCase();
 
     return allTemplates.filter(template => 
       template.name.toLowerCase().includes(searchTerm) ||
@@ -79,24 +95,29 @@ export class TemplateManager {
     options: TemplateMatchOptions = {}
   ): Promise<TemplateMatchResult[]> {
     try {
+      // Validate inputs
+      const validatedOptions = TemplateMatchOptionsSchema.parse(options);
+      const validatedBuffer = z.instanceof(Buffer).parse(screenImage);
+      
       // Ensure tools are auto-discovered
       await this.toolManager.autoDiscoverTools();
 
       // Prepare input for template-matcher tool
       const matcherInput = {
-        screenImage,
-        templateIds: options.templateIds,
-        categories: options.categories,
-        tags: options.tags,
-        minConfidence: options.minConfidence,
-        maxResults: options.maxResults,
-        searchRegion: options.searchRegion
+        screenImage: validatedBuffer,
+        templateIds: validatedOptions.templateIds,
+        categories: validatedOptions.categories,
+        tags: validatedOptions.tags,
+        minConfidence: validatedOptions.minConfidence,
+        maxResults: validatedOptions.maxResults,
+        searchRegion: validatedOptions.searchRegion
       };
 
       // Call the template-matcher tool
       const results = await this.toolManager.runTool('template-matcher', matcherInput);
       
-      return results as TemplateMatchResult[];
+      // Validate results
+      return z.array(TemplateMatchResultSchema).parse(results);
     } catch (error) {
       console.error('Template matching failed:', error);
       

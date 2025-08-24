@@ -25,8 +25,8 @@ export class ScreenshotTool extends Tool<typeof ScreenshotInputSchema, typeof Sc
       name: 'Full HD Area',
       description: 'Capture a 1920x1080 area from top-left corner',
       inputs: {
-        top: 0,
-        left: 0,
+        x: 0,
+        y: 0,
         width: 1920,
         height: 1080
       }
@@ -35,8 +35,8 @@ export class ScreenshotTool extends Tool<typeof ScreenshotInputSchema, typeof Sc
       name: 'Small Window',
       description: 'Capture a typical small window area',
       inputs: {
-        top: 100,
-        left: 100,
+        x: 100,
+        y: 100,
         width: 800,
         height: 600
       }
@@ -45,8 +45,8 @@ export class ScreenshotTool extends Tool<typeof ScreenshotInputSchema, typeof Sc
       name: 'Use Region Selector',
       description: 'Use coordinates from the most recent region selector step',
       inputs: {
-        top: { $ref: '{{previous:screen-region-selector.top}}' },
-        left: { $ref: '{{previous:screen-region-selector.left}}' },
+        x: { $ref: '{{previous:screen-region-selector.x}}' },
+        y: { $ref: '{{previous:screen-region-selector.y}}' },
         width: { $ref: '{{previous:screen-region-selector.width}}' },
         height: { $ref: '{{previous:screen-region-selector.height}}' }
       }
@@ -55,8 +55,8 @@ export class ScreenshotTool extends Tool<typeof ScreenshotInputSchema, typeof Sc
       name: 'Use Previous Step',
       description: 'Use coordinates from the immediately previous step (if it returns coordinates)',
       inputs: {
-        top: { $ref: '{{previous.top}}' },
-        left: { $ref: '{{previous.left}}' },
+        x: { $ref: '{{previous.x}}' },
+        y: { $ref: '{{previous.y}}' },
         width: { $ref: '{{previous.width}}' },
         height: { $ref: '{{previous.height}}' }
       }
@@ -74,8 +74,8 @@ export class ScreenshotTool extends Tool<typeof ScreenshotInputSchema, typeof Sc
 
     // Crop the image
     const croppedImage = fullImage.crop({
-      x: input.left,
-      y: input.top,
+      x: input.x,
+      y: input.y,
       width: input.width,
       height: input.height,
     });
@@ -89,8 +89,8 @@ export class ScreenshotTool extends Tool<typeof ScreenshotInputSchema, typeof Sc
         width: imageSize.width,
         height: imageSize.height,
         region: {
-          top: input.top,
-          left: input.left,
+          x: input.x,
+          y: input.y,
           width: input.width,
           height: input.height
         },

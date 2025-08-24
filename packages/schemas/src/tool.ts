@@ -59,8 +59,8 @@ export const HelloWorldOutputSchema = z.object({
 });
 
 export const ScreenshotInputSchema = z.object({
-    top: z.number().min(0),
-    left: z.number().min(0),
+    x: z.number().min(0),
+    y: z.number().min(0),
     width: z.number().positive(),
     height: z.number().positive(),
     display: z.number().optional()
@@ -114,7 +114,7 @@ export const TemplateMatcherInputSchema = z.object({
     overlayTimeout: z.number().min(100).max(30000).optional().default(5000)
 });
 
-export const TemplateMatchResultSchema = z.object({
+export const ToolTemplateMatchResultSchema = z.object({
     templateId: z.string(),
     confidence: z.number().min(0).max(1),
     location: RectangleSchema,
@@ -127,7 +127,7 @@ export const TemplateMatchResultSchema = z.object({
     })
 });
 
-export const TemplateMatcherOutputSchema = z.array(TemplateMatchResultSchema);
+export const TemplateMatcherOutputSchema = z.array(ToolTemplateMatchResultSchema);
 
 export const ClickInputSchemaBase = z.union([
     PointSchema,

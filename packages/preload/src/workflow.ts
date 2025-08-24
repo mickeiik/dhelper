@@ -2,10 +2,13 @@
 import { ipcRenderer } from 'electron';
 import type { Workflow, WorkflowProgress, WorkflowStep } from '@app/types';
 import type { WorkflowListItem, SaveWorkflowOptions, StorageStats } from '@app/storage';
+import { WorkflowSchema } from '@app/schemas';
+import { z } from 'zod';
 
 // Existing workflow execution
 export async function runWorkflow(id: string) {
-    return await ipcRenderer.invoke('run-workflow', id)
+    const validatedId = z.string().min(1).parse(id);
+    return await ipcRenderer.invoke('run-workflow', validatedId)
 }
 
 export async function runExampleWorkflow() {
@@ -13,7 +16,8 @@ export async function runExampleWorkflow() {
 }
 
 export async function runCustomWorkflow(workflow: Workflow) {
-    return await ipcRenderer.invoke('run-custom-workflow', workflow)
+    const validatedWorkflow = WorkflowSchema.parse(workflow);
+    return await ipcRenderer.invoke('run-custom-workflow', validatedWorkflow)
 }
 
 export function onWorkflowProgress(callback: (progress: WorkflowProgress) => void) {
@@ -35,7 +39,8 @@ export async function getCacheStats(workflowId: string) {
 
 // Workflow storage
 export async function saveWorkflow(workflow: Workflow, options?: SaveWorkflowOptions) {
-    return await ipcRenderer.invoke('save-workflow', workflow, options)
+    const validatedWorkflow = WorkflowSchema.parse(workflow);
+    return await ipcRenderer.invoke('save-workflow', validatedWorkflow, options)
 }
 
 export async function loadWorkflow(workflowId: string): Promise<Workflow | null> {

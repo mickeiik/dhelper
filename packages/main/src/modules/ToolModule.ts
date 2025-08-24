@@ -3,6 +3,7 @@ import { ipcMain } from 'electron'
 import { ToolManager } from '@app/tools'
 import type { OverlayService } from '@app/types';
 import { ToolExecutionError, ErrorLogger } from '@app/types';
+import { z } from 'zod';
 
 const logger = new ErrorLogger('ToolModule');
 
@@ -28,7 +29,10 @@ export async function initializeTools(overlayService?: OverlayService) {
     
     ipcMain.handle('run-tool', async (_, toolId: string, inputs: Record<string, unknown>) => {
         try {
-            return await toolManager.runTool(toolId, inputs);
+            // Validate tool inputs
+            const validatedToolId = z.string().min(1).parse(toolId);
+            const validatedInputs = z.record(z.unknown()).parse(inputs);
+            return await toolManager.runTool(validatedToolId, validatedInputs);
         } catch (error) {
             const toolError = error instanceof ToolExecutionError ? error : new ToolExecutionError('Failed to run tool', toolId, { originalError: error, inputs });
             logger.logError(toolError);

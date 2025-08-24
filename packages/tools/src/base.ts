@@ -9,12 +9,12 @@ export abstract class Tool<
     abstract name: string;
     abstract inputSchema: TInput;
     abstract outputSchema: TOutput;
-    
+
     // Optional properties that tools commonly implement
     abstract description: string;
     category?: string;
     examples?: unknown;
-    
+
     // Optional initialization method
     initialize?(context: any): Promise<void>;
 

@@ -9,11 +9,18 @@ import type {
   Rectangle,
   OverlayEvents
 } from '@app/types';
+import {
+  OverlayOptionsSchema,
+  OverlayShapeSchema,
+  OverlayTextSchema,
+  CreateOverlayResultSchema,
+  OverlayMouseEventSchema,
+  OverlayKeyEventSchema
+} from '@app/schemas';
 import { BrowserWindow, screen, ipcMain } from 'electron';
-import { join } from 'path';
-import { fileURLToPath } from 'url';
 import { randomUUID } from 'crypto';
 import { getConfig } from '../config/index.js';
+import { z } from 'zod';
 
 class OverlayWindowImpl implements OverlayWindow {
   readonly id: string;
@@ -32,21 +39,43 @@ class OverlayWindowImpl implements OverlayWindow {
     // Handle IPC events from overlay window
     const handleMouseClick = (event: Electron.IpcMainEvent, data: { x: number; y: number }) => {
       if (event.sender.id === this.window.webContents.id) {
-        const point: Point = { x: data.x, y: data.y };
-        this.mouseClickCallbacks.forEach(cb => cb(point));
+        try {
+          const validatedEvent = OverlayMouseEventSchema.parse({
+            overlayId: this.id,
+            point: { x: data.x, y: data.y }
+          });
+          this.mouseClickCallbacks.forEach(cb => cb(validatedEvent.point));
+        } catch (error) {
+          console.error('[OverlayWindow] Invalid mouse click event:', error);
+        }
       }
     };
 
     const handleMouseMove = (event: Electron.IpcMainEvent, data: { x: number; y: number }) => {
       if (event.sender.id === this.window.webContents.id) {
-        const point: Point = { x: data.x, y: data.y };
-        this.mouseMoveCallbacks.forEach(cb => cb(point));
+        try {
+          const validatedEvent = OverlayMouseEventSchema.parse({
+            overlayId: this.id,
+            point: { x: data.x, y: data.y }
+          });
+          this.mouseMoveCallbacks.forEach(cb => cb(validatedEvent.point));
+        } catch (error) {
+          console.error('[OverlayWindow] Invalid mouse move event:', error);
+        }
       }
     };
 
     const handleKeyPress = (event: Electron.IpcMainEvent, data: { key: string }) => {
       if (event.sender.id === this.window.webContents.id) {
-        this.keyPressCallbacks.forEach(cb => cb(data.key));
+        try {
+          const validatedEvent = OverlayKeyEventSchema.parse({
+            overlayId: this.id,
+            key: data.key
+          });
+          this.keyPressCallbacks.forEach(cb => cb(validatedEvent.key));
+        } catch (error) {
+          console.error('[OverlayWindow] Invalid key press event:', error);
+        }
       }
     };
 
@@ -67,14 +96,26 @@ class OverlayWindowImpl implements OverlayWindow {
   }
 
   async drawShapes(shapes: OverlayShape[]): Promise<void> {
-    if (!this.window.isDestroyed()) {
-      this.window.webContents.send('overlay-draw-shapes', shapes);
+    try {
+      const validatedShapes = z.array(OverlayShapeSchema).parse(shapes);
+      if (!this.window.isDestroyed()) {
+        this.window.webContents.send('overlay-draw-shapes', validatedShapes);
+      }
+    } catch (error) {
+      console.error('[OverlayWindow] Invalid shapes provided:', error);
+      throw new Error(`Invalid overlay shapes: ${error instanceof z.ZodError ? error.message : String(error)}`);
     }
   }
 
   async drawText(texts: OverlayText[]): Promise<void> {
-    if (!this.window.isDestroyed()) {
-      this.window.webContents.send('overlay-draw-text', texts);
+    try {
+      const validatedTexts = z.array(OverlayTextSchema).parse(texts);
+      if (!this.window.isDestroyed()) {
+        this.window.webContents.send('overlay-draw-text', validatedTexts);
+      }
+    } catch (error) {
+      console.error('[OverlayWindow] Invalid texts provided:', error);
+      throw new Error(`Invalid overlay texts: ${error instanceof z.ZodError ? error.message : String(error)}`);
     }
   }
 
@@ -136,13 +177,22 @@ class OverlayServiceImpl implements OverlayService {
   private overlays = new Map<string, OverlayWindowImpl>();
 
   async createOverlay(options: OverlayOptions = {}): Promise<OverlayWindow> {
+    // Validate options with Zod
+    let validatedOptions: z.infer<typeof OverlayOptionsSchema>;
+    try {
+      validatedOptions = OverlayOptionsSchema.parse(options);
+    } catch (error) {
+      console.error('[OverlayService] Invalid overlay options:', error);
+      throw new Error(`Invalid overlay options: ${error instanceof z.ZodError ? error.message : String(error)}`);
+    }
+    
     const overlayId = randomUUID();
     const config = getConfig();
     
     // Determine bounds - use provided bounds or full screen
     let bounds: Rectangle;
-    if (options.bounds) {
-      bounds = options.bounds;
+    if (validatedOptions.bounds) {
+      bounds = validatedOptions.bounds;
     } else {
       // Always use primary display with full screen bounds
       const primaryDisplay = screen.getPrimaryDisplay();
@@ -160,16 +210,16 @@ class OverlayServiceImpl implements OverlayService {
       y: bounds.y,
       width: bounds.width,
       height: bounds.height,
-      transparent: options.transparent ?? config.overlay.transparent,
+      transparent: validatedOptions.transparent ?? config.overlay.transparent,
       frame: false,
-      alwaysOnTop: options.alwaysOnTop ?? config.overlay.alwaysOnTop,
+      alwaysOnTop: validatedOptions.alwaysOnTop ?? config.overlay.alwaysOnTop,
       skipTaskbar: true,
       resizable: false,
       movable: false,
       minimizable: false,
       maximizable: false,
       closable: true,
-      focusable: !(options.clickThrough ?? config.overlay.clickThrough),
+      focusable: !(validatedOptions.clickThrough ?? config.overlay.clickThrough),
       show: false, // Start hidden
       webPreferences: {
         nodeIntegration: true,
@@ -178,10 +228,15 @@ class OverlayServiceImpl implements OverlayService {
     });
 
     // Force the window to the exact bounds after creation
-    window.setBounds(bounds);
+    window.setBounds({
+      x: bounds.x,
+      y: bounds.y,
+      width: bounds.width,
+      height: bounds.height
+    });
 
     // Set mouse event handling based on clickThrough option
-    const clickThrough = options.clickThrough ?? config.overlay.clickThrough;
+    const clickThrough = validatedOptions.clickThrough ?? config.overlay.clickThrough;
     if (clickThrough) {
       window.setIgnoreMouseEvents(true, { forward: true });
     } else {
@@ -221,9 +276,9 @@ class OverlayServiceImpl implements OverlayService {
       window.webContents.send('overlay-init', {
         id: overlayId,
         options: {
-          showInstructions: options.showInstructions ?? config.ui.showInstructions,
-          instructionText: options.instructionText,
-          timeout: options.timeout ?? config.ui.overlayTimeout
+          showInstructions: validatedOptions.showInstructions ?? config.ui.showInstructions,
+          instructionText: validatedOptions.instructionText,
+          timeout: validatedOptions.timeout ?? config.ui.overlayTimeout
         }
       });
     };
@@ -248,7 +303,7 @@ class OverlayServiceImpl implements OverlayService {
     }, 500);
 
     // Handle auto-close timeout
-    const timeout = options.timeout ?? config.ui.overlayTimeout;
+    const timeout = validatedOptions.timeout ?? config.ui.overlayTimeout;
     if (timeout && timeout > 0) {
       setTimeout(() => {
         if (!window.isDestroyed()) {

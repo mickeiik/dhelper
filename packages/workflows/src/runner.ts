@@ -176,7 +176,7 @@ export class WorkflowRunner extends WorkflowEventEmitter {
 
         // Execute tool if not cached
         if (!fromCache) {
-          result = await this.toolManager.runTool(String(step.toolId), resolvedInputs as Record<string, unknown>);
+          result = await this.toolManager.runTool(step.toolId, resolvedInputs);
 
           // Cache the result if caching is enabled
           if (step.cache?.enabled && cacheKey) {

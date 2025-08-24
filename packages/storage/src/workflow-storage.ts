@@ -1,10 +1,12 @@
 import type { Workflow, Result } from '@app/types';
 import { StorageError, WorkflowError, success, failure, tryAsync } from '@app/types';
+import { WorkflowSchema } from '@app/schemas';
 import type { StoredWorkflow, WorkflowListItem, SaveWorkflowOptions, StorageStats } from './types.js';
 import { writeFile, readFile, mkdir, unlink, readdir, stat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { app } from 'electron';
+import { z } from 'zod';
 
 export class WorkflowStorage {
     private storageDir: string;
@@ -34,15 +36,19 @@ export class WorkflowStorage {
         options: SaveWorkflowOptions = {}
     ): Promise<void> {
         await this.initialize();
+        
+        // Validate workflow with Zod
+        const validatedWorkflow = WorkflowSchema.parse(workflow);
+        
         const now = new Date();
 
         // Check if workflow already exists to preserve creation date
-        const existingResult = await this.loadStoredWorkflow(workflow.id);
+        const existingResult = await this.loadStoredWorkflow(validatedWorkflow.id);
         const existing = existingResult.success ? existingResult.data : null;
         const createdAt = existing?.metadata.createdAt || now;
 
         const storedWorkflow: StoredWorkflow = {
-            workflow,
+            workflow: validatedWorkflow,
             metadata: {
                 createdAt,
                 updatedAt: now,
@@ -88,7 +94,14 @@ export class WorkflowStorage {
             }
 
             const data = await readFile(filePath, 'utf-8');
-            const stored: StoredWorkflow = JSON.parse(data);
+            const parsed = JSON.parse(data);
+            
+            // Validate the loaded workflow structure
+            const stored: StoredWorkflow = {
+                workflow: WorkflowSchema.parse(parsed.workflow),
+                metadata: parsed.metadata,
+                cache: parsed.cache
+            };
 
             // Convert date strings back to Date objects
             stored.metadata.createdAt = new Date(stored.metadata.createdAt);

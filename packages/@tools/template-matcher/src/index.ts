@@ -268,16 +268,8 @@ export class TemplateMatcherTool extends Tool<typeof TemplateMatcherInputSchema,
 
       // Show visual indicators if requested
       if (input.showVisualIndicators && results.length > 0) {
-        // Convert location format for overlay display (from {top, left} to {x, y})
-        const overlayResults = results.map(result => ({
-          ...result,
-          location: {
-            x: result.location.left,
-            y: result.location.top,
-            width: result.location.width,
-            height: result.location.height
-          }
-        }));
+        // Results already have correct {x, y} format, no conversion needed
+        const overlayResults = results;
         await this.showVisualIndicators(overlayResults as any, input.overlayTimeout);
       }
 
@@ -437,8 +429,8 @@ export class TemplateMatcherTool extends Tool<typeof TemplateMatcherInputSchema,
             templateId: templateMetadata.id,
             confidence: minMaxLoc.maxVal,
             location: {
-              top: minMaxLoc.maxLoc.y,
-              left: minMaxLoc.maxLoc.x,
+              x: minMaxLoc.maxLoc.x,
+              y: minMaxLoc.maxLoc.y,
               width: scaledWidth,
               height: scaledHeight
             },
@@ -513,10 +505,10 @@ export class TemplateMatcherTool extends Tool<typeof TemplateMatcherInputSchema,
 
     results.forEach((result, index) => {
       const { location, template, confidence } = result;
-      // Convert location format for screen.screenToDipRect (expects {x, y, width, height})
+      // Location already has correct {x, y, width, height} format
       const rectForScreen = {
-        x: location.left,
-        y: location.top,
+        x: location.x,
+        y: location.y,
         width: location.width,
         height: location.height
       };

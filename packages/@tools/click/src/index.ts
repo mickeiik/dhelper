@@ -74,8 +74,8 @@ export class ClickTool extends Tool<typeof ClickInputSchema, typeof ClickOutputS
       description: 'Click in the center of a region selected with screen-region-selector',
       inputs: {
         region: {
-          x: { $ref: '{{previous:screen-region-selector.left}}' },
-          y: { $ref: '{{previous:screen-region-selector.top}}' },
+          x: { $ref: '{{previous:screen-region-selector.x}}' },
+          y: { $ref: '{{previous:screen-region-selector.y}}' },
           width: { $ref: '{{previous:screen-region-selector.width}}' },
           height: { $ref: '{{previous:screen-region-selector.height}}' }
         }
@@ -89,36 +89,24 @@ export class ClickTool extends Tool<typeof ClickInputSchema, typeof ClickOutputS
   }
 
   async executeValidated(input: ClickToolInput): Promise<ClickResult> {
-    try {
-      // Determine click position
-      const position = this.calculateClickPosition(input);
+    // Determine click position
+    const position = this.calculateClickPosition(input);
 
-      // Get click configuration
-      const button = this.getMouseButton(input.button);
+    // Get click configuration
+    const button = this.getMouseButton(input.button);
 
-      // Show visual indicator before clicking
-      if (input.showVisualIndicator !== false) {
-        await this.showVisualIndicator(position, input.indicatorTimeout);
-      }
-
-      // Perform the click using selected method
-      await this.clickDefault(position, button, input.clicks, input.delay);
-
-      return {
-        success: true,
-        data: position // Return the clicked position {x, y}
-      };
-
-    } catch (error) {
-      return {
-        success: false,
-        error: {
-          message: error instanceof Error ? error.message : String(error),
-          code: 'TOOL_EXECUTION_ERROR' as const,
-          details: { originalError: error }
-        }
-      };
+    // Show visual indicator before clicking
+    if (input.showVisualIndicator !== false) {
+      await this.showVisualIndicator(position, input.indicatorTimeout);
     }
+
+    // Perform the click using selected method
+    await this.clickDefault(position, button, input.clicks, input.delay);
+
+    return {
+      success: true,
+      data: position // Return the clicked position {x, y}
+    };
   }
 
   private calculateClickPosition(input: ClickToolInput): ClickToolOutput {
@@ -126,8 +114,8 @@ export class ClickTool extends Tool<typeof ClickInputSchema, typeof ClickOutputS
 
     if (isRectangle) {
       return {
-        x: input.left + Math.floor(input.width / 2),
-        y: input.top + Math.floor(input.height / 2)
+        x: input.x + Math.floor(input.width / 2),
+        y: input.y + Math.floor(input.height / 2)
       };
     }
 
