@@ -12,11 +12,11 @@
     }
   },
   "dependencies": {
+    "@app/overlay": "*",
     "@app/preload": "*",
     "@app/renderer": "*",
     "@app/templates": "*",
     "@app/tools": "*",
-    "@app/types": "*",
     "@app/workflows": "*",
     "electron-updater": "6.6.2",
     "zod": "^4.0.17"

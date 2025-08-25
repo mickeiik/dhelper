@@ -12,8 +12,8 @@
     }
   },
   "dependencies": {
-    "@app/types": "*",
     "@app/schemas": "*",
+    "@app/overlay": "*",
     "zod": "^4.0.17"
   },
   "devDependencies": {

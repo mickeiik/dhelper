@@ -14,7 +14,6 @@
   "dependencies": {
     "@app/storage": "*",
     "@app/tools": "*",
-    "@app/types": "*",
     "sqlite3": "^5.1.7",
     "zod": "^4.0.17"
   },

@@ -2,7 +2,6 @@
 import { ScreenshotInputSchema, ScreenshotOutputSchema, ToolResult } from '@app/schemas';
 import { Tool } from '@app/tools';
 import { z } from 'zod';
-import type { ToolInputField, ToolOutputField } from '@app/types';
 import { nativeImage } from 'electron';
 import screenshot from 'screenshot-desktop';
 

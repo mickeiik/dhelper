@@ -13,8 +13,8 @@
   },
   "dependencies": {
     "@nut-tree-fork/nut-js": "^4.2.6",
-    "@app/types": "*",
     "@app/schemas": "*",
+    "@app/overlay": "*",
     "zod": "^4.0.17"
   },
   "devDependencies": {

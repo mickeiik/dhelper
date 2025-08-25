@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { get } from 'lodash';
+import _ from 'lodash';
 import { ToolManager } from '@app/tools';
 import { WorkflowSchema, StepResultSchema, WorkflowStep, WorkflowResultSchema, WorkflowStepInputSchema, WorkflowExecutionData } from '@app/schemas';
 
@@ -150,7 +150,7 @@ export class Workflow {
 
     // Use lodash.get for safe nested property access
     const propertyPath = parts.slice(1).join('.');
-    return get(stepResult.data, propertyPath);
+    return _.get(stepResult.data, propertyPath);
   }
 
   // Simple getters

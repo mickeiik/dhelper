@@ -1,5 +1,5 @@
-import type { ToolInitContext, OverlayService } from '@app/types';
-import { OVERLAY_STYLES } from '@app/types';
+import type { OverlayService } from '@app/overlay';
+import { OVERLAY_STYLES } from '@app/overlay';
 import { OverlayShapeSchema, ClickInputSchema, ClickOutputSchema, ToolResult, PointSchema } from '@app/schemas';
 import { mouse, Button, sleep } from '@nut-tree-fork/nut-js';
 import { Tool } from '@app/tools';
@@ -83,7 +83,7 @@ export class ClickTool extends Tool<typeof ClickInputSchema, typeof ClickOutputS
     }
   ];
 
-  async initialize(context: ToolInitContext) {
+  async initialize(context: any) {
     this.overlayService = context.overlayService;
     return;
   }

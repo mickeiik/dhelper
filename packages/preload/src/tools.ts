@@ -1,5 +1,5 @@
 import { ToolMetadataSchema } from '@app/schemas';
-import { ToolId, ToolInput } from '@app/types/src/tool.js';
+import { ToolId, ToolInput } from '@app/tools';
 import { ipcRenderer } from 'electron';
 import { z } from 'zod';
 

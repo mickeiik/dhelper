@@ -1,5 +1,5 @@
 {
-  "name": "@app/types",
+  "name": "@app/overlay",
   "type": "module",
   "scripts": {
     "build": "vite build",
@@ -11,12 +11,14 @@
       "default": "./dist/index.js"
     }
   },
+  "dependencies": {
+    "@app/schemas": "*",
+    "electron": "37.2.4",
+    "zod": "^4.0.17"
+  },
   "devDependencies": {
     "@app/electron-versions": "*",
     "typescript": "5.8.3",
     "vite": "7.0.6"
-  },
-  "dependencies": {
-    "zod": "^4.0.17"
   }
 }

@@ -10,12 +10,10 @@
     "isolatedModules": true,
     "types": ["node"],
     "baseUrl": ".",
-    "rootDir": "./src",
-    "outDir": "./dist",
     "paths": {
       "@app/*": ["../*"]
     }
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "../../types/**/*.d.ts"],
   "exclude": ["**/*.spec.ts", "**/*.test.ts"]
 }

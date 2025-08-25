@@ -2,9 +2,9 @@
 import { ScreenRegionSelectorInputSchema, ScreenRegionSelectorOutputUnionSchema, ToolResult } from '@app/schemas';
 import { Tool } from '@app/tools';
 import { z } from 'zod';
-import type { ToolInputField, ToolOutputField, ToolInitContext, OverlayService, OverlayWindow } from '@app/types';
+import type { OverlayService, OverlayWindow } from '@app/overlay';
 import { OverlayShapeSchema, OverlayTextSchema, PointSchema } from '@app/schemas';
-import { OVERLAY_STYLES } from '@app/types';
+import { OVERLAY_STYLES } from '@app/overlay';
 import { screen } from 'electron';
 
 // Type aliases for convenience
@@ -57,7 +57,7 @@ export class ScreenRegionSelectorTool extends Tool<typeof ScreenRegionSelectorIn
     ttl: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
   };
 
-  async initialize(context: ToolInitContext) {
+  async initialize(context: any) {
     this.overlayService = context.overlayService;
     return;
   }
@@ -101,7 +101,7 @@ export class ScreenRegionSelectorTool extends Tool<typeof ScreenRegionSelectorIn
     };
   }
 
-  private async setupCrosshairs(overlay: import('@app/types').OverlayWindow): Promise<void> {
+  private async setupCrosshairs(overlay: OverlayWindow): Promise<void> {
     // Add crosshair indicators (will follow mouse via overlay service)
     const shapes: OverlayShape[] = [];
     const texts: OverlayText[] = [];

@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@app/preload": "*",
-    "@app/types": "*",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -25,7 +24,7 @@
     "clsx": "^2.1.1",
     "i18next": "^25.3.4",
     "i18next-browser-languagedetector": "^8.2.0",
-    "lucide-react": "^0.539.0",
+    "lucide-react": "^0.541.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-i18next": "^15.6.1",

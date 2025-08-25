@@ -14,7 +14,7 @@
   "dependencies": {
     "@app/schemas": "*",
     "@app/tools": "*",
-    "@app/types": "*",
+    "@app/overlay": "*",
     "zod": "^4.0.17"
   },
   "devDependencies": {

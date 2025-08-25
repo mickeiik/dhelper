@@ -54,7 +54,8 @@ const rendererWatchServerProvider = {
 
 /** @type {string[]} */
 const corePackages = [
-  'packages/types',
+  'packages/overlay',
+  'packages/schemas',
   'packages/tools',
   'packages/workflows',
   'packages/storage',

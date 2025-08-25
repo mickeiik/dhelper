@@ -1,10 +1,10 @@
 import { TemplateMatcherInputSchema, TemplateMatcherOutputSchema, TemplateMatchResultSchema, ToolResult } from '@app/schemas';
 import { Tool } from '@app/tools';
 import { z } from 'zod';
-import type { ToolInputField, ToolOutputField, ToolInitContext, OverlayService } from '@app/types';
+import type { OverlayService } from '@app/overlay';
 import { OverlayShapeSchema, OverlayTextSchema } from '@app/schemas';
-import { OVERLAY_STYLES } from '@app/types';
-import type { TemplateMetadata } from '@app/types';
+import { OVERLAY_STYLES } from '@app/overlay';
+import { TemplateManager } from '@app/templates';
 import screenshot from 'screenshot-desktop';
 
 // Configure OpenCV before importing opencv4nodejs
@@ -40,7 +40,7 @@ export class TemplateMatcherTool extends Tool<typeof TemplateMatcherInputSchema,
   inputSchema = TemplateMatcherInputSchema;
   outputSchema = TemplateMatcherOutputSchema;
 
-  private templateManager: import('@app/types').TemplateManager | undefined; // Will be injected during initialization
+  private templateManager: TemplateManager | undefined; // Will be injected during initialization
   private overlayService?: OverlayService;
 
   inputFields: ToolInputField[] = [
@@ -195,7 +195,7 @@ export class TemplateMatcherTool extends Tool<typeof TemplateMatcherInputSchema,
     }
   ];
 
-  async initialize(context: ToolInitContext) {
+  async initialize(context: any) {
     // opencv4nodejs is ready to use immediately
 
     // Create a new templateManager instance for this tool
@@ -359,7 +359,7 @@ export class TemplateMatcherTool extends Tool<typeof TemplateMatcherInputSchema,
   private async matchTemplate(
     screenMat: cv.Mat,
     templateMat: cv.Mat,
-    templateMetadata: TemplateMetadata,
+    templateMetadata: any,
     threshold: number
   ): Promise<TemplateMatchResult[]> {
     // Search on full screen (no region restriction)

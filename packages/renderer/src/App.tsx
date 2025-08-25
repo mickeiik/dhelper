@@ -13,7 +13,6 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
-import WorkflowPage from './pages/workflows/Workflows.page'
 
 function AppContent() {
   const location = useLocation()
@@ -57,9 +56,9 @@ function AppContent() {
           </header>
           <main className="flex-1 flex flex-col p-4 pt-0 min-h-0">
             <Routes>
-              <Route path="/" element={<WorkflowPage />} />
-              <Route path="/workflow" element={<WorkflowPage />} />
-              <Route path="/template" element={<p>Test</p>} />
+              {/* <Route path="/" element={<WorkflowPage />} />
+              <Route path="/workflow" element={<WorkflowPage />} /> */}
+              <Route path="/" element={<p>Test</p>} />
             </Routes>
           </main>
         </SidebarInset>

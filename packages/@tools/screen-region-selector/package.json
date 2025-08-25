@@ -12,7 +12,10 @@
     }
   },
   "dependencies": {
-    "@app/types": "*"
+    "@app/schemas": "*",
+    "@app/overlay": "*",
+    "electron": "37.2.4",
+    "zod": "^4.0.17"
   },
   "devDependencies": {
     "@app/electron-versions": "*",
