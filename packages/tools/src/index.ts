@@ -46,29 +46,16 @@ const AVAILABLE_TOOLS = [
 // Auto-generated types from AVAILABLE_TOOLS
 type ToolInstances = InstanceType<typeof AVAILABLE_TOOLS[number]>;
 
-// Extract tool ID from tool instance
-type ExtractToolId<T> = T extends { id: infer U } ? U : never;
-
-// Extract input type from tool instance
-type ExtractInputType<T> = T extends { inputSchema: infer S extends z.ZodType } 
-    ? z.infer<S> 
-    : never;
-
-// Extract output type from tool instance  
-type ExtractOutputType<T> = T extends { outputSchema: infer S extends z.ZodType } 
-    ? z.infer<S> 
-    : never;
-
 // Auto-generated tool registry types
-export type ToolId = ExtractToolId<ToolInstances>;
+export type ToolId = ToolInstances['id'];
 
-export type ToolInput<T extends ToolId> = ExtractInputType<
-    Extract<ToolInstances, { id: T }>
->;
+export type ToolInput<T extends ToolId> = Extract<ToolInstances, { id: T }> extends { 
+    inputSchema: infer S extends z.ZodType 
+} ? z.infer<S> : never;
 
-export type ToolOutput<T extends ToolId> = ExtractOutputType<
-    Extract<ToolInstances, { id: T }>
->;
+export type ToolOutput<T extends ToolId> = Extract<ToolInstances, { id: T }> extends { 
+    outputSchema: infer S extends z.ZodType 
+} ? z.infer<S> : never;
 
 export class ToolManager {
     private tools = new Map<string, ToolRegistration>();

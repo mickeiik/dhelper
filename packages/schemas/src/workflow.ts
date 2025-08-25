@@ -1,81 +1,86 @@
 import { z } from 'zod';
+import type { ToolId } from '@app/tools';
+import { ResultSchema } from './errors.js';
 
-// Semantic reference schema
-const SemanticReferenceSchema = z.object({
-    $ref: z.string().regex(/^\\{\\{[^}]+\\}\\}$/, 'Invalid reference format')
+// Reference schema for workflow inputs
+const ReferenceSchema = z.object({
+    $ref: z.string()
 });
 
-// Merge operation schema
-const MergeOperationSchema = z.object({
-    $merge: z.array(z.lazy(() => WorkflowInputSchema))
-});
-
-// Recursive workflow input schema
-export const WorkflowInputSchema: z.ZodType<any> = z.lazy(() =>
+// Workflow input schema that allows references to replace any value recursively
+export const WorkflowStepInputSchema: z.ZodType<any> = z.lazy(() =>
     z.union([
+        // Primitives
         z.string(),
         z.number(),
         z.boolean(),
-        z.null(),
-        SemanticReferenceSchema,
-        MergeOperationSchema,
-        z.array(WorkflowInputSchema),
-        WorkflowInputSchema
+        // References can replace any value at any level
+        ReferenceSchema,
+        // Arrays where each element can be a reference or nested structure
+        z.array(WorkflowStepInputSchema),
+        // Objects where each property can be a reference or nested structure
+        z.record(z.string(), WorkflowStepInputSchema)
     ])
 );
 
-// Cache configuration schema
-export const CacheConfigSchema = z.object({
-    enabled: z.boolean(),
-    key: z.string().optional(),
-    persistent: z.boolean().optional(),
-    ttl: z.number().positive().optional()
+// Factory to create strongly-typed workflow step schema for specific tools
+export function createWorkflowStepSchema<T extends ToolId>(toolId: T) {
+    return z.object({
+        id: z.string().min(1),
+        toolId: z.literal(toolId),
+        inputs: WorkflowStepInputSchema,
+        onError: z.enum(['stop', 'continue']).default('stop'),
+        delay: z.number().min(0).optional(),
+    });
+}
+
+// Step execution metadata
+const StepExecutionMetadata = z.object({
+    stepId: z.string(),
+    toolId: z.custom<ToolId>((val) => typeof val === 'string' && val.length > 0),
+    startTime: z.date(),
+    endTime: z.date(),
+    retryCount: z.number().default(0),
 });
 
-// Workflow step schema
+// Step result using the same pattern as tools
+export const StepResultSchema = StepExecutionMetadata.and(
+    ResultSchema(z.unknown())
+);
+
+// Generic workflow step schema (accepts any valid tool)
 export const WorkflowStepSchema = z.object({
     id: z.string().min(1),
-    toolId: z.string().min(1),
-    inputs: WorkflowInputSchema,
-    onError: z.enum(['stop', 'continue', 'retry']).optional(),
-    retryCount: z.number().min(0).max(10).optional(),
+    toolId: z.custom<ToolId>((val) => typeof val === 'string' && val.length > 0),
+    inputs: WorkflowStepInputSchema,
+    onError: z.enum(['stop', 'continue']).default('stop'),
     delay: z.number().min(0).optional(),
-    cache: CacheConfigSchema.optional()
+    lastSuccessResult: StepResultSchema,
+    replayLastSuccess: z.boolean().default(false)
 });
+
+// Generic workflow step (inferred from schema)
+export type WorkflowStep = z.infer<typeof WorkflowStepSchema>;
 
 // Complete workflow schema
 export const WorkflowSchema = z.object({
     id: z.string().min(1),
     name: z.string().min(1),
     description: z.string().optional(),
-    steps: z.array(WorkflowStepSchema).min(1),
-    clearCache: z.boolean().optional()
+    steps: z.array(WorkflowStepSchema).min(1)
 });
 
-// Workflow result schemas
-export const StepResultSchema = z.object({
-    stepId: z.string(),
-    toolId: z.string(),
-    success: z.boolean(),
-    result: z.unknown().optional(),
-    error: z.string().optional(),
+
+// Workflow execution metadata
+const WorkflowExecutionMetadata = z.object({
+    workflowId: z.string(),
     startTime: z.date(),
     endTime: z.date(),
-    retryCount: z.number(),
-    fromCache: z.boolean().optional(),
-    cacheKey: z.string().optional()
+    stepResults: z.record(z.string(), StepResultSchema),
 });
 
-export const WorkflowResultSchema = z.object({
-    workflowId: z.string(),
-    success: z.boolean(),
-    error: z.string().optional(),
-    startTime: z.date(),
-    endTime: z.date().optional(),
-    stepResults: StepResultSchema,
-    cacheStats: z.object({
-        cacheHits: z.number(),
-        cacheMisses: z.number(),
-        stepsCached: z.array(z.string())
-    }).optional()
-});
+// Workflow execution data
+export const WorkflowExecutionData = WorkflowExecutionMetadata;
+
+// Workflow result using the same pattern as tools
+export const WorkflowResultSchema = ResultSchema(WorkflowExecutionData);

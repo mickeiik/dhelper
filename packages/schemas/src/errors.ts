@@ -3,6 +3,7 @@ import { z } from 'zod';
 export const ErrorCodeSchema = z.enum([
     'TOOL_EXECUTION_ERROR',
     'WORKFLOW_ERROR',
+    'WORKFLOW_STEP_ERROR',
     'STORAGE_ERROR',
     'TEMPLATE_ERROR',
     'VALIDATION_ERROR',
@@ -20,7 +21,7 @@ export const ResultSchema = <T extends z.ZodType, E extends z.ZodType = typeof D
     errorSchema?: E
 ) => z.discriminatedUnion('success', [
     z.object({ success: z.literal(true), data: dataSchema }),
-    z.object({ success: z.literal(false), error: errorSchema || DHelperErrorSchema })
+    z.object({ success: z.literal(false), error: errorSchema })
 ]);
 
 // Helper type for tool results

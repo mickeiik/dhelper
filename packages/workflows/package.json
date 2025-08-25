@@ -16,10 +16,12 @@
     "@app/templates": "*",
     "@app/tools": "*",
     "@app/types": "*",
+    "lodash": "^4.17.21",
     "zod": "^4.0.17"
   },
   "devDependencies": {
     "@app/electron-versions": "*",
+    "@types/lodash": "^4.17.20",
     "typescript": "5.8.3",
     "vite": "7.0.6"
   }
