@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@app/types": "*",
+    "@app/schemas": "*",
     "zod": "^4.0.17"
   },
   "devDependencies": {
