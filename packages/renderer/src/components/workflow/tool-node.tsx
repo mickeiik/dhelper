@@ -257,68 +257,10 @@ export const ToolNode = memo(({ data, selected, id }: any) => {
                       toolId === 'template-matcher' && ['templateIds', 'templateNames', 'categories', 'tags'].includes(field.name) ? (
                         <div className="space-y-1">
                           {/* Template selection dropdown */}
-                          <Select onValueChange={(value) => addToArrayInput(field.name, value)}>
-                            <SelectTrigger className="h-7 text-xs">
-                              <SelectValue placeholder={`Add ${field.name.replace(/([A-Z])/g, ' $1').toLowerCase()}`} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {loadingTemplates ? (
-                                <SelectItem value="loading" disabled className="text-xs">Loading...</SelectItem>
-                              ) : (
-                                (() => {
-                                  if (field.name === 'templateIds') {
-                                    return templates.map(template => (
-                                      <SelectItem key={template.id} value={template.id} className="text-xs">
-                                        <div className="flex flex-col">
-                                          <span>{template.name}</span>
-                                          <span className="text-muted-foreground">({template.id})</span>
-                                        </div>
-                                      </SelectItem>
-                                    ));
-                                  } else if (field.name === 'templateNames') {
-                                    return templates.map(template => (
-                                      <SelectItem key={template.name} value={template.name} className="text-xs">
-                                        <div className="flex flex-col">
-                                          <span>{template.name}</span>
-                                          <span className="text-muted-foreground">({template.category})</span>
-                                        </div>
-                                      </SelectItem>
-                                    ));
-                                  } else if (field.name === 'categories') {
-                                    return categories.map(category => (
-                                      <SelectItem key={category} value={category} className="text-xs">
-                                        {category}
-                                      </SelectItem>
-                                    ));
-                                  } else if (field.name === 'tags') {
-                                    return tags.map(tag => (
-                                      <SelectItem key={tag} value={tag} className="text-xs">
-                                        {tag}
-                                      </SelectItem>
-                                    ));
-                                  }
-                                  return [];
-                                })()
-                              )}
-                            </SelectContent>
-                          </Select>
+                          
                           
                           {/* Show selected values */}
-                          {inputs?.[field.name] && Array.isArray(inputs[field.name]) && (inputs[field.name] as string[]).length > 0 && (
-                            <div className="flex flex-wrap gap-1">
-                              {(inputs[field.name] as string[]).map((value, idx) => (
-                                <div key={idx} className="flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
-                                  <span>{value}</span>
-                                  <button 
-                                    onClick={() => removeFromArrayInput(field.name, value)}
-                                    className="hover:bg-blue-200 rounded px-1"
-                                  >
-                                    ×
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                          
                         </div>
                       ) : (
                         // Regular manual input

@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { getTools, runTool, saveWorkflow, loadWorkflow, listWorkflows, runWorkflow } from '@app/preload';
-import type { ToolMetadata } from '@app/types';
+import { runTool, saveWorkflow, loadWorkflow, listWorkflows, runWorkflow } from '@app/preload';
 
 export function useTools() {
-  const [tools, setTools] = useState<ToolMetadata[]>([]);
+  // const [tools, setTools] = useState<ToolMetadata[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -11,8 +10,8 @@ export function useTools() {
     const fetchTools = async () => {
       try {
         setLoading(true);
-        const toolsData = await getTools();
-        setTools(toolsData);
+        // const toolsData = await getTools();
+        // setTools(toolsData);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch tools');
       } finally {
@@ -23,7 +22,7 @@ export function useTools() {
     fetchTools();
   }, []);
 
-  return { tools, loading, error, runTool };
+  return { loading, error, runTool };
 }
 
 export function useWorkflows() {

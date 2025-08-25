@@ -1,7 +1,8 @@
 import { TemplateMatcherInputSchema, TemplateMatcherOutputSchema, TemplateMatchResultSchema, ToolResult } from '@app/schemas';
 import { Tool } from '@app/tools';
 import { z } from 'zod';
-import type { ToolInputField, ToolOutputField, ToolInitContext, OverlayService, OverlayShape, OverlayText } from '@app/types';
+import type { ToolInputField, ToolOutputField, ToolInitContext, OverlayService } from '@app/types';
+import { OverlayShapeSchema, OverlayTextSchema } from '@app/schemas';
 import { OVERLAY_STYLES } from '@app/types';
 import type { TemplateMetadata } from '@app/types';
 import screenshot from 'screenshot-desktop';
@@ -26,6 +27,8 @@ import { screen } from 'electron';
 type TemplateMatcherInput = z.infer<typeof TemplateMatcherInputSchema>;
 type TemplateMatcherOutput = z.infer<typeof TemplateMatcherOutputSchema>;
 type TemplateMatcherResult = ToolResult<typeof TemplateMatcherOutputSchema>;
+type OverlayShape = z.infer<typeof OverlayShapeSchema>;
+type OverlayText = z.infer<typeof OverlayTextSchema>;
 type TemplateMatchResult = z.infer<typeof TemplateMatchResultSchema>;
 
 export class TemplateMatcherTool extends Tool<typeof TemplateMatcherInputSchema, typeof TemplateMatcherOutputSchema> {

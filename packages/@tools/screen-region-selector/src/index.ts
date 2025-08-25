@@ -2,7 +2,8 @@
 import { ScreenRegionSelectorInputSchema, ScreenRegionSelectorOutputUnionSchema, ToolResult } from '@app/schemas';
 import { Tool } from '@app/tools';
 import { z } from 'zod';
-import type { ToolInputField, ToolOutputField, ToolInitContext, OverlayService, OverlayShape, OverlayText, OverlayWindow, Point } from '@app/types';
+import type { ToolInputField, ToolOutputField, ToolInitContext, OverlayService, OverlayWindow } from '@app/types';
+import { OverlayShapeSchema, OverlayTextSchema, PointSchema } from '@app/schemas';
 import { OVERLAY_STYLES } from '@app/types';
 import { screen } from 'electron';
 
@@ -10,6 +11,9 @@ import { screen } from 'electron';
 type ScreenRegionSelectorInput = z.infer<typeof ScreenRegionSelectorInputSchema>;
 type ScreenRegionSelectorOutput = z.infer<typeof ScreenRegionSelectorOutputUnionSchema>;
 type ScreenRegionSelectorResult = ToolResult<typeof ScreenRegionSelectorOutputUnionSchema>;
+type OverlayShape = z.infer<typeof OverlayShapeSchema>;
+type OverlayText = z.infer<typeof OverlayTextSchema>;
+type Point = z.infer<typeof PointSchema>;
 
 export class ScreenRegionSelectorTool extends Tool<typeof ScreenRegionSelectorInputSchema, typeof ScreenRegionSelectorOutputUnionSchema> {
   id = 'screen-region-selector' as const;

@@ -2,7 +2,7 @@ import type { AppInitConfig } from './AppInitConfig.js';
 import { app, BrowserWindow } from 'electron';
 import { getToolManager, initializeTools } from './modules/ToolModule.js';
 import { initializeWorkflows } from './modules/WorkflowModule.js';
-import { getTemplateManager, initializeTemplates, cleanupTemplates } from './modules/TemplateModule.js';
+import { getTemplateManager, initializeTemplates } from './modules/TemplateModule.js';
 import { initializeOverlay, cleanupOverlays } from './modules/OverlayModule.js';
 import { initializeSecurity } from './modules/security.js';
 import { initializeElectron } from './modules/electron.js';
@@ -47,12 +47,7 @@ async function cleanup() {
   try {
     // Close all overlay windows
     await cleanupOverlays();
-    console.log('✓ Overlay windows cleaned up');
-    
-    // Close database connections and cleanup templates
-    await cleanupTemplates();
-    console.log('✓ Template storage cleaned up');
-    
+    console.log('✓ Overlay windows cleaned up');    
   } catch (error) {
     console.error('Error during cleanup:', error);
   }

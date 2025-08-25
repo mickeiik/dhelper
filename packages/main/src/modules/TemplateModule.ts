@@ -1,107 +1,80 @@
 // packages/main/src/modules/TemplateModule.ts
-import { ipcMain } from 'electron';
+import { ipcMain, protocol } from 'electron';
+import { readFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { TemplateManager } from '@app/templates';
-import type { CreateTemplateInput, UpdateTemplateInput } from '@app/types';
-import { TemplateError, ErrorLogger } from '@app/types';
-import { getToolManager } from './ToolModule.js';
+import { TemplateSchema, CreateTemplateInputSchema, UpdateTemplateInputSchema } from '@app/schemas';
+import { z } from 'zod';
 import { getConfig } from '../config/index.js';
 
-const logger = new ErrorLogger('TemplateModule');
+type CreateTemplateInput = z.infer<typeof CreateTemplateInputSchema>;
+type UpdateTemplateInput = z.infer<typeof UpdateTemplateInputSchema>;
 const config = getConfig();
 
-const templateManager = new TemplateManager(config.storage.templatesPath, getToolManager());
+const templateManager = new TemplateManager(config.storage.templatesPath);
 
 export function initializeTemplates() {
+    // Register template:// protocol handler
+    protocol.handle('template', async (request) => {
+      try {
+        const url = new URL(request.url);
+        const [type, templateId] = url.pathname.split('/').filter(Boolean);
+        
+        if (!templateId) {
+          return new Response('Invalid URL', { status: 400 });
+        }
+
+        let filePath: string;
+        
+        if (type === 'image') {
+          filePath = templateManager.getAbsoluteImagePath(templateId);
+        } else if (type === 'thumbnail') {
+          filePath = templateManager.getAbsoluteThumbnailPath(templateId);
+        } else {
+          return new Response('Invalid URL', { status: 400 });
+        }
+
+        if (!existsSync(filePath)) {
+          return new Response('File not found', { status: 404 });
+        }
+
+        const fileData = await readFile(filePath);
+        return new Response(new Uint8Array(fileData), {
+          headers: {
+            'Content-Type': 'image/png',
+            'Content-Length': fileData.length.toString()
+          }
+        });
+      } catch (error) {
+        console.error('Template protocol handler error:', error);
+        return new Response('Internal error', { status: 500 });
+      }
+    });
 
     // Template CRUD operations
     ipcMain.handle('templates:list', async () => {
       try {
         return await templateManager.listTemplates();
       } catch (error) {
-        const templateError = error instanceof TemplateError ? error : new TemplateError('Failed to list templates', undefined, { originalError: error });
-        logger.logError(templateError);
-        throw templateError;
+        console.error('Failed to list templates:', error);
+        throw error;
       }
     });
 
     ipcMain.handle('templates:get', async (_, templateId: string) => {
-      try {
-        const template = await templateManager.getTemplate(templateId);
-        if (!template) return null;
-        
-        // Convert Buffer to Uint8Array for browser compatibility
-        return {
-          ...template,
-          imageData: template.imageData ? new Uint8Array(template.imageData) : undefined,
-          thumbnailData: template.thumbnailData ? new Uint8Array(template.thumbnailData) : undefined
-        };
-      } catch (error) {
-        const templateError = error instanceof TemplateError ? error : new TemplateError('Failed to get template', templateId, { originalError: error });
-        logger.logError(templateError);
-        throw templateError;
-      }
-    });
-
-    ipcMain.handle('templates:get-by-name', async (_, templateName: string) => {
-      const template = await templateManager.getTemplateByName(templateName);
-      if (!template) return null;
-      
-      // Convert Buffer to Uint8Array for browser compatibility
-      return {
-        ...template,
-        imageData: template.imageData ? new Uint8Array(template.imageData) : undefined,
-        thumbnailData: template.thumbnailData ? new Uint8Array(template.thumbnailData) : undefined
-      };
+      return await templateManager.getTemplate(templateId);
     });
 
     ipcMain.handle('templates:create', async (_, input: CreateTemplateInput) => {
-      try {
-        // Convert Uint8Array from renderer to Buffer for Node.js
-        const nodeInput = {
-          ...input,
-          imageData: Buffer.from(input.imageData)
-        };
-        const template = await templateManager.createTemplate(nodeInput);
-        
-        // Convert Buffer back to Uint8Array for browser compatibility
-        return {
-          ...template,
-          imageData: template.imageData ? new Uint8Array(template.imageData) : undefined,
-          thumbnailData: template.thumbnailData ? new Uint8Array(template.thumbnailData) : undefined
-        };
-      } catch (error) {
-        const templateError = error instanceof TemplateError ? error : new TemplateError('Failed to create template', undefined, { originalError: error, input: input.name });
-        logger.logError(templateError);
-        throw templateError;
-      }
+      return await templateManager.createTemplate(input);
     });
 
-    ipcMain.handle('templates:update', async (_, input: UpdateTemplateInput) => {
-      try {
-        const template = await templateManager.updateTemplate(input);
-        if (!template) return null;
-        
-        // Convert Buffer back to Uint8Array for browser compatibility
-        return {
-          ...template,
-          imageData: template.imageData ? new Uint8Array(template.imageData) : undefined,
-          thumbnailData: template.thumbnailData ? new Uint8Array(template.thumbnailData) : undefined
-        };
-      } catch (error) {
-        const templateError = error instanceof TemplateError ? error : new TemplateError('Failed to update template', input.id, { originalError: error });
-        logger.logError(templateError);
-        throw templateError;
-      }
+    ipcMain.handle('templates:update', async (_, id: string, input: UpdateTemplateInput) => {
+      return await templateManager.updateTemplate(id, input);
     });
 
     ipcMain.handle('templates:delete', async (_, templateId: string) => {
-      try {
-        return await templateManager.deleteTemplate(templateId);
-      } catch (error) {
-        const templateError = error instanceof TemplateError ? error : new TemplateError('Failed to delete template', templateId, { originalError: error });
-        logger.logError(templateError);
-        throw templateError;
-      }
+      return await templateManager.deleteTemplate(templateId);
     });
 
     // Template discovery and search
@@ -109,35 +82,8 @@ export function initializeTemplates() {
       return await templateManager.searchTemplates(query);
     });
 
-    ipcMain.handle('templates:get-by-category', async (_, category: string) => {
-      return await templateManager.getTemplatesByCategory(category);
-    });
-
-    ipcMain.handle('templates:get-by-tags', async (_, tags: string[]) => {
-      return await templateManager.getTemplatesByTags(tags);
-    });
-
     ipcMain.handle('templates:get-categories', async () => {
       return await templateManager.getCategories();
-    });
-
-    ipcMain.handle('templates:get-all-tags', async () => {
-      return await templateManager.getAllTags();
-    });
-
-    // Template matching and usage
-    ipcMain.handle('templates:match', async (_, screenImage: Buffer, options: import('@app/types').TemplateMatchOptions) => {
-      try {
-        return await templateManager.matchTemplates(screenImage, options);
-      } catch (error) {
-        const templateError = error instanceof TemplateError ? error : new TemplateError('Failed to match templates', undefined, { originalError: error });
-        logger.logError(templateError);
-        throw templateError;
-      }
-    });
-
-    ipcMain.handle('templates:record-usage', async (_, templateId: string, success: boolean) => {
-      return await templateManager.recordTemplateUsage(templateId, success);
     });
 
     // Template reference resolution
@@ -145,40 +91,6 @@ export function initializeTemplates() {
       return await templateManager.resolveTemplateReference(reference);
     });
 
-    // Template statistics and management
-    ipcMain.handle('templates:get-stats', async () => {
-      return await templateManager.getStats();
-    });
-
-    // Template import/export
-    ipcMain.handle('templates:export', async (_, templateId: string) => {
-      try {
-        return await templateManager.exportTemplate(templateId);
-      } catch (error) {
-        const templateError = error instanceof TemplateError ? error : new TemplateError('Failed to export template', templateId, { originalError: error });
-        logger.logError(templateError);
-        throw templateError;
-      }
-    });
-
-    ipcMain.handle('templates:import', async (_, data: string) => {
-      try {
-        return await templateManager.importTemplate(data);
-      } catch (error) {
-        const templateError = error instanceof TemplateError ? error : new TemplateError('Failed to import template', undefined, { originalError: error });
-        logger.logError(templateError);
-        throw templateError;
-      }
-    });
 }
 
 export const getTemplateManager = () => templateManager;
-
-export async function cleanupTemplates(): Promise<void> {
-  console.log('Cleaning up template resources...');
-  try {
-    await templateManager.close();
-  } catch (error) {
-    console.error('Error during template cleanup:', error);
-  }
-}

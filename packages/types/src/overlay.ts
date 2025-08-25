@@ -1,71 +1,22 @@
 // packages/types/src/overlay.ts
-
-export interface Point {
-  x: number;
-  y: number;
-}
-
-export interface Rectangle {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-export interface OverlayStyle {
-  color?: string;
-  fillColor?: string;
-  lineWidth?: number;
-  lineDash?: number[];
-  opacity?: number;
-  fontSize?: number;
-  fontFamily?: string;
-}
-
-export interface OverlayShape {
-  id?: string;
-  type: 'rectangle' | 'circle' | 'crosshair' | 'point';
-  bounds: Rectangle;
-  style?: OverlayStyle;
-  label?: string;
-  labelPosition?: 'top' | 'bottom' | 'left' | 'right' | 'center';
-}
-
-export interface OverlayText {
-  id?: string;
-  text: string;
-  position: Point;
-  style?: OverlayStyle;
-  backgroundColor?: string;
-  padding?: number;
-  borderRadius?: number;
-}
-
-export interface OverlayOptions {
-  bounds?: Rectangle; // If not provided, uses full screen
-  transparent?: boolean;
-  alwaysOnTop?: boolean;
-  timeout?: number; // Auto-close timeout in ms
-  clickThrough?: boolean; // Allow clicks to pass through
-  showInstructions?: boolean;
-  instructionText?: string;
-}
+// Basic geometric and overlay types are now defined in @app/schemas with Zod validation
+// Import schemas where needed and infer types directly instead of duplicating here
 
 export interface OverlayService {
-  createOverlay(options?: OverlayOptions): Promise<OverlayWindow>;
+  createOverlay(options?: any): Promise<OverlayWindow>;
 }
 
 export interface OverlayWindow {
   readonly id: string;
   
   // Drawing methods
-  drawShapes(shapes: OverlayShape[]): Promise<void>;
-  drawText(texts: OverlayText[]): Promise<void>;
+  drawShapes(shapes: any[]): Promise<void>;
+  drawText(texts: any[]): Promise<void>;
   clear(): Promise<void>;
   
   // Interaction
-  onMouseClick(callback: (point: Point) => void): void;
-  onMouseMove(callback: (point: Point) => void): void;
+  onMouseClick(callback: (point: any) => void): void;
+  onMouseMove(callback: (point: any) => void): void;
   onKeyPress(callback: (key: string) => void): void;
   
   // Lifecycle
@@ -75,13 +26,13 @@ export interface OverlayWindow {
   
   // Properties
   isVisible(): boolean;
-  getBounds(): Rectangle;
+  getBounds(): any;
 }
 
 // Events for IPC communication
 export interface OverlayEvents {
-  'overlay-mouse-click': { overlayId: string; point: Point };
-  'overlay-mouse-move': { overlayId: string; point: Point };
+  'overlay-mouse-click': { overlayId: string; point: any };
+  'overlay-mouse-move': { overlayId: string; point: any };
   'overlay-key-press': { overlayId: string; key: string };
   'overlay-closed': { overlayId: string };
 }

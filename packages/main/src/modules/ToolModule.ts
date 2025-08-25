@@ -1,16 +1,27 @@
 // packages/main/src/modules/ToolModule.ts
-import { ipcMain } from 'electron'
-import { ToolManager } from '@app/tools'
-import type { OverlayService } from '@app/types';
-import { ToolExecutionError, ErrorLogger } from '@app/types';
-import { z } from 'zod';
+import { ipcMain, IpcMainInvokeEvent } from 'electron'
+import { ToolId, ToolInput, ToolManager } from '@app/tools'
+import type { OverlayService } from './OverlayModule.js';
 
-const logger = new ErrorLogger('ToolModule');
+/**
+ * Registry of all available tools with dynamic imports
+ * 
+ * To add a new tool:
+ * 1. Add its dynamic import to this array
+ */
+const AVAILABLE_TOOLS = [
+    () => import('@tools/hello-world').then(m => m.HelloWorldTool),
+    () => import('@tools/ocr').then(m => m.TesseractOcrTool),
+    () => import('@tools/screen-region-selector').then(m => m.ScreenRegionSelectorTool),
+    () => import('@tools/screenshot').then(m => m.ScreenshotTool),
+    () => import('@tools/template-matcher').then(m => m.TemplateMatcherTool),
+    () => import('@tools/click').then(m => m.ClickTool),
+] as const;
 
 const toolManager = new ToolManager()
 
 export async function initializeTools(overlayService?: OverlayService) {
-    await toolManager.autoDiscoverTools();
+    await toolManager.autoDiscoverTools(AVAILABLE_TOOLS);
 
     // Set overlay service for tools to access
     if (overlayService) {
@@ -18,26 +29,11 @@ export async function initializeTools(overlayService?: OverlayService) {
     }
 
     ipcMain.handle('get-tools', async () => {
-        try {
-            return await toolManager.getToolsMetadata();
-        } catch (error) {
-            const toolError = error instanceof ToolExecutionError ? error : new ToolExecutionError('Failed to get tools metadata', 'get-tools', { originalError: error });
-            logger.logError(toolError);
-            throw toolError;
-        }
+        return await toolManager.getToolsMetadata();
     });
     
-    ipcMain.handle('run-tool', async (_, toolId: string, inputs: Record<string, unknown>) => {
-        try {
-            // Validate tool inputs
-            const validatedToolId = z.string().min(1).parse(toolId);
-            const validatedInputs = z.record(z.unknown()).parse(inputs);
-            return await toolManager.runTool(validatedToolId, validatedInputs);
-        } catch (error) {
-            const toolError = error instanceof ToolExecutionError ? error : new ToolExecutionError('Failed to run tool', toolId, { originalError: error, inputs });
-            logger.logError(toolError);
-            throw toolError;
-        }
+    ipcMain.handle('run-tool', async <T extends ToolId>(_: IpcMainInvokeEvent, toolId: T, inputs: ToolInput<T>) => {
+        return await toolManager.runTool(toolId, inputs);
     });
 }
 

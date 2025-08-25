@@ -39,12 +39,6 @@ export {
 
 // Overlay-related types
 export type {
-  Point,
-  Rectangle,
-  OverlayStyle,
-  OverlayShape,
-  OverlayText,
-  OverlayOptions,
   OverlayService,
   OverlayWindow,
   OverlayEvents
@@ -54,10 +48,7 @@ export {
   OVERLAY_STYLES
 } from './overlay.js';
 
-// Common utilities
-export type {
-  DeepPartial
-} from './common.js';
+// Common utilities moved to schemas package
 
 // Error handling types
 export type {
@@ -78,13 +69,4 @@ export {
   isFailure
 } from './errors.js';
 
-// Error handling utilities
-export {
-  ErrorLogger,
-  LogLevel,
-  formatErrorMessage,
-  isNotFoundError,
-  isConnectionError,
-  isPermissionError,
-  createLogger
-} from './error-utils.js';
+// Error handling utilities removed - use console.error instead

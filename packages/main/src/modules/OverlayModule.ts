@@ -1,14 +1,4 @@
 // packages/main/src/modules/OverlayModule.ts
-import type {
-  OverlayService,
-  OverlayWindow,
-  OverlayOptions,
-  OverlayShape,
-  OverlayText,
-  Point,
-  Rectangle,
-  OverlayEvents
-} from '@app/types';
 import {
   OverlayOptionsSchema,
   OverlayShapeSchema,
@@ -17,10 +7,39 @@ import {
   OverlayMouseEventSchema,
   OverlayKeyEventSchema
 } from '@app/schemas';
+import { PointSchema, RectangleSchema } from '@app/schemas';
 import { BrowserWindow, screen, ipcMain } from 'electron';
 import { randomUUID } from 'crypto';
 import { getConfig } from '../config/index.js';
 import { z } from 'zod';
+
+type Point = z.infer<typeof PointSchema>;
+type Rectangle = z.infer<typeof RectangleSchema>;
+type OverlayOptions = z.infer<typeof OverlayOptionsSchema>;
+type OverlayShape = z.infer<typeof OverlayShapeSchema>;
+type OverlayText = z.infer<typeof OverlayTextSchema>;
+
+interface OverlayWindow {
+  readonly id: string;
+  drawShapes(shapes: OverlayShape[]): Promise<void>;
+  drawText(texts: OverlayText[]): Promise<void>;
+  clear(): Promise<void>;
+  onMouseClick(callback: (point: Point) => void): void;
+  onMouseMove(callback: (point: Point) => void): void;
+  onKeyPress(callback: (key: string) => void): void;
+  show(): Promise<void>;
+  hide(): Promise<void>;
+  close(): Promise<void>;
+  isVisible(): boolean;
+  getBounds(): Rectangle;
+}
+
+export interface OverlayService {
+  createOverlay(options?: OverlayOptions): Promise<OverlayWindow>;
+  getOverlay(id: string): OverlayWindow | undefined;
+  getAllOverlays(): OverlayWindow[];
+  closeAllOverlays(): Promise<void>;
+}
 
 class OverlayWindowImpl implements OverlayWindow {
   readonly id: string;
@@ -176,15 +195,8 @@ class OverlayWindowImpl implements OverlayWindow {
 class OverlayServiceImpl implements OverlayService {
   private overlays = new Map<string, OverlayWindowImpl>();
 
-  async createOverlay(options: OverlayOptions = {}): Promise<OverlayWindow> {
-    // Validate options with Zod
-    let validatedOptions: z.infer<typeof OverlayOptionsSchema>;
-    try {
-      validatedOptions = OverlayOptionsSchema.parse(options);
-    } catch (error) {
-      console.error('[OverlayService] Invalid overlay options:', error);
-      throw new Error(`Invalid overlay options: ${error instanceof z.ZodError ? error.message : String(error)}`);
-    }
+  async createOverlay(options?: OverlayOptions): Promise<OverlayWindow> {
+    let validatedOptions = OverlayOptionsSchema.parse(options);
     
     const overlayId = randomUUID();
     const config = getConfig();

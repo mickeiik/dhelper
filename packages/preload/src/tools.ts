@@ -1,14 +1,14 @@
-import type { ToolMetadata } from '@app/types';
+import { ToolMetadataSchema } from '@app/schemas';
+import { ToolId, ToolInput } from '@app/types/src/tool.js';
 import { ipcRenderer } from 'electron';
 import { z } from 'zod';
+
+type ToolMetadata = z.infer<typeof ToolMetadataSchema>
 
 export async function getTools(): Promise<ToolMetadata[]> {
   return await ipcRenderer.invoke('get-tools')
 }
 
-export async function runTool(toolId: string, inputs: Record<string, unknown>): Promise<unknown> {
-  // Validate inputs before sending to main process
-  const validatedToolId = z.string().min(1).parse(toolId);
-  const validatedInputs = z.record(z.unknown()).parse(inputs);
-  return await ipcRenderer.invoke('run-tool', validatedToolId, validatedInputs)
+export async function runTool<T extends ToolId>(toolId: T, inputs: ToolInput<T>): Promise<unknown> {
+  return await ipcRenderer.invoke('run-tool', toolId, inputs)
 }

@@ -10,7 +10,7 @@ export type {
 
 // Re-export storage classes
 export { 
-  SqliteTemplateStorage
+  TemplateStorage
 } from './storage.js';
 
 // Re-export main manager class

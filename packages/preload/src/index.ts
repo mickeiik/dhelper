@@ -16,46 +16,26 @@ import {
   runWorkflow,
   runExampleWorkflow,
   runCustomWorkflow,
-  onWorkflowProgress,
-  clearWorkflowCache,
-  clearAllCaches,
-  getCacheStats,
   saveWorkflow,
   loadWorkflow,
   deleteWorkflow,
   listWorkflows,
   workflowExists,
-  getStorageStats,
   clearAllWorkflows,
-  exportWorkflow,
-  importWorkflow,
-  duplicateWorkflow,
-  searchWorkflows,
-  validateSemanticReferences,
-  resolveSemanticReferences
+  searchWorkflows
 } from './workflow.js';
 
 export {
   runWorkflow,
   runExampleWorkflow,
   runCustomWorkflow,
-  onWorkflowProgress,
-  clearWorkflowCache,
-  clearAllCaches,
-  getCacheStats,
   saveWorkflow,
   loadWorkflow,
   deleteWorkflow,
   listWorkflows,
   workflowExists,
-  getStorageStats,
   clearAllWorkflows,
-  exportWorkflow,
-  importWorkflow,
-  duplicateWorkflow,
-  searchWorkflows,
-  validateSemanticReferences,
-  resolveSemanticReferences
+  searchWorkflows
 };
 
 import {
@@ -65,17 +45,7 @@ import {
   updateTemplate,
   deleteTemplate,
   searchTemplates,
-  getTemplatesByCategory,
-  getTemplatesByTags,
-  getTemplateCategories,
-  getAllTemplateTags,
-  matchTemplates,
-  recordTemplateUsage,
-  resolveTemplateReference,
-  getTemplateStats,
-  exportTemplate,
-  importTemplate,
-  createTemplateFromScreenshot
+  getTemplateCategories
 } from './templates.js';
 
 export {
@@ -85,15 +55,5 @@ export {
   updateTemplate,
   deleteTemplate,
   searchTemplates,
-  getTemplatesByCategory,
-  getTemplatesByTags,
-  getTemplateCategories,
-  getAllTemplateTags,
-  matchTemplates,
-  recordTemplateUsage,
-  resolveTemplateReference,
-  getTemplateStats,
-  exportTemplate,
-  importTemplate,
-  createTemplateFromScreenshot
+  getTemplateCategories
 };

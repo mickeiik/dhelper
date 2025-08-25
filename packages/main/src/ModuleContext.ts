@@ -1,4 +1,4 @@
-import type { OverlayService } from '@app/types';
+import type { OverlayService } from './modules/OverlayModule.js';
 
 export type ModuleContext = {
   readonly app: Electron.App;

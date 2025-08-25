@@ -1,6 +1,6 @@
 import { AppModule } from './AppModule.js';
 import { ModuleContext } from './ModuleContext.js';
-import type { OverlayService } from '@app/types';
+import type { OverlayService } from './modules/OverlayModule.js';
 import { app } from 'electron';
 
 class ModuleRunner {

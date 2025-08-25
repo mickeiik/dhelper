@@ -3,10 +3,7 @@ import { ReactFlow, applyNodeChanges, applyEdgeChanges, addEdge, OnNodesChange, 
 import '@xyflow/react/dist/style.css';
 import { ToolNode, ToolNodeData } from '@/components/workflow/tool-node';
 import type { ComponentType } from 'react';
-import { ToolPalette } from '@/components/workflow/tool-palette';
-import { useTools } from '@/hooks/useElectronAPI';
 import type { Workflow, WorkflowStep } from '@app/types';
-import { runCustomWorkflow } from '@app/preload';
 
 const nodeTypes: Record<string, ComponentType<any>> = {
     toolNode: ToolNode,
@@ -16,7 +13,6 @@ function WorkflowPage() {
     const [nodes, setNodes] = useState<Node[]>([]);
     const [edges, setEdges] = useState<Edge[]>([]);
     const { screenToFlowPosition } = useReactFlow();
-    const { tools } = useTools();
 
     const onNodesChange: OnNodesChange = useCallback(
         (changes) => setNodes((nodesSnapshot) => applyNodeChanges(changes, nodesSnapshot)),
@@ -113,35 +109,35 @@ function WorkflowPage() {
     const onDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
         event.preventDefault();
 
-        const position = screenToFlowPosition({
-            x: event.clientX,
-            y: event.clientY,
-        });
+        // const position = screenToFlowPosition({
+        //     x: event.clientX,
+        //     y: event.clientY,
+        // });
 
         try {
             const data = event.dataTransfer.getData('application/reactflow');
             if (!data) return;
 
-            const { toolId } = JSON.parse(data);
-            const tool = tools.find(t => t.id === toolId);
-            if (!tool) return;
+            // const { toolId } = JSON.parse(data);
+            // const tool = tools.find((t:Record<string, string>) => t.id === toolId);
+            // if (!tool) return;
 
-            const newNode: Node = {
-                id: `${toolId}-${Date.now()}`,
-                type: 'toolNode',
-                position,
-                data: {
-                    toolId: tool.id,
-                    toolMetadata: tool,
-                    inputs: {},
-                } as ToolNodeData,
-            };
+            // const newNode: Node = {
+            //     id: `${toolId}-${Date.now()}`,
+            //     type: 'toolNode',
+            //     position,
+            //     data: {
+            //         toolId: tool.id,
+            //         toolMetadata: tool,
+            //         inputs: {},
+            //     } as ToolNodeData,
+            // };
 
-            setNodes((nds) => [...nds, newNode]);
+            // setNodes((nds) => [...nds, newNode]);
         } catch (error) {
             console.error('Failed to parse drop data:', error);
         }
-    }, [screenToFlowPosition, tools])
+    }, [screenToFlowPosition])
 
     const getWorkflowFromNodes = (nodes: Node[], edges: Edge[]): Workflow => {
         // Only include nodes that are connected (have at least one edge)
@@ -225,14 +221,13 @@ function WorkflowPage() {
     const test = async() => {
         //For testing, do not remove.
         console.log('Workflow:', getWorkflowFromNodes(nodes, edges));
-        console.log(await runCustomWorkflow(getWorkflowFromNodes(nodes, edges)))
     }
 
     return (
         <div className='flex h-full'>
             <button onClick={test}>Test</button> {/* Do Not Remove */}
             {/* Tool Palette Sidebar */}
-            <ToolPalette tools={tools} />
+            {/* <ToolPalette tools={tools} /> */}
 
             {/* Workflow Canvas */}
             <div className="flex-1 h-full">

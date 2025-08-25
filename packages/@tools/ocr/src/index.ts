@@ -2,7 +2,6 @@
 import { OcrInputSchema, OcrOutputSchema, ToolResult } from '@app/schemas';
 import { Tool } from '@app/tools';
 import { z } from 'zod';
-import type { ToolInputField, ToolOutputField } from '@app/types';
 import Tesseract from 'tesseract.js';
 
 // Type aliases for convenience

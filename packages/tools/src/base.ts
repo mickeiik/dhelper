@@ -2,8 +2,8 @@ import { z } from 'zod';
 import { ResultSchema } from '@app/schemas';
 
 export abstract class Tool<
-    TInput extends z.ZodType = z.ZodAny,
-    TOutput extends z.ZodType = z.ZodAny
+    TInput extends z.ZodType,
+    TOutput extends z.ZodType
 > {
     abstract id: string;
     abstract name: string;

@@ -2,24 +2,13 @@
 export * from './base.js';
 
 import type { OverlayService } from '@app/types';
-import { ToolExecutionError, ErrorLogger } from '@app/types';
+import { ToolExecutionError } from '@app/types';
 import { ToolMetadataSchema, ToolResult } from '@app/schemas';
 import { z } from 'zod';
 import { Tool } from './base.js';
 
-/**
- * Tool imports - Add new tools here
- * 
- * To add a new tool:
- * 1. Import your tool class here
- * 2. Add it to the AVAILABLE_TOOLS array below
- */
-import { HelloWorldTool } from '@tools/hello-world';
-import { TesseractOcrTool } from '@tools/ocr';
-import { ScreenRegionSelectorTool } from '@tools/screen-region-selector';
-import { ScreenshotTool } from '@tools/screenshot';
-import { TemplateMatcherTool } from '@tools/template-matcher';
-import { ClickTool } from '@tools/click';
+// Tool classes are now loaded dynamically to avoid circular dependencies
+// Individual tools are imported at runtime by the main process
 
 interface ToolRegistration {
     tool?: Tool<z.ZodType, z.ZodType>;
@@ -28,23 +17,28 @@ interface ToolRegistration {
     loading: boolean;
 }
 
-/**
- * Registry of all available tools
- * 
- * Add your imported tool class to this array to make it available in the system.
- * Tools are automatically instantiated and registered when the ToolManager initializes.
- */
-const AVAILABLE_TOOLS = [
-    HelloWorldTool,
-    TesseractOcrTool,
-    ScreenRegionSelectorTool,
-    ScreenshotTool,
-    TemplateMatcherTool,
-    ClickTool
-] as const;
+// Tools are now registered via dynamic imports passed to autoDiscoverTools()
 
-// Auto-generated types from AVAILABLE_TOOLS
-type ToolInstances = InstanceType<typeof AVAILABLE_TOOLS[number]>;
+// Import types for type generation only (these won't create circular dependency at runtime)
+import type { HelloWorldTool } from '@tools/hello-world';
+import type { TesseractOcrTool } from '@tools/ocr';
+import type { ScreenRegionSelectorTool } from '@tools/screen-region-selector';
+import type { ScreenshotTool } from '@tools/screenshot';
+import type { TemplateMatcherTool } from '@tools/template-matcher';
+import type { ClickTool } from '@tools/click';
+
+// Type-only array for generating types (not used at runtime)
+type AVAILABLE_TOOLS_TYPES = readonly [
+    typeof HelloWorldTool,
+    typeof TesseractOcrTool,
+    typeof ScreenRegionSelectorTool,
+    typeof ScreenshotTool,
+    typeof TemplateMatcherTool,
+    typeof ClickTool
+];
+
+// Auto-generated types from AVAILABLE_TOOLS_TYPES
+type ToolInstances = InstanceType<AVAILABLE_TOOLS_TYPES[number]>;
 
 // Auto-generated tool registry types
 export type ToolId = ToolInstances['id'];
@@ -61,13 +55,13 @@ export class ToolManager {
     private tools = new Map<string, ToolRegistration>();
     private overlayService?: OverlayService;
     private templateManager?: import('@app/types').TemplateManager;
-    private logger = new ErrorLogger('ToolManager');
     private loadingPromises = new Map<string, Promise<Tool<z.ZodType, z.ZodType>>>();
 
-    async autoDiscoverTools() {
-        // Register all available tools
-        for (const ToolClass of AVAILABLE_TOOLS) {
+    async autoDiscoverTools(toolLoaders: readonly (() => Promise<new() => Tool<z.ZodType, z.ZodType>>)[]) {
+        // Register all available tools using dynamic imports
+        for (const toolLoader of toolLoaders) {
             try {
+                const ToolClass = await toolLoader();
                 const tool = new ToolClass();
                 
                 // Validate tool structure at registration time
@@ -91,14 +85,10 @@ export class ToolManager {
                 });
             } catch (error) {
                 const errorMessage = error instanceof z.ZodError 
-                    ? `Tool ${ToolClass.name} failed validation: ${error.message}`
-                    : `Failed to instantiate tool ${ToolClass.name}`;
+                    ? `Tool failed validation: ${error.message}`
+                    : `Failed to load or instantiate tool`;
                     
-                this.logger.logError(new ToolExecutionError(
-                    errorMessage,
-                    ToolClass.name,
-                    { originalError: error }
-                ));
+                console.error(`[ToolManager] ${errorMessage}`, error);
             }
         }
     }
@@ -170,7 +160,7 @@ export class ToolManager {
                         : `Failed to load tool ${id}`;
                         
                     const toolError = new ToolExecutionError(errorMessage, id, { originalError: error });
-                    this.logger.logError(toolError);
+                    console.error(`[ToolManager] ${toolError.message}`, toolError);
                     throw toolError;
                 }
             })();
@@ -200,7 +190,7 @@ export class ToolManager {
             return await tool.execute(inputs);
         } catch (error) {
             const toolError = error instanceof ToolExecutionError ? error : new ToolExecutionError(`Tool "${id}" execution failed`, id, { originalError: error, inputs });
-            this.logger.logError(toolError);
+            console.error(`[ToolManager] ${toolError.message}`, toolError);
             throw toolError;
         }
     }
@@ -230,7 +220,7 @@ export class ToolManager {
             registration.initialized = true;
         } catch (error) {
             const toolError = new ToolExecutionError(`Failed to initialize tool "${id}"`, id, { originalError: error });
-            this.logger.logError(toolError);
+            console.error(`[ToolManager] ${toolError.message}`, toolError);
             throw toolError;
         }
     }
@@ -243,11 +233,7 @@ export class ToolManager {
                 const tool = await this.ensureToolLoaded(id);
                 tools.push(tool);
             } catch (error) {
-                this.logger.logError(new ToolExecutionError(
-                    `Failed to load tool ${id}`,
-                    id,
-                    { originalError: error }
-                ));
+                console.error(`[ToolManager] Failed to load tool ${id}`, error);
             }
         }
         
@@ -271,11 +257,7 @@ export class ToolManager {
                     examples: tool.examples
                 }));
             } catch (error) {
-                this.logger.logError(new ToolExecutionError(
-                    `Failed to load metadata for tool ${id}`,
-                    id,
-                    { originalError: error }
-                ));
+                console.error(`[ToolManager] Failed to load metadata for tool ${id}`, error);
             }
         }
         

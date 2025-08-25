@@ -13,6 +13,3 @@ export class WorkflowRunner {
     return await workflow.execute(this.toolManager);
   }
 }
-
-// Also re-export the main class
-export { Workflow };

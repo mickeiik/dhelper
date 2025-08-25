@@ -3,7 +3,7 @@ import { app } from 'electron';
 import { join } from 'node:path';
 import { existsSync } from 'node:fs';
 import { writeFile, readFile, mkdir, unlink, readdir } from 'node:fs/promises';
-import { WorkflowSchema, StorageListItemSchema } from '@app/schemas';
+import { WorkflowSchema, WorkflowStorageListItemSchema } from '@app/schemas';
 
 // Simple stored workflow - just the workflow + timestamps
 const StoredWorkflowSchema = WorkflowSchema.extend({
@@ -13,7 +13,7 @@ const StoredWorkflowSchema = WorkflowSchema.extend({
 
 type Workflow = z.infer<typeof WorkflowSchema>;
 type StoredWorkflow = z.infer<typeof StoredWorkflowSchema>;
-type StorageListItem = z.infer<typeof StorageListItemSchema>;
+type WorkflowStorageListItem = z.infer<typeof WorkflowStorageListItemSchema>;
 
 export class WorkflowStorage {
   private storageDir: string;
@@ -87,7 +87,7 @@ export class WorkflowStorage {
     return true;
   }
 
-  async list(): Promise<StorageListItem[]> {
+  async list(): Promise<WorkflowStorageListItem[]> {
     await this.initialize();
     
     if (!existsSync(this.storageDir)) {
@@ -96,7 +96,7 @@ export class WorkflowStorage {
 
     const files = await readdir(this.storageDir);
     const jsonFiles = files.filter(file => file.endsWith('.json'));
-    const items: StorageListItem[] = [];
+    const items: WorkflowStorageListItem[] = [];
 
     for (const file of jsonFiles) {
       try {
@@ -152,7 +152,7 @@ export class WorkflowStorage {
     await this.save(duplicated);
   }
 
-  async search(query: string): Promise<StorageListItem[]> {
+  async search(query: string): Promise<WorkflowStorageListItem[]> {
     const items = await this.list();
     const lowerQuery = query.toLowerCase();
 

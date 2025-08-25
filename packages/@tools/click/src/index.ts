@@ -1,6 +1,6 @@
-import type { ToolInputField, ToolOutputField, ToolInitContext, OverlayService, OverlayShape } from '@app/types';
+import type { ToolInitContext, OverlayService } from '@app/types';
 import { OVERLAY_STYLES } from '@app/types';
-import { ClickInputSchema, ClickOutputSchema, ToolResult, PointSchema } from '@app/schemas';
+import { OverlayShapeSchema, ClickInputSchema, ClickOutputSchema, ToolResult, PointSchema } from '@app/schemas';
 import { mouse, Button, sleep } from '@nut-tree-fork/nut-js';
 import { Tool } from '@app/tools';
 import { z } from 'zod';
@@ -9,7 +9,7 @@ import { z } from 'zod';
 type ClickToolInput = z.infer<typeof ClickInputSchema>;
 type ClickToolOutput = z.infer<typeof ClickOutputSchema>;
 type ClickResult = ToolResult<typeof ClickOutputSchema>;
-
+type OverlayShape = z.infer<typeof OverlayShapeSchema>;
 export class ClickTool extends Tool<typeof ClickInputSchema, typeof ClickOutputSchema> {
   id = 'click' as const;
   name = 'Click Tool';
