@@ -5,30 +5,7 @@ import { join } from 'node:path';
 import { rm, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import z from 'zod';
-import { WorkflowSchema } from '@app/schemas';
-import { Tool } from '@app/tools';
-
-// Mock tool class for testing
-const MockInputSchema = z.object({
-  param: z.string()
-});
-
-const MockOutputSchema = z.object({
-  result: z.string()
-});
-
-class MockToolClass extends Tool<typeof MockInputSchema, typeof MockOutputSchema> {
-  id = 'hello-world' as const;
-  name = 'Mock Tool';
-  description = 'A mock tool for testing';
-  
-  inputSchema = MockInputSchema;
-  outputSchema = MockOutputSchema;
-  
-  async executeValidated(input: z.infer<typeof MockInputSchema>) {
-    return { success: true as const, data: { result: `Hello ${input.param}` } };
-  }
-}
+import { WorkflowSchema } from '../../../schemas/src';
 
 describe('WorkflowStorage', () => {
   let storage: WorkflowStorage;
