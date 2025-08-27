@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import _ from 'lodash';
 import { ToolManager } from '@app/tools';
-import { WorkflowSchema, StepResultSchema, WorkflowStep, WorkflowResultSchema, WorkflowStepInputSchema, WorkflowExecutionData } from '@app/schemas';
+import { WorkflowSchema, StepResultSchema, WorkflowStep, WorkflowResultSchema, WorkflowStepInputSchema } from '@app/schemas';
 
 type StepResult = z.infer<typeof StepResultSchema>;
 type WorkflowResult = z.infer<typeof WorkflowResultSchema>;

@@ -17,6 +17,7 @@
     "vite": "7.0.6"
   },
   "dependencies": {
+    "@app/tools": "*",
     "zod": "^4.0.17"
   }
 }

@@ -11,7 +11,8 @@
     "types": ["node"],
     "baseUrl": ".",
     "paths": {
-      "@app/*": ["../*"]
+      "@app/tools": ["../tools"],
+      "@app/schemas": ["../schemas"]
     }
   },
   "include": ["src/**/*.ts", "../../types/**/*.d.ts"],

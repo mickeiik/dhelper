@@ -12,8 +12,7 @@
     }
   },
   "dependencies": {
-    "@app/storage": "*",
-    "@app/templates": "*",
+    "@app/schemas": "*",
     "@app/tools": "*",
     "lodash": "^4.17.21",
     "zod": "^4.0.17"

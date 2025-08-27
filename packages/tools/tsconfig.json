@@ -11,7 +11,8 @@
     "types": ["node"],
     "baseUrl": ".",
     "paths": {
-      "@app/*": ["../*"]
+      "@app/overlay": ["../overlay"],
+      "@app/schemas": ["../schemas"]
     }
   },
   "include": ["src/**/*.ts", "../../types/**/*.d.ts"],
