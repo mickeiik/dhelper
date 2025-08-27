@@ -6,7 +6,29 @@ import { rm, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import z from 'zod';
 import { WorkflowSchema } from '@app/schemas';
+import { Tool } from '@app/tools';
 
+// Mock tool class for testing
+const MockInputSchema = z.object({
+  param: z.string()
+});
+
+const MockOutputSchema = z.object({
+  result: z.string()
+});
+
+class MockToolClass extends Tool<typeof MockInputSchema, typeof MockOutputSchema> {
+  id = 'hello-world' as const;
+  name = 'Mock Tool';
+  description = 'A mock tool for testing';
+  
+  inputSchema = MockInputSchema;
+  outputSchema = MockOutputSchema;
+  
+  async executeValidated(input: z.infer<typeof MockInputSchema>) {
+    return { success: true as const, data: { result: `Hello ${input.param}` } };
+  }
+}
 
 describe('WorkflowStorage', () => {
   let storage: WorkflowStorage;
@@ -41,57 +63,14 @@ describe('WorkflowStorage', () => {
     }
   });
 
-  describe('Constructor and Initialization', () => {
-    test('should create with default directory when no path provided', async () => {
-      const mockStoragePath = join(testDir, 'default');
-
-      const { getPath } = vi.hoisted(() => {
-        return { getPath: vi.fn() }
-      })
-
-      vi.mock('electron', () => ({
-        app: {
-          getPath: getPath
-        }
-      }));
-
-      getPath.mockReturnValue(mockStoragePath)
-
-      const defaultStorage = new WorkflowStorage();
-      await defaultStorage.save(mockWorkflow)
-      expect(existsSync(mockStoragePath)).toBe(true);
-    });
-
-    test('should use correct file paths for workflow storage', async () => {
-      await storage.save(mockWorkflow);
-      // Test that the file exists at the expected location
-      const expectedPath = join(testDir, `${mockWorkflow.id}.json`);
-      console.log('expectedPath:', expectedPath)
-      expect(existsSync(expectedPath)).toBe(true);
-    });
-
-    test('should handle different workflow IDs in file paths', async () => {
-      const workflows = [
-        { ...mockWorkflow, id: 'simple-id' },
-        { ...mockWorkflow, id: 'workflow-with-dashes' },
-        { ...mockWorkflow, id: 'workflow_with_underscores' }
-      ];
-
-      for (const workflow of workflows) {
-        await storage.save(workflow);
-
-        const expectedPath = join(testDir, `${workflow.id}.json`);
-        expect(existsSync(expectedPath)).toBe(true);
-      }
-    });
-  });
-
   describe('Save Method', () => {
     test('should save a valid workflow', async () => {
+      const expectedSavePath = join(testDir, `${mockWorkflow.id}.json`);
+      expect(existsSync(expectedSavePath)).toBe(false);
+
       await storage.save(mockWorkflow);
 
-      const exists = await storage.exists(mockWorkflow.id);
-      expect(exists).toBe(true);
+      expect(existsSync(expectedSavePath)).toBe(true);
     });
 
     test('should reject invalid workflow data', async () => {
@@ -113,6 +92,57 @@ describe('WorkflowStorage', () => {
       await newStorage.save(mockWorkflow);
 
       expect(existsSync(nonExistentDir)).toBe(true);
+    });
+  });
+
+  describe('Constructor and Initialization', () => {
+    test('should create with default directory when no path provided', async () => {
+      const mockStoragePath = join(testDir, 'default');
+
+      const { getPath } = vi.hoisted(() => {
+        return { getPath: vi.fn() }
+      })
+
+      vi.mock('electron', () => ({
+        app: {
+          getPath: getPath
+        }
+      }));
+
+      getPath.mockReturnValue(mockStoragePath)
+
+      expect(existsSync(mockStoragePath)).toBe(false);
+
+      const defaultStorage = new WorkflowStorage();
+      await defaultStorage.save(mockWorkflow)
+      expect(existsSync(mockStoragePath)).toBe(true);
+    });
+
+    test('should use correct file paths for workflow storage', async () => {
+      const expectedPath = join(testDir, `${mockWorkflow.id}.json`);
+      expect(existsSync(expectedPath)).toBe(false);
+
+      await storage.save(mockWorkflow);
+      // Test that the file exists at the expected location
+
+      expect(existsSync(expectedPath)).toBe(true);
+    });
+
+    test('should handle different workflow IDs in file paths', async () => {
+      const workflows = [
+        { ...mockWorkflow, id: 'simple-id' },
+        { ...mockWorkflow, id: 'workflow-with-dashes' },
+        { ...mockWorkflow, id: 'workflow_with_underscores' }
+      ];
+
+      for (const workflow of workflows) {
+        const expectedPath = join(testDir, `${workflow.id}.json`);
+        expect(existsSync(expectedPath)).toBe(false);
+
+        await storage.save(workflow);
+
+        expect(existsSync(expectedPath)).toBe(true);
+      }
     });
   });
 
