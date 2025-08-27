@@ -1,4 +1,3 @@
-// packages/@tools/screenshot/src/index.ts
 import { ScreenshotInputSchema, ScreenshotOutputSchema, ToolResult } from '@app/schemas';
 import { Tool } from '@app/tools';
 import { z } from 'zod';

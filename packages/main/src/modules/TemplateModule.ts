@@ -1,4 +1,3 @@
-// packages/main/src/modules/TemplateModule.ts
 import { ipcMain, protocol } from 'electron';
 import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';

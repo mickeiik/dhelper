@@ -1,4 +1,3 @@
-// packages/renderer/src/hooks/useErrorHandler.ts
 import { useCallback, useState } from 'react';
 
 export interface UseErrorHandlerReturn {

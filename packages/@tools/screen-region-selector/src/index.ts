@@ -1,4 +1,3 @@
-// packages/@tools/screen-region-selector/src/index.ts
 import { ScreenRegionSelectorInputSchema, ScreenRegionSelectorOutputUnionSchema, ToolResult } from '@app/schemas';
 import { Tool } from '@app/tools';
 import { z } from 'zod';
@@ -104,7 +103,7 @@ export class ScreenRegionSelectorTool extends Tool<typeof ScreenRegionSelectorIn
   private async setupCrosshairs(overlay: OverlayWindow): Promise<void> {
     // Add crosshair indicators (will follow mouse via overlay service)
     const shapes: OverlayShape[] = [];
-    const texts: OverlayText[] = [];
+    // const texts: OverlayText[] = [];
 
     // Initial crosshair setup - the overlay service should handle mouse tracking
     shapes.push({

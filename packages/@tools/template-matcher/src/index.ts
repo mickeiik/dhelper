@@ -43,128 +43,6 @@ export class TemplateMatcherTool extends Tool<typeof TemplateMatcherInputSchema,
   private templateManager: TemplateManager | undefined; // Will be injected during initialization
   private overlayService?: OverlayService;
 
-  inputFields: ToolInputField[] = [
-    {
-      name: 'templateIds',
-      type: 'array',
-      description: 'Specific template IDs to match against',
-      required: true,
-      example: ['template-1', 'template-2']
-    },
-    {
-      name: 'threshold',
-      type: 'number',
-      description: 'Minimum confidence threshold (0-1). Lower values may help find scaled templates.',
-      required: false,
-      defaultValue: 0.8,
-      example: 0.7
-    },
-    {
-      name: 'showVisualIndicators',
-      type: 'boolean',
-      description: 'Show visual indicators on screen highlighting the found matches',
-      required: false,
-      defaultValue: false,
-      example: true
-    },
-    {
-      name: 'overlayTimeout',
-      type: 'number',
-      description: 'Auto-dismiss visual overlay after specified milliseconds',
-      required: false,
-      defaultValue: 5000,
-      example: 3000
-    }
-  ];
-
-  outputFields: ToolOutputField[] = [
-    {
-      name: 'result',
-      type: 'array',
-      description: 'Array of template match results - each element contains templateId, confidence, location, and template metadata',
-      example: [
-        {
-          templateId: 'login-button',
-          confidence: 0.95,
-          location: { x: 100, y: 200, width: 120, height: 40 },
-          template: { id: 'login-button', name: 'Login Button', category: 'Buttons' }
-        }
-      ]
-    },
-    {
-      name: 'result[].templateId',
-      type: 'string',
-      description: 'ID of the matched template',
-      example: 'login-button'
-    },
-    {
-      name: 'result[].confidence',
-      type: 'number',
-      description: 'Match confidence score (0-1, where 1 is perfect match)',
-      example: 0.95
-    },
-    {
-      name: 'result[].location',
-      type: 'object',
-      description: 'Location and dimensions of the match on screen',
-      example: { x: 100, y: 200, width: 120, height: 40 }
-    },
-    {
-      name: 'result[].location.x',
-      type: 'number',
-      description: 'X coordinate of top-left corner of the match',
-      example: 100
-    },
-    {
-      name: 'result[].location.y',
-      type: 'number',
-      description: 'Y coordinate of top-left corner of the match',
-      example: 200
-    },
-    {
-      name: 'result[].location.width',
-      type: 'number',
-      description: 'Width of the matched region',
-      example: 120
-    },
-    {
-      name: 'result[].location.height',
-      type: 'number',
-      description: 'Height of the matched region',
-      example: 40
-    },
-    {
-      name: 'result[].template',
-      type: 'object',
-      description: 'Template metadata including name, category, and other properties',
-      example: { id: 'login-button', name: 'Login Button', category: 'Buttons' }
-    },
-    {
-      name: 'result[].template.id',
-      type: 'string',
-      description: 'Template ID',
-      example: 'login-button'
-    },
-    {
-      name: 'result[].template.name',
-      type: 'string',
-      description: 'Human-readable template name',
-      example: 'Login Button'
-    },
-    {
-      name: 'result[].template.category',
-      type: 'string',
-      description: 'Template category',
-      example: 'Buttons'
-    },
-    {
-      name: 'result[].template.detectedScale',
-      type: 'number',
-      description: 'Scale factor used for successful match (optional runtime property)',
-      example: 1.33
-    }
-  ];
-
   examples = [
     {
       name: 'Match Specific Templates by ID',
@@ -263,11 +141,6 @@ export class TemplateMatcherTool extends Tool<typeof TemplateMatcherInputSchema,
 
       // Sort by confidence (highest first)
       results.sort((a, b) => b.confidence - a.confidence);
-
-      // Update usage statistics
-      for (const result of results) {
-        await this.templateManager?.recordTemplateUsage?.(result.templateId, true);
-      }
 
       // Show visual indicators if requested
       if (input.showVisualIndicators && results.length > 0) {
@@ -471,16 +344,6 @@ export class TemplateMatcherTool extends Tool<typeof TemplateMatcherInputSchema,
 
     if (matches.length > 0) {
       const bestMatch = matches[0];
-      const bestScale = bestMatch.template.detectedScale;
-
-      // Cache the successful scale if it's not already cached
-      if (bestScale && (!templateMetadata.scaleCache || templateMetadata.scaleCache[currentResolution] !== bestScale)) {
-        try {
-          await this.templateManager?.updateScaleCache?.(templateMetadata.id, currentResolution, bestScale);
-        } catch (error) {
-          console.warn(`[Template Matcher] Failed to cache scale: ${error}`);
-        }
-      }
 
       return [bestMatch];
     }

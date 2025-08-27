@@ -1,4 +1,3 @@
-// packages/tools/src/index.ts
 import { z } from 'zod';
 import { Tool } from './base.js';
 import type { OverlayService } from '@app/overlay';
@@ -19,7 +18,7 @@ import type { ScreenRegionSelectorTool } from '@tools/screen-region-selector';
 import type { ScreenshotTool } from '@tools/screenshot';
 import type { TemplateMatcherTool } from '@tools/template-matcher';
 import type { ClickTool } from '@tools/click';
-import { TemplateManager } from '@app/templates/src/manager.js';
+import { TemplateManager } from '@app/templates';
 
 // Type-only array for generating types (not used at runtime)
 type AVAILABLE_TOOLS_TYPES = readonly [

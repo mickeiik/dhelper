@@ -50,6 +50,20 @@ describe('WorkflowStorage', () => {
       expect(existsSync(expectedSavePath)).toBe(true);
     });
 
+    test('should save a valid workflow and preserve creationDate', async () => {
+      await storage.save(mockWorkflow);
+
+      const savedWorkflow = await storage.load(mockWorkflow.id);
+
+      await storage.save({ ...mockWorkflow, name: 'newName' });
+
+      const updatedWorkflow = await storage.load(mockWorkflow.id);
+
+      expect(savedWorkflow?.name).not.toBe(updatedWorkflow?.name)
+      expect(savedWorkflow?.updatedAt).not.toBe(updatedWorkflow?.updatedAt)
+      expect(savedWorkflow?.createdAt).toStrictEqual(updatedWorkflow?.createdAt)
+    });
+
     test('should reject invalid workflow data', async () => {
       const invalidWorkflow = {
         id: '', // Invalid - empty id
@@ -176,6 +190,13 @@ describe('WorkflowStorage', () => {
       const list = await storage.list();
       expect(list).toEqual([]);
     });
+
+    test('should return empty array when workflow folder does not exist', async () => {
+      storage['initialize'] = async () => { }; //Initialize private method will create the folder before listing
+      await rm(testDir, { recursive: true });
+      const list = await storage.list();
+      expect(list).toEqual([]);
+    })
 
     test('should return list of workflows', async () => {
       const workflow2 = { ...mockWorkflow, id: 'workflow-2', name: 'Second Workflow' };

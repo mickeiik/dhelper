@@ -1,9 +1,7 @@
-// packages/overlay/src/index.ts
 import {
   OverlayOptionsSchema,
   OverlayShapeSchema,
   OverlayTextSchema,
-  CreateOverlayResultSchema,
   OverlayMouseEventSchema,
   OverlayKeyEventSchema
 } from '@app/schemas';

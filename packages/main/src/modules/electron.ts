@@ -1,4 +1,3 @@
-// packages/main/src/modules/electron.ts
 import { app, BrowserWindow } from 'electron';
 import type { AppInitConfig } from '../AppInitConfig.js';
 

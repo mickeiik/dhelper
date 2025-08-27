@@ -1,4 +1,3 @@
-// packages/main/src/modules/security.ts
 import { shell, app } from 'electron';
 import type { AppInitConfig } from '../AppInitConfig.js';
 

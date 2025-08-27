@@ -36,8 +36,8 @@ export const OverlayTextSchema = z.object({
 // Overlay options schema with defaults
 export const OverlayOptionsSchema = z.object({
     bounds: RectangleSchema.optional(),
-    transparent: z.boolean().default(true),
-    alwaysOnTop: z.boolean().default(true),
+    transparent: z.boolean().default(true).optional(),
+    alwaysOnTop: z.boolean().default(true).optional(),
     timeout: z.number().min(0).max(300000).optional(), // Max 5 minutes
     clickThrough: z.boolean().default(false),
     showInstructions: z.boolean().default(false),

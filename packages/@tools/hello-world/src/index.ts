@@ -1,4 +1,3 @@
-// packages/@tools/hello-world/src/index.ts
 import { HelloWorldInputSchema, HelloWorldOutputSchema, ToolResult } from '@app/schemas';
 import { Tool } from '@app/tools';
 import { z } from 'zod';

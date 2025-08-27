@@ -1,6 +1,6 @@
 import z from 'zod';
 import { ipcRenderer } from 'electron';
-import { CreateTemplateInputSchema, TemplateSchema, UpdateTemplateInputSchema } from '@app/schemas/src/template.js';
+import { CreateTemplateInputSchema, TemplateSchema, UpdateTemplateInputSchema } from '@app/schemas';
 
 type Template = z.infer<typeof TemplateSchema>;
 type CreateTemplateInput = z.infer<typeof CreateTemplateInputSchema>;

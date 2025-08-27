@@ -7,14 +7,7 @@ import { randomUUID } from 'node:crypto';
 import sharp from 'sharp';
 import { TemplateSchema, CreateTemplateInputSchema, UpdateTemplateInputSchema } from '@app/schemas';
 
-// Simple stored template - just the template + timestamps
-const StoredTemplateSchema = TemplateSchema.extend({
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
-
 type Template = z.infer<typeof TemplateSchema>;
-type StoredTemplate = z.infer<typeof StoredTemplateSchema>;
 type CreateTemplateInput = z.infer<typeof CreateTemplateInputSchema>;
 type UpdateTemplateInput = z.infer<typeof UpdateTemplateInputSchema>;
 

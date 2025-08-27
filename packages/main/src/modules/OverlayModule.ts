@@ -1,4 +1,3 @@
-// packages/main/src/modules/OverlayModule.ts
 import { createOverlayService, type OverlayService, type OverlayConfig } from '@app/overlay';
 import { getConfig } from '../config/index.js';
 

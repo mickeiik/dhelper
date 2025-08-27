@@ -1,4 +1,3 @@
-// packages/@tools/ocr/src/index.ts
 import { OcrInputSchema, OcrOutputSchema, ToolResult } from '@app/schemas';
 import { Tool } from '@app/tools';
 import { z } from 'zod';

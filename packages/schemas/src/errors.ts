@@ -21,7 +21,7 @@ export const ResultSchema = <T extends z.ZodType, E extends z.ZodType = typeof D
     errorSchema?: E
 ) => z.discriminatedUnion('success', [
     z.object({ success: z.literal(true), data: dataSchema }),
-    z.object({ success: z.literal(false), error: errorSchema })
+    z.object({ success: z.literal(false), error: errorSchema || DHelperErrorSchema })
 ]);
 
 // Helper type for tool results

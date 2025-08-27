@@ -1,4 +1,3 @@
-// packages/main/src/modules/ToolModule.ts
 import { ipcMain, IpcMainInvokeEvent } from 'electron'
 import { ToolId, ToolInput, ToolManager } from '@app/tools'
 import type { OverlayService } from './OverlayModule.js';

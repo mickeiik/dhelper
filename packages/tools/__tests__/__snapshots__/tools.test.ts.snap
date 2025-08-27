@@ -1,0 +1,84 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Tool Base Class > Tool Execution > should validate input schema 1`] = `
+{
+  "error": {
+    "code": "TOOL_EXECUTION_ERROR",
+    "details": {
+      "originalError": [ZodError: [
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "message"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  }
+]],
+    },
+    "message": "[
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "message"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  }
+]",
+  },
+  "success": false,
+}
+`;
+
+exports[`ToolManager > Async Tool Loading > should throw if a async loaded tool hase a wrong ToolMetadataSche 1`] = `
+[MockFunction error] {
+  "calls": [
+    [
+      "[ToolManager] Tool mock-tool failed validation after loading: [
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "name"
+    ],
+    "message": "Invalid input: expected string, received number"
+  }
+]",
+      [Error: Tool mock-tool failed validation after loading: [
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "name"
+    ],
+    "message": "Invalid input: expected string, received number"
+  }
+]],
+    ],
+    [
+      "[ToolManager] Failed to load tool mock-tool",
+      [Error: Tool mock-tool failed validation after loading: [
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "name"
+    ],
+    "message": "Invalid input: expected string, received number"
+  }
+]],
+    ],
+  ],
+  "results": [
+    {
+      "type": "return",
+      "value": undefined,
+    },
+    {
+      "type": "return",
+      "value": undefined,
+    },
+  ],
+}
+`;

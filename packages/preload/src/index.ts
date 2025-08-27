@@ -1,4 +1,3 @@
-// packages/preload/src/index.ts
 import { sha256sum } from './nodeCrypto.js';
 import { versions } from './versions.js';
 import { ipcRenderer } from 'electron';

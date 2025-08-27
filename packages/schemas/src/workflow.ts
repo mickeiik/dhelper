@@ -23,17 +23,6 @@ export const WorkflowStepInputSchema: z.ZodType<any> = z.lazy(() =>
     ])
 );
 
-// Factory to create strongly-typed workflow step schema for specific tools
-export function createWorkflowStepSchema<T extends ToolId>(toolId: T) {
-    return z.object({
-        id: z.string().min(1),
-        toolId: z.literal(toolId),
-        inputs: WorkflowStepInputSchema,
-        onError: z.enum(['stop', 'continue']).default('stop'),
-        delay: z.number().min(0).optional(),
-    });
-}
-
 // Step execution metadata
 const StepExecutionMetadata = z.object({
     stepId: z.string(),

@@ -1,4 +1,3 @@
-// packages/preload/src/workflow.ts
 import { ipcRenderer } from 'electron';
 import { WorkflowStorageListItemSchema, WorkflowSchema } from '@app/schemas';
 import { z } from 'zod';
