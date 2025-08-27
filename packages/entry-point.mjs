@@ -1,23 +1,23 @@
-import {fileURLToPath} from 'node:url';
-import {join, dirname} from 'node:path';
-import {writeFileSync} from 'node:fs';
-import {app, dialog} from 'electron';
+import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+import { writeFileSync } from 'node:fs';
+import { dialog } from 'electron';
 
 // Configure OpenCV environment variables FIRST before any other imports
 if (process.env.NODE_ENV !== 'development') {
   const resourcesPath = process.resourcesPath;
   const opencvPath = join(resourcesPath, 'opencv');
-  
+
   // Set opencv4nodejs configuration environment variables
   process.env.OPENCV4NODEJS_DISABLE_AUTOBUILD = '1';
   process.env.OPENCV_INCLUDE_DIR = join(opencvPath, 'include');
   process.env.OPENCV_LIB_DIR = join(opencvPath, 'lib');
   process.env.OPENCV_BIN_DIR = join(opencvPath, 'bin');
-  
+
   // Add OpenCV bin directory to PATH so DLLs can be found at runtime
   const currentPath = process.env.PATH || '';
   process.env.PATH = `${join(opencvPath, 'bin')};${currentPath}`;
-  
+
   console.log('OpenCV configured for production:', {
     OPENCV_BIN_DIR: process.env.OPENCV_BIN_DIR,
     OPENCV_LIB_DIR: process.env.OPENCV_LIB_DIR,
@@ -27,13 +27,13 @@ if (process.env.NODE_ENV !== 'development') {
 }
 
 // Import main app AFTER environment variables are set
-import {initApp} from '@app/main';
+import { initApp } from '@app/main';
 
 // Always enable error logging, even in production
 function showAndExit(...args) {
   const errorMsg = args.join(' ');
   console.error(errorMsg);
-  
+
   // Write error to log file in production
   if (process.env.NODE_ENV !== 'development') {
     try {

@@ -47,6 +47,7 @@
     "playwright": "^1.54.1"
   },
   "dependencies": {
+    "@app/main": "*",
     "@nut-tree-fork/nut-js": "^4.2.6",
     "@u4/opencv-build": "^1.1.1",
     "@u4/opencv4nodejs": "^7.1.2",

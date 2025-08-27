@@ -18,7 +18,7 @@ export default /** @type import('electron-builder').Configuration */
     '**/detect-libc/**',
     '**/sharp/**',
     '**/packages/overlay/**',
-    '**/sqlite3/**'
+    // '**/sqlite3/**'
   ],
   files: [
     // '**/*',
