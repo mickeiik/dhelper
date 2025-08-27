@@ -1,6 +1,4 @@
 import { ipcMain, protocol } from 'electron';
-import { readFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
 import { TemplateManager } from '@app/templates';
 import { TemplateSchema, CreateTemplateInputSchema, UpdateTemplateInputSchema } from '@app/schemas';
 import { z } from 'zod';
@@ -23,25 +21,24 @@ export function initializeTemplates() {
           return new Response('Invalid URL', { status: 400 });
         }
 
-        let filePath: string;
+        let result: { fileData: Buffer; exists: boolean };
         
         if (type === 'image') {
-          filePath = templateManager.getAbsoluteImagePath(templateId);
+          result = await templateManager.getImageData(templateId);
         } else if (type === 'thumbnail') {
-          filePath = templateManager.getAbsoluteThumbnailPath(templateId);
+          result = await templateManager.getThumbnailData(templateId);
         } else {
           return new Response('Invalid URL', { status: 400 });
         }
 
-        if (!existsSync(filePath)) {
+        if (!result.exists) {
           return new Response('File not found', { status: 404 });
         }
 
-        const fileData = await readFile(filePath);
-        return new Response(new Uint8Array(fileData), {
+        return new Response(new Uint8Array(result.fileData), {
           headers: {
             'Content-Type': 'image/png',
-            'Content-Length': fileData.length.toString()
+            'Content-Length': result.fileData.length.toString()
           }
         });
       } catch (error) {

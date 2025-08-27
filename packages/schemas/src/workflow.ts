@@ -45,7 +45,7 @@ export const WorkflowStepSchema = z.object({
     onError: z.enum(['stop', 'continue']).default('stop'),
     delay: z.number().min(0).optional(),
     lastSuccessResult: StepResultSchema.optional(),
-    replayLastSuccess: z.boolean().default(false).optional()
+    replayLastSuccess: z.boolean().optional().default(false),
 });
 
 // Generic workflow step (inferred from schema)

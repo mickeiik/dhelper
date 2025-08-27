@@ -108,26 +108,19 @@ export const OcrOutputSchema = z.object({
 
 
 export const TemplateMatcherInputSchema = z.object({
-    templateIds: z.array(z.string()).min(1),
+    image: z.union([
+        z.string().startsWith('data:image/'),
+        z.instanceof(Buffer)
+    ]),
     threshold: z.number().min(0).max(1).optional().default(0.8),
     showVisualIndicators: z.boolean().optional().default(false),
     overlayTimeout: z.number().min(100).max(30000).optional().default(5000)
 });
 
-export const ToolTemplateMatchResultSchema = z.object({
-    templateId: z.string(),
+export const TemplateMatcherOutputSchema = z.object({
     confidence: z.number().min(0).max(1),
     location: RectangleSchema,
-    template: z.object({
-        id: z.string(),
-        name: z.string(),
-        category: z.string().optional(),
-        tags: z.array(z.string()).optional(),
-        detectedScale: z.number().optional()
-    })
 });
-
-export const TemplateMatcherOutputSchema = z.array(ToolTemplateMatchResultSchema);
 
 export const ClickInputSchemaBase = z.union([
     PointSchema,

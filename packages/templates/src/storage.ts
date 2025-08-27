@@ -231,4 +231,28 @@ export class TemplateStorage {
   getAbsoluteThumbnailPath(templateId: string): string {
     return this.getThumbnailPath(templateId);
   }
+
+  async getImageData(templateId: string): Promise<{ fileData: Buffer; exists: boolean }> {
+    await this.initialize();
+    
+    const imagePath = this.getImagePath(templateId);
+    if (!existsSync(imagePath)) {
+      return { fileData: Buffer.alloc(0), exists: false };
+    }
+
+    const fileData = await readFile(imagePath);
+    return { fileData, exists: true };
+  }
+
+  async getThumbnailData(templateId: string): Promise<{ fileData: Buffer; exists: boolean }> {
+    await this.initialize();
+    
+    const thumbnailPath = this.getThumbnailPath(templateId);
+    if (!existsSync(thumbnailPath)) {
+      return { fileData: Buffer.alloc(0), exists: false };
+    }
+
+    const fileData = await readFile(thumbnailPath);
+    return { fileData, exists: true };
+  }
 }

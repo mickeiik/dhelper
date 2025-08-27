@@ -91,4 +91,14 @@ export class TemplateManager {
   getAbsoluteThumbnailPath(templateId: string): string {
     return this.storage.getAbsoluteThumbnailPath(templateId);
   }
+
+  async getImageData(templateId: string): Promise<{ fileData: Buffer; exists: boolean }> {
+    const validatedId = z.string().min(1).parse(templateId);
+    return this.storage.getImageData(validatedId);
+  }
+
+  async getThumbnailData(templateId: string): Promise<{ fileData: Buffer; exists: boolean }> {
+    const validatedId = z.string().min(1).parse(templateId);
+    return this.storage.getThumbnailData(validatedId);
+  }
 }

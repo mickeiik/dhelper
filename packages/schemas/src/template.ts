@@ -27,12 +27,8 @@ export const TemplateSchema = z.object({
 
 // Template match result schema
 export const TemplateMatchResultSchema = z.object({
-  templateId: z.string().min(1),
   confidence: z.number().min(0).max(1),
-  location: RectangleSchema,
-  template: TemplateSchema.extend({
-    detectedScale: z.number().positive().optional()
-  })
+  location: RectangleSchema
 });
 
 // Template creation input schema

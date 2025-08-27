@@ -4,7 +4,6 @@ import { z } from 'zod';
 import type { OverlayService } from '@app/overlay';
 import { OverlayShapeSchema, OverlayTextSchema } from '@app/schemas';
 import { OVERLAY_STYLES } from '@app/overlay';
-import { TemplateManager } from '@app/templates';
 import screenshot from 'screenshot-desktop';
 
 // Configure OpenCV before importing opencv4nodejs
@@ -29,7 +28,6 @@ type TemplateMatcherOutput = z.infer<typeof TemplateMatcherOutputSchema>;
 type TemplateMatcherResult = ToolResult<typeof TemplateMatcherOutputSchema>;
 type OverlayShape = z.infer<typeof OverlayShapeSchema>;
 type OverlayText = z.infer<typeof OverlayTextSchema>;
-type TemplateMatchResult = z.infer<typeof TemplateMatchResultSchema>;
 
 export class TemplateMatcherTool extends Tool<typeof TemplateMatcherInputSchema, typeof TemplateMatcherOutputSchema> {
   id = 'template-matcher' as const;
@@ -40,45 +38,14 @@ export class TemplateMatcherTool extends Tool<typeof TemplateMatcherInputSchema,
   inputSchema = TemplateMatcherInputSchema;
   outputSchema = TemplateMatcherOutputSchema;
 
-  private templateManager: TemplateManager | undefined; // Will be injected during initialization
   private overlayService?: OverlayService;
 
   examples = [
-    {
-      name: 'Match Specific Templates by ID',
-      description: 'Search for specific template IDs on the current screen',
-      inputs: {
-        templateIds: ['login-button', 'close-icon'],
-        threshold: 0.8,
-        showVisualIndicators: true
-      }
-    },
-    {
-      name: 'High Confidence Match',
-      description: 'Search with high confidence threshold for precise matches',
-      inputs: {
-        templateIds: ['submit-button'],
-        threshold: 0.9
-      }
-    },
-    {
-      name: 'Multiple Templates with Indicators',
-      description: 'Match multiple templates and show visual indicators',
-      inputs: {
-        templateIds: ['login-button', 'close-icon', 'submit-button'],
-        threshold: 0.7,
-        showVisualIndicators: true,
-        overlayTimeout: 3000
-      }
-    }
+
   ];
 
   async initialize(context: any) {
     // opencv4nodejs is ready to use immediately
-
-    // Create a new templateManager instance for this tool
-    // The tool should be independent and not rely on the main process
-    this.templateManager = context.templateManager!;
 
     // Store overlay service for visual indicators
     this.overlayService = context.overlayService;
@@ -88,6 +55,7 @@ export class TemplateMatcherTool extends Tool<typeof TemplateMatcherInputSchema,
 
   async executeValidated(input: TemplateMatcherInput): Promise<TemplateMatcherResult> {
     let screenMat: cv.Mat | null = null;
+    let match: TemplateMatcherOutput | null = null;
 
     try {
       // Get screen image by capturing current screen
@@ -100,59 +68,40 @@ export class TemplateMatcherTool extends Tool<typeof TemplateMatcherInputSchema,
         throw new Error('Failed to capture or load screen image for template matching');
       }
 
-      // Get candidate templates
-      const templates = await this.getCandidateTemplates(input);
+      let templateMat: cv.Mat | null = null;
+      try {
+        templateMat = await this.loadImage(input.image);
 
-      if (templates.length === 0) {
-        throw new Error(`No templates found for IDs: ${input.templateIds.join(', ')}`);
+        if (!templateMat) throw Error('Could not load template image')
+
+        match = await this.matchTemplate(
+          screenMat,
+          templateMat,
+        );
+
+      } catch (error) {
+        console.warn(`Failed to match template`, error);
       }
-
-      // Perform template matching
-      const results: TemplateMatcherOutput = [];
-      const threshold = input.threshold;
-
-      for (const template of templates) {
-        let templateMat: cv.Mat | null = null;
-        try {
-          templateMat = await this.loadTemplateImage(template.id);
-          if (!templateMat) continue;
-
-          const matches = await this.matchTemplate(
-            screenMat,
-            templateMat,
-            template,
-            threshold
-          );
-
-          results.push(...matches);
-        } catch (error) {
-          console.warn(`Failed to match template ${template.id}:`, error);
-        } finally {
-          // Cleanup template image Mat
-          if (templateMat) {
-            try {
-              templateMat.release();
-            } catch {
-              // Ignore cleanup errors
-            }
-          }
-        }
-      }
-
-      // Sort by confidence (highest first)
-      results.sort((a, b) => b.confidence - a.confidence);
 
       // Show visual indicators if requested
-      if (input.showVisualIndicators && results.length > 0) {
-        // Results already have correct {x, y} format, no conversion needed
-        const overlayResults = results;
-        await this.showVisualIndicators(overlayResults as any, input.overlayTimeout);
+      if (input.showVisualIndicators && match) {
+        await this.showVisualIndicators(match, input.overlayTimeout);
+      }
+
+      if (match) {
+        return {
+          success: true,
+          data: match
+        };
       }
 
       return {
-        success: true,
-        data: results
-      };
+        success: false,
+        error: {
+          message: 'Could not match template',
+          code: 'TOOL_EXECUTION_ERROR'
+        }
+      }
     } finally {
       // Cleanup screen image Mat to prevent memory leaks
       if (screenMat) {
@@ -200,158 +149,57 @@ export class TemplateMatcherTool extends Tool<typeof TemplateMatcherInputSchema,
     return `${primaryDisplay.bounds.width}x${primaryDisplay.bounds.height}`;
   }
 
-  private async getCandidateTemplates(input: TemplateMatcherInput) {
-    // Get specific templates by ID (templateIds is now required)
-    const templates = [];
-    for (const templateId of input.templateIds) {
-      const template = await this.templateManager?.getTemplate?.(templateId);
-      if (template && typeof template === 'object') {
-        const templateObj = template as any;
-        const { imageData, thumbnailData, ...metadata } = templateObj;
-        templates.push(metadata);
-      } else {
-        console.warn(`[Template Matcher] Template not found by ID: ${templateId}`);
-      }
-    }
-    return templates;
-  }
-
-  private async loadTemplateImage(templateId: string): Promise<cv.Mat | null> {
-    const template = await this.templateManager?.getTemplate?.(templateId);
-    if (!template || typeof template !== 'object') {
-      return null;
-    }
-    const templateObj = template as any;
-    if (!templateObj.imageData) {
-      return null;
-    }
-
-    return cv.imdecode(templateObj.imageData);
-  }
-
   private async matchTemplate(
     screenMat: cv.Mat,
     templateMat: cv.Mat,
-    templateMetadata: any,
-    threshold: number
-  ): Promise<TemplateMatchResult[]> {
-    // Search on full screen (no region restriction)
-    const searchMat = screenMat;
+  ): Promise<TemplateMatcherOutput> {
+    let matchResult;
+    try {
+      // Search on full screen (no region restriction)
+      const searchMat = screenMat;
 
-    const templateSize = templateMat.sizes;
-    const originalWidth = templateSize[1];
-    const originalHeight = templateSize[0];
+      const templateSize = templateMat.sizes;
+      const width = templateSize[1];
+      const height = templateSize[0];
 
-    const matches: TemplateMatchResult[] = [];
-    const finalThreshold = Math.max(threshold, templateMetadata.matchThreshold || 0.8);
-    const currentResolution = this.getCurrentResolution();
+      // Perform template matching using normalized cross correlation
+      matchResult = searchMat.matchTemplate(templateMat, cv.TM_CCOEFF_NORMED);
 
-    // Smart scale selection: try cached scale first, then fallback to full search
-    let scalesToTry: number[] = [];
+      // Find min/max locations and values
+      const minMaxLoc = matchResult.minMaxLoc();
 
-    if (templateMetadata.scaleCache && templateMetadata.scaleCache[currentResolution]) {
-      // We have a cached scale for this resolution - try it first
-      const cachedScale = templateMetadata.scaleCache[currentResolution];
-      scalesToTry = [cachedScale, 1.0]; // Try cached scale first, then original size
-    } else if (currentResolution === templateMetadata.sourceResolution) {
-      // Same resolution as when template was created - should be 1.0
-      scalesToTry = [1.0];
-    } else {
-      // No cached scale - need full search
-      scalesToTry = [
-        1.0,          // Original size (try first)
-        // Scaling down (template larger than screen)
-        0.9, 0.8, 0.75, 0.7, 0.67, 0.6, 0.5, 0.4, 0.33, 0.25,
-        // Scaling up (template smaller than screen) 
-        1.1, 1.2, 1.25, 1.33, 1.4, 1.5, 1.6, 1.67, 1.75, 1.8, 2.0, 2.25, 2.5, 3.0
-      ];
-    }
-
-    // Try scale factors in order of priority
-    for (const scale of scalesToTry) {
-      let scaledWidth = originalWidth;
-      let scaledHeight = originalHeight;
-
-      let result: any = null;
-      let scaledTemplate: cv.Mat = templateMat;
-
-      try {
-        // Scale template if scale factor is not 1.0
-        if (Math.abs(scale - 1.0) > 0.01) {
-          const newWidth = Math.round(originalWidth * scale);
-          const newHeight = Math.round(originalHeight * scale);
-
-          // Skip if scaled template would be too small or too large
-          if (newWidth < 10 || newHeight < 10 ||
-            newWidth > searchMat.sizes[1] || newHeight > searchMat.sizes[0]) {
-            continue;
-          }
-
-          scaledTemplate = templateMat.resize(newHeight, newWidth);
-          scaledWidth = newWidth;
-          scaledHeight = newHeight;
+      return {
+        confidence: minMaxLoc.maxVal,
+        location: {
+          x: minMaxLoc.maxLoc.x,
+          y: minMaxLoc.maxLoc.y,
+          width: width,
+          height: height
         }
-
-        // Perform template matching using normalized cross correlation
-        result = searchMat.matchTemplate(scaledTemplate, cv.TM_CCOEFF_NORMED);
-
-        // Find min/max locations and values
-        const minMaxLoc = result.minMaxLoc();
-
-
-        if (minMaxLoc.maxVal >= finalThreshold) {
-          // Found a good match at this scale - create the match result
-          matches.push({
-            templateId: templateMetadata.id,
-            confidence: minMaxLoc.maxVal,
-            location: {
-              x: minMaxLoc.maxLoc.x,
-              y: minMaxLoc.maxLoc.y,
-              width: scaledWidth,
-              height: scaledHeight
-            },
-            template: {
-              ...templateMetadata,
-              // Add scale information for debugging/display
-              detectedScale: scale
-            }
-          });
+      }
+    } catch (error) {
+      throw error;
+    } finally {
+      // Cleanup temporary Mat objects
+      if (matchResult) {
+        try {
+          matchResult.release();
+        } catch {
+          // Fallback: ignore cleanup errors
         }
-      } catch (scaleError) {
-        // Log but continue with other scales
-      } finally {
-        // Cleanup temporary Mat objects
-        if (result) {
-          try {
-            result.release();
-          } catch {
-            // Fallback: ignore cleanup errors
-          }
-        }
-        // Cleanup scaled template if it's different from original
-        if (scaledTemplate !== templateMat) {
-          try {
-            scaledTemplate.release();
-          } catch {
-            // Fallback: ignore cleanup errors
-          }
+      }
+      // Cleanup scaled template if it's different from original
+      if (templateMat) {
+        try {
+          templateMat.release();
+        } catch {
+          // Fallback: ignore cleanup errors
         }
       }
     }
-
-    // Sort matches by confidence (highest first) and return top matches
-    matches.sort((a, b) => b.confidence - a.confidence);
-
-    if (matches.length > 0) {
-      const bestMatch = matches[0];
-
-      return [bestMatch];
-    }
-
-    return [];
   }
 
-  private async showVisualIndicators(results: TemplateMatchResult[], timeout: number): Promise<void> {
+  private async showVisualIndicators(result: TemplateMatcherOutput, timeout: number): Promise<void> {
     if (!this.overlayService) {
       console.warn('[Template Matcher] Overlay service not available, skipping visual indicators');
       return;
@@ -359,64 +207,60 @@ export class TemplateMatcherTool extends Tool<typeof TemplateMatcherInputSchema,
 
     // Create overlay window
     const overlay = await this.overlayService.createOverlay({
+      transparent: true,
+      alwaysOnTop: true,
       showInstructions: true,
-      instructionText: `Found ${results.length} template match(es)`,
+      instructionText: `Found template match`,
       timeout: timeout,
       clickThrough: false
     });
 
-    // Convert results to overlay shapes and text
-    const shapes: OverlayShape[] = [];
-    const texts: OverlayText[] = [];
+    const { location, confidence } = result;
+    // Location already has correct {x, y, width, height} format
+    const rectForScreen = {
+      x: location.x,
+      y: location.y,
+      width: location.width,
+      height: location.height
+    };
+    const screenDipRect = screen.screenToDipRect(null, rectForScreen)
 
-    results.forEach((result, index) => {
-      const { location, template, confidence } = result;
-      // Location already has correct {x, y, width, height} format
-      const rectForScreen = {
-        x: location.x,
-        y: location.y,
-        width: location.width,
-        height: location.height
-      };
-      const screenDipRect = screen.screenToDipRect(null, rectForScreen)
+    // Create rectangle shape for each match
+    const shape: OverlayShape = {
+      id: `match`,
+      type: 'rectangle',
+      bounds: screenDipRect,
+      style: {
+        ...OVERLAY_STYLES.HIGHLIGHT,
+        color: confidence > 0.9 ? '#00ff00' : confidence > 0.8 ? '#ffaa00' : '#ff8800',
+        lineWidth: 3,
+        fillColor: confidence > 0.9 ? 'rgba(0, 255, 0, 0.1)' : 'rgba(255, 170, 0, 0.1)'
+      },
+      label: `Match`,
+      labelPosition: 'top'
+    };
 
-      // Create rectangle shape for each match
-      shapes.push({
-        id: `match-${index}`,
-        type: 'rectangle',
-        bounds: screenDipRect,
-        style: {
-          ...OVERLAY_STYLES.HIGHLIGHT,
-          color: confidence > 0.9 ? '#00ff00' : confidence > 0.8 ? '#ffaa00' : '#ff8800',
-          lineWidth: 3,
-          fillColor: confidence > 0.9 ? 'rgba(0, 255, 0, 0.1)' : 'rgba(255, 170, 0, 0.1)'
-        },
-        label: `${template.name}`,
-        labelPosition: 'top'
-      });
-
-      // Add confidence text
-      texts.push({
-        id: `confidence-${index}`,
-        text: `${Math.round(confidence * 100)}%`,
-        position: {
-          x: rectForScreen.x + rectForScreen.width + 5,
-          y: rectForScreen.y + 20
-        },
-        style: {
-          color: '#ffffff',
-          fontSize: 14,
-          fontFamily: 'system-ui, -apple-system, sans-serif'
-        },
-        backgroundColor: 'rgba(26, 26, 26, 0.9)',
-        padding: 6,
-        borderRadius: 4
-      });
-    });
+    // Add confidence text
+    const text: OverlayText = {
+      id: `confidence`,
+      text: `${Math.round(confidence * 100)}%`,
+      position: {
+        x: rectForScreen.x + rectForScreen.width + 5,
+        y: rectForScreen.y + 20
+      },
+      style: {
+        color: '#ffffff',
+        fontSize: 14,
+        fontFamily: 'system-ui, -apple-system, sans-serif'
+      },
+      backgroundColor: 'rgba(26, 26, 26, 0.9)',
+      padding: 6,
+      borderRadius: 4
+    };
 
     // Draw shapes and text
-    await overlay.drawShapes(shapes);
-    await overlay.drawText(texts);
+    await overlay.drawShapes([shape]);
+    await overlay.drawText([text]);
 
     // Show the overlay
     await overlay.show();
