@@ -1,21 +1,21 @@
-import { OcrInputSchema, OcrOutputSchema, ToolResult } from '@app/schemas';
+import { TesseractOcrInputSchema, TesseractOcrOutputSchema, ToolResult } from '@app/schemas';
 import { Tool } from '@app/tools';
 import { z } from 'zod';
 import Tesseract from 'tesseract.js';
 
 // Type aliases for convenience
-type OcrInput = z.infer<typeof OcrInputSchema>;
-type OcrOutput = z.infer<typeof OcrOutputSchema>;
-type OcrResult = ToolResult<typeof OcrOutputSchema>;
+type TesseractOcrInput = z.infer<typeof TesseractOcrInputSchema>;
+type TesseractOcrOutput = z.infer<typeof TesseractOcrOutputSchema>;
+type TesseractOcrResult = ToolResult<typeof TesseractOcrOutputSchema>;
 
-export class TesseractOcrTool extends Tool<typeof OcrInputSchema, typeof OcrOutputSchema> {
+export class TesseractOcrTool extends Tool<typeof TesseractOcrInputSchema, typeof TesseractOcrOutputSchema> {
   id = 'tesseract-ocr' as const;
   name = 'Tesseract OCR Tool';
   description = 'Extract text from images using Tesseract OCR engine';
-  category = 'Text Processing';
+  category = 'textProcessing';
 
-  inputSchema = OcrInputSchema;
-  outputSchema = OcrOutputSchema;
+  inputSchema = TesseractOcrInputSchema;
+  outputSchema = TesseractOcrOutputSchema;
 
   examples = [
     {
@@ -47,9 +47,9 @@ export class TesseractOcrTool extends Tool<typeof OcrInputSchema, typeof OcrOutp
     });
   }
 
-  async executeValidated(input: OcrInput): Promise<OcrResult> {
+  async executeValidated(input: TesseractOcrInput): Promise<TesseractOcrResult> {
     const startTime = Date.now();
-    
+
     const recognizeResult = await this.worker?.recognize(input);
 
     if (!recognizeResult) {
@@ -60,7 +60,7 @@ export class TesseractOcrTool extends Tool<typeof OcrInputSchema, typeof OcrOutp
     const cleanedText = text.trim().replace(/\n+/g, ' ').replace(/\s+/g, ' ');
     const processingTime = Date.now() - startTime;
 
-    const result: OcrOutput = {
+    const result: TesseractOcrOutput = {
       text: cleanedText,
       confidence,
       metadata: {

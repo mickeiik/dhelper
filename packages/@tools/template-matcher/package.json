@@ -21,5 +21,11 @@
     "@app/electron-versions": "*",
     "typescript": "^5.8.3",
     "vite": "^7.0.6"
+  },
+  "opencv4nodejs": {
+    "disableAutoBuild": "1",
+    "OPENCV_INCLUDE_DIR": "C:\\opencv\\build\\include",
+    "OPENCV_LIB_DIR": "C:\\opencv\\build\\x64\\vc16\\lib",
+    "OPENCV_BIN_DIR": "C:\\opencv\\build\\x64\\vc16\\bin"
   }
 }

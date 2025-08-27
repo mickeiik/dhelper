@@ -13,7 +13,7 @@ export class ScreenshotTool extends Tool<typeof ScreenshotInputSchema, typeof Sc
   id = 'screenshot' as const;
   name = 'Screenshot Tool';
   description = 'Capture a screenshot of a specific screen region';
-  category = 'Image';
+  category = 'image';
 
   inputSchema = ScreenshotInputSchema;
   outputSchema = ScreenshotOutputSchema;

@@ -11,7 +11,7 @@ export class HelloWorldTool extends Tool<typeof HelloWorldInputSchema, typeof He
   id = 'hello-world' as const;
   name = 'Hello World Tool';
   description = 'Simple debugging tool that logs input and returns it';
-  category = 'Debug';
+  category = 'debug';
 
   inputSchema = HelloWorldInputSchema;
   outputSchema = HelloWorldOutputSchema;

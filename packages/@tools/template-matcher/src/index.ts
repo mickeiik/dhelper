@@ -1,4 +1,4 @@
-import { TemplateMatcherInputSchema, TemplateMatcherOutputSchema, TemplateMatchResultSchema, ToolResult } from '@app/schemas';
+import { TemplateMatcherInputSchema, TemplateMatcherOutputSchema, ToolResult } from '@app/schemas';
 import { Tool } from '@app/tools';
 import { z } from 'zod';
 import type { OverlayService } from '@app/overlay';
@@ -9,7 +9,7 @@ import screenshot from 'screenshot-desktop';
 // Configure OpenCV before importing opencv4nodejs
 import { join } from 'node:path';
 
-if (process.env.NODE_ENV !== 'development') {
+if (process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== 'test') {
   const resourcesPath = process.resourcesPath;
   const opencvPath = join(resourcesPath, 'opencv');
 
@@ -32,8 +32,8 @@ type OverlayText = z.infer<typeof OverlayTextSchema>;
 export class TemplateMatcherTool extends Tool<typeof TemplateMatcherInputSchema, typeof TemplateMatcherOutputSchema> {
   id = 'template-matcher' as const;
   name = 'Template Matcher Tool';
-  description = 'Find specific template matches on the current screen using multi-scale OpenCV template matching. Requires template IDs and automatically handles different screen resolutions (1080p, 1440p, 4K)';
-  category = 'Computer Vision';
+  description = 'Find specific template match on the current screen using OpenCV';
+  category = 'computerVision';
 
   inputSchema = TemplateMatcherInputSchema;
   outputSchema = TemplateMatcherOutputSchema;
@@ -207,8 +207,6 @@ export class TemplateMatcherTool extends Tool<typeof TemplateMatcherInputSchema,
 
     // Create overlay window
     const overlay = await this.overlayService.createOverlay({
-      transparent: true,
-      alwaysOnTop: true,
       showInstructions: true,
       instructionText: `Found template match`,
       timeout: timeout,

@@ -90,14 +90,17 @@ export const ScreenRegionSelectorOutputSchema = <T extends z.infer<typeof Screen
 };
 
 // Union type for general use when mode is unknown
-export const ScreenRegionSelectorOutputUnionSchema = z.union([PointSchema, RectangleSchema]);
+export const ScreenRegionSelectorOutputUnionSchema = z.union([
+    PointSchema,
+    RectangleSchema
+]);
 
-export const OcrInputSchema = z.union([
+export const TesseractOcrInputSchema = z.union([
     z.string(), // Base64
     z.instanceof(Buffer)
 ]);
 
-export const OcrOutputSchema = z.object({
+export const TesseractOcrOutputSchema = z.object({
     text: z.string(),
     confidence: z.number().min(0).max(100).optional(),
     metadata: z.object({

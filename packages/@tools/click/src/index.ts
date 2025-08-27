@@ -14,7 +14,7 @@ export class ClickTool extends Tool<typeof ClickInputSchema, typeof ClickOutputS
   id = 'click' as const;
   name = 'Click Tool';
   description = 'Click at screen positions with multiple click methods and input types';
-  category = 'Input';
+  category = 'input';
 
   inputSchema = ClickInputSchema;
   outputSchema = ClickOutputSchema;

@@ -12,7 +12,7 @@ import { z } from 'zod';
 
 type Point = z.infer<typeof PointSchema>;
 type Rectangle = z.infer<typeof RectangleSchema>;
-type OverlayOptions = z.infer<typeof OverlayOptionsSchema>;
+type OverlayOptions = z.input<typeof OverlayOptionsSchema>;
 type OverlayShape = z.infer<typeof OverlayShapeSchema>;
 type OverlayText = z.infer<typeof OverlayTextSchema>;
 

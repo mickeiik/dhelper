@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { z } from 'zod';
-import { Tool, ToolId, ToolManager } from '../src/index.js';
-import { ResultSchema, ToolMetadataSchema } from '../../schemas/src';
+import { Tool, ToolId, ToolManager } from '../index.js';
+import { ResultSchema, ToolMetadataSchema } from '../../../schemas/src';
 import { afterEach } from 'node:test';
 
 const MockInputSchema = z.object({
@@ -319,7 +319,7 @@ describe('ToolManager', () => {
         })
 
         test('should throw if a async loaded tool hase a wrong ToolMetadataSche', async () => {
-            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
 
             const emptyObjectSchema = z.object({});
             class InvalidTool extends Tool<typeof emptyObjectSchema, typeof emptyObjectSchema> {

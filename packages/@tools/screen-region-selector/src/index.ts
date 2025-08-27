@@ -18,7 +18,7 @@ export class ScreenRegionSelectorTool extends Tool<typeof ScreenRegionSelectorIn
   id = 'screen-region-selector' as const;
   name = 'Screen Region Selector';
   description = 'Interactive tool to select a point or rectangle area on the screen';
-  category = 'Input';
+  category = 'input';
 
   inputSchema = ScreenRegionSelectorInputSchema;
   outputSchema = ScreenRegionSelectorOutputUnionSchema;
