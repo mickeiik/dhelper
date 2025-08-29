@@ -21,6 +21,6 @@
     "@app/electron-versions": "*",
     "@types/lodash": "^4.17.20",
     "typescript": "5.8.3",
-    "vite": "7.0.6"
+    "vite": "7.1.3"
   }
 }
