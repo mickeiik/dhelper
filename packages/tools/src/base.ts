@@ -23,7 +23,7 @@ export abstract class Tool<
         return ResultSchema(this.outputSchema);
     }
 
-    async execute(rawInput: unknown): Promise<z.infer<typeof this.resultSchema>> {
+    async execute(rawInput: z.input<TInput>): Promise<z.infer<typeof this.resultSchema>> {
         try {
             // Validate input
             const input = this.inputSchema.parse(rawInput);
@@ -47,6 +47,6 @@ export abstract class Tool<
     }
 
     protected abstract executeValidated(
-        input: z.infer<TInput>
+        input: z.output<TInput>
     ): Promise<z.infer<typeof this.resultSchema>>;
 }

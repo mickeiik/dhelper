@@ -41,14 +41,14 @@ export const ToolMetadataSchema = z.object({
     })).optional()
 });
 
-export const ToolConfigSchema = z.object({
-    showVisualIndicator: z.boolean().optional().default(false),
-    indicatorTimeout: z.number().min(0).optional().default(1000)
+export const ToolOverlayConfigSchema = z.object({
+    showVisualIndicator: z.boolean().default(false),
+    indicatorTimeout: z.number().min(0).default(1000)
 })
 
 // Individual tool input schemas
 export const HelloWorldInputSchema = z.object({
-    message: z.string().optional().default('Hello World!'),
+    message: z.string().default('Hello World!'),
     data: z.unknown().optional()
 });
 
@@ -126,19 +126,23 @@ export const TemplateMatcherOutputSchema = z.object({
 });
 
 export const ClickInputSchemaBase = z.union([
-    PointSchema,
     RectangleSchema,
+    PointSchema,
 ]);
 
-export const ClickInputOptions = z.object({
-    button: z.enum(['left', 'right', 'middle']).optional().default('left'),
-    clicks: z.number().min(1).max(10).optional().default(1),
-    delay: z.number().min(10).optional().default(100),
-});
+const ClickInputOptions = z.object({
+    button: z.enum(['left', 'right', 'middle']).default('left'),
+    clicks: z.number().min(1).max(10).default(1),
+    delay: z.number().min(10).default(100),
+    ...ToolOverlayConfigSchema.shape
+})
 
-export const ClickInputSchemaWithOptions = z.intersection(ClickInputSchemaBase, ClickInputOptions);
+export const ClickInputSchema = z.intersection(
+    ClickInputSchemaBase,
+    ClickInputOptions
+);
 
-export const ClickInputSchema = z.intersection(ClickInputSchemaWithOptions, ToolConfigSchema)
+// export const ClickInputSchema = z.intersection(ClickInputSchemaWithOptions, ToolConfigSchema)
 
 
 export const ClickOutputSchema = PointSchema;

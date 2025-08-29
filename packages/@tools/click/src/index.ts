@@ -1,19 +1,20 @@
 import type { OverlayService } from '@app/overlay';
 import { OVERLAY_STYLES } from '@app/overlay';
+//@ts-ignore
 import { OverlayShapeSchema, ClickInputSchema, ClickOutputSchema, ToolResult, PointSchema } from '@app/schemas';
 import { mouse, Button, sleep } from '@nut-tree-fork/nut-js';
 import { Tool } from '@app/tools';
 import { z } from 'zod';
 
 // Type aliases for convenience
-type ClickToolInput = z.infer<typeof ClickInputSchema>;
+type ClickToolInput = z.output<typeof ClickInputSchema>;
 type ClickToolOutput = z.infer<typeof ClickOutputSchema>;
 type ClickResult = ToolResult<typeof ClickOutputSchema>;
 type OverlayShape = z.infer<typeof OverlayShapeSchema>;
 export class ClickTool extends Tool<typeof ClickInputSchema, typeof ClickOutputSchema> {
   id = 'click' as const;
   name = 'Click Tool';
-  description = 'Click at screen positions with multiple click methods and input types';
+  description = 'Click at screen position or center of region';
   category = 'input';
 
   inputSchema = ClickInputSchema;

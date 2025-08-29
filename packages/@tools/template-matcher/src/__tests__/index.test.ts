@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
-import { TemplateMatcherInputSchema, TemplateMatcherOutputSchema } from '../../../../schemas/src';
+import { TemplateMatcherInputSchema, TemplateMatcherOutputSchema } from '@app/schemas';
 import { TemplateMatcherTool } from '..';
 
 describe('TemplateMatcherTool Class', () => {

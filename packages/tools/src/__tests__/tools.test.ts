@@ -47,7 +47,7 @@ class MockToolWithInit extends Tool<typeof MockInputSchema, typeof MockOutputSch
         initializeMock()
     }
 
-    async executeValidated(input: z.infer<typeof MockInputSchema>) {
+    async executeValidated(input: z.output<typeof MockInputSchema>) {
         return {
             success: true as const,
             data: {
@@ -121,6 +121,7 @@ describe('Tool Base Class', () => {
 
         test('should validate input schema', async () => {
             const invalidInput = { wrongField: 'test' };
+            //@ts-expect-error Argument of type '{ wrongField: string; }' is not assignable to parameter of type '{ message: string; value?: number | undefined; }'
             const result = await tool.execute(invalidInput);
 
             expect(result.success).toBe(false);

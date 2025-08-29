@@ -4,7 +4,7 @@ import { z } from 'zod';
 import Tesseract from 'tesseract.js';
 
 // Type aliases for convenience
-type TesseractOcrInput = z.infer<typeof TesseractOcrInputSchema>;
+type TesseractOcrInput = z.output<typeof TesseractOcrInputSchema>;
 type TesseractOcrOutput = z.infer<typeof TesseractOcrOutputSchema>;
 type TesseractOcrResult = ToolResult<typeof TesseractOcrOutputSchema>;
 
@@ -35,7 +35,7 @@ export class TesseractOcrTool extends Tool<typeof TesseractOcrInputSchema, typeo
     }
   ];
 
-  worker: Tesseract.Worker | null = null;
+  private worker: Tesseract.Worker | null = null;
 
   async initialize() {
     this.worker = await Tesseract.createWorker('eng', Tesseract.OEM.DEFAULT, {

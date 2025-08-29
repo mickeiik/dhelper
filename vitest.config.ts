@@ -1,3 +1,4 @@
+import path from 'path'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
@@ -12,4 +13,10 @@ export default defineConfig({
       include: ['**\/*.ts'],
     },
   },
+  resolve: {
+    alias: {
+      '@app/schemas': path.resolve(__dirname,
+        'packages/schemas/src/index.ts')
+    }
+  }
 })

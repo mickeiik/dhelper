@@ -3,7 +3,7 @@ import { Tool } from '@app/tools';
 import { z } from 'zod';
 
 // Type aliases for convenience
-type HelloWorldInput = z.infer<typeof HelloWorldInputSchema>;
+type HelloWorldInput = z.output<typeof HelloWorldInputSchema>;
 type HelloWorldOutput = z.infer<typeof HelloWorldOutputSchema>;
 type HelloWorldResult = ToolResult<typeof HelloWorldOutputSchema>;
 
@@ -54,10 +54,6 @@ export class HelloWorldTool extends Tool<typeof HelloWorldInputSchema, typeof He
       }
     }
   ];
-
-  async initialize() {
-    return;
-  }
 
   async executeValidated(input: HelloWorldInput): Promise<HelloWorldResult> {
     const result: HelloWorldOutput = {

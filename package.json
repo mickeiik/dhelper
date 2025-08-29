@@ -23,6 +23,7 @@
     "compile-nobuild": "electron-builder build --config electron-builder.mjs",
     "test": "npx playwright test ./tests/e2e.spec.ts",
     "vitest": "vitest",
+    "vitest-ui": "vitest --ui",
     "start": "node packages/dev-mode.js",
     "typecheck": "npm run typecheck -ws --if-present",
     "create-renderer": "cd packages && node ./integrate-renderer/create-renderer.js",

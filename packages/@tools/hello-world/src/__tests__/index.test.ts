@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach } from 'vitest';
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { HelloWorldTool } from '..';
-import { HelloWorldInputSchema, HelloWorldOutputSchema } from '../../../../schemas/src';
+import { HelloWorldInputSchema, HelloWorldOutputSchema } from '@app/schemas';
 
 describe('HelloWorldTool Class', () => {
     let helloWorldTool: HelloWorldTool;
@@ -39,4 +39,18 @@ describe('HelloWorldTool Class', () => {
         });
     });
 
+    describe('HelloWorldTool Methods', () => {
+        test('should parse and set default values', () => {
+            const inputSchemaSpy = vi.spyOn(helloWorldTool.inputSchema, 'parse');
+            const executeValidatedSpy = vi.spyOn(helloWorldTool, 'executeValidated');
+
+            helloWorldTool.execute({})
+
+            expect(executeValidatedSpy).toHaveBeenCalledWith({
+                message: "Hello World!"
+            })
+
+            expect(inputSchemaSpy).toHaveBeenCalled()
+        });
+    });
 });

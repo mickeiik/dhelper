@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from 'vitest';
-import { ScreenshotInputSchema, ScreenshotOutputSchema } from '../../../../schemas/src';
+import { ScreenshotInputSchema, ScreenshotOutputSchema } from '@app/schemas';
 import { ScreenshotTool } from '..';
 
 describe('ScreenshotTool Class', () => {

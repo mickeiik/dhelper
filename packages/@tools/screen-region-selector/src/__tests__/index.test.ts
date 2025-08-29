@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from 'vitest';
-import { ScreenRegionSelectorInputSchema, ScreenRegionSelectorOutputUnionSchema } from '../../../../schemas/src';
+import { ScreenRegionSelectorInputSchema, ScreenRegionSelectorOutputUnionSchema } from '@app/schemas';
 import { ScreenRegionSelectorTool } from '..';
 
 describe('ScreenRegionSelectorTool Class', () => {
