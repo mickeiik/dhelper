@@ -25,7 +25,6 @@ describe('TemplateMatcherTool Class', () => {
                 .toStrictEqual(JSON.stringify(TemplateMatcherOutputSchema));
         });
 
-
         test('should generate correct result schema', () => {
             const resultSchema = templateMatcherTool.resultSchema;
             expect(resultSchema).toBeDefined();

@@ -5,7 +5,7 @@ import { nativeImage } from 'electron';
 import screenshot from 'screenshot-desktop';
 
 // Type aliases for convenience
-type ScreenshotInput = z.infer<typeof ScreenshotInputSchema>;
+type ScreenshotInput = z.output<typeof ScreenshotInputSchema>;
 type ScreenshotOutput = z.infer<typeof ScreenshotOutputSchema>;
 type ScreenshotResult = ToolResult<typeof ScreenshotOutputSchema>;
 
@@ -18,50 +18,7 @@ export class ScreenshotTool extends Tool<typeof ScreenshotInputSchema, typeof Sc
   inputSchema = ScreenshotInputSchema;
   outputSchema = ScreenshotOutputSchema;
 
-  examples = [
-    {
-      name: 'Full HD Area',
-      description: 'Capture a 1920x1080 area from top-left corner',
-      inputs: {
-        x: 0,
-        y: 0,
-        width: 1920,
-        height: 1080
-      }
-    },
-    {
-      name: 'Small Window',
-      description: 'Capture a typical small window area',
-      inputs: {
-        x: 100,
-        y: 100,
-        width: 800,
-        height: 600
-      }
-    },
-    {
-      name: 'Use Region Selector',
-      description: 'Use coordinates from the most recent region selector step',
-      inputs: {
-        x: { $ref: '{{previous:screen-region-selector.x}}' },
-        y: { $ref: '{{previous:screen-region-selector.y}}' },
-        width: { $ref: '{{previous:screen-region-selector.width}}' },
-        height: { $ref: '{{previous:screen-region-selector.height}}' }
-      }
-    },
-    {
-      name: 'Use Previous Step',
-      description: 'Use coordinates from the immediately previous step (if it returns coordinates)',
-      inputs: {
-        x: { $ref: '{{previous.x}}' },
-        y: { $ref: '{{previous.y}}' },
-        width: { $ref: '{{previous.width}}' },
-        height: { $ref: '{{previous.height}}' }
-      }
-    }
-  ];
-
-  async initialize() { }
+  examples = [];
 
   async executeValidated(input: ScreenshotInput): Promise<ScreenshotResult> {
     // Capture full screen at native resolution

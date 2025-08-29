@@ -6,24 +6,11 @@ import { OverlayShapeSchema, OverlayTextSchema } from '@app/schemas';
 import { OVERLAY_STYLES } from '@app/overlay';
 import screenshot from 'screenshot-desktop';
 
-// Configure OpenCV before importing opencv4nodejs
-import { join } from 'node:path';
-
-if (process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== 'test') {
-  const resourcesPath = process.resourcesPath;
-  const opencvPath = join(resourcesPath, 'opencv');
-
-  process.env.OPENCV4NODEJS_DISABLE_AUTOBUILD = '1';
-  process.env.OPENCV_INCLUDE_DIR = join(opencvPath, 'include');
-  process.env.OPENCV_LIB_DIR = join(opencvPath, 'lib');
-  process.env.OPENCV_BIN_DIR = join(opencvPath, 'bin');
-}
-
 import cv from '@u4/opencv4nodejs';
 import { screen } from 'electron';
 
 // Type aliases for convenience
-type TemplateMatcherInput = z.infer<typeof TemplateMatcherInputSchema>;
+type TemplateMatcherInput = z.output<typeof TemplateMatcherInputSchema>;
 type TemplateMatcherOutput = z.infer<typeof TemplateMatcherOutputSchema>;
 type TemplateMatcherResult = ToolResult<typeof TemplateMatcherOutputSchema>;
 type OverlayShape = z.infer<typeof OverlayShapeSchema>;
@@ -45,8 +32,6 @@ export class TemplateMatcherTool extends Tool<typeof TemplateMatcherInputSchema,
   ];
 
   async initialize(context: any) {
-    // opencv4nodejs is ready to use immediately
-
     // Store overlay service for visual indicators
     this.overlayService = context.overlayService;
 
